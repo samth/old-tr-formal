@@ -1,1 +1,0 @@
-("299.30" (plthome . #"collects/parser-tools/lex.ss") (plthome . #"collects/parser-tools/yacc.ss") #"/home/samth/sw/trinity/syntactic/lexer.ss" #"/home/samth/sw/trinity/syntactic/ast.ss" (plthome . #"collects/schemeunit/test.ss") (plthome . #"collects/schemeunit/graphical-ui.ss"))

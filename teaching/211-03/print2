@@ -1,6 +1,0 @@
-cd '/course/csu211/fall03/submission/week'$2'/Samuel Tobin-Hochstadt/'$1;
-cat HOMEWORK-CONTENT.definitions | /proj/scheme/plt-released/205/bin/mzscheme -t /proj/scheme/plt-released/205/collects/lang/htdp-advanced.ss  >  /tmp/output.txt 2>&1
-cat student-info /tmp/output.txt HOMEWORK-CONTENT.definitions | a2ps -1 --pretty-print=scheme -P'escher -onobanner'
-
-cat HOMEWORK-CONTENT.testcases | /proj/scheme/plt-released/205/bin/mzscheme -t /proj/scheme/plt-released/205/collects/lang/htdp-advanced.ss  >  /tmp/output.txt 2>&1
-cat student-info /tmp/output.txt HOMEWORK-CONTENT.testcases | a2ps -1 --pretty-print=scheme -P'escher -onobanner'
