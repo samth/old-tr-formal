@@ -24,10 +24,19 @@
 
 (define-syntax test-compile
   (syntax-rules ()
-      ((test-compile e e1 e2 e3 asm)
+      ((test-compile e e1 e2 e3)
        (begin
+         (set! listify? #t)
          (define e1 (make-readable (pass1 e usual-syntactic-environment) #t))
          (define e2 (make-readable (pass2 (pass1 e usual-syntactic-environment)) #t))
          (define e3 (make-readable (pass3 (pass2 (pass1 e usual-syntactic-environment))) #t))
-         (define asm (disassemble (assemble (compile e))))))))
+         (assemble (compile e))))
+      ((test-compile e e1 e2 e3 a)
+       (begin
+         (set! listify? #t)
+         (define e1 (make-readable (pass1 e usual-syntactic-environment) #t))
+         (define e2 (make-readable (pass2 (pass1 e usual-syntactic-environment)) #t))
+         (define e3 (make-readable (pass3 (pass2 (pass1 e usual-syntactic-environment))) #t))
+         (define a (assemble (compile e)))
+         ))))
 
