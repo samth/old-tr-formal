@@ -11,7 +11,7 @@
     ("Elevinion Riojas" 2375 "Yaich" #t 3)
     ("Binh Le" 8536 "Flores" #t 3)
     ("Mike Burns" 9164 "Nguyen" #t #f)
-    ("Tung Nguyen" ? "Burns" #t 3)
+    ("Tung Nguyen" 4143 "Burns" #t 3)
     ("Steven Collatos" 5906 "Rockwell" #t 3)
     ("Paul Briggs" 4889 "Champeau" #t 3)
     ("Martin Fowler" 9725 "Nutter-Upham" #t 3)
