@@ -1,0 +1,123 @@
+Problem 1:
+
+Part A:
+
+Let *(n) = the number of sqrts neccessary to reduce n to 1 (analagous to log*)
+
+Then T(n) = 2^(*(n)) + *(n)(n^2 log n)
+
+Part B:
+
+T(n) = O(n sqrt(n lg n))
+
+Bound above by replacing k with n.
+
+Bound below by replacing k with n/2, and summing only half the terms.  
+
+Part C:
+
+Choose the worst case bound.
+
+Part D:
+
+Choose the amortized bound.
+
+Problem 2:  
+
+This is just like weighted median, except we want to stop when the
+weights below the current element barely exceed the threshold.  The
+trick is to realize that we don't actually want to pick a set of
+elements, we just want to pick a certain element so that the sums of
+the elements less than that are less than a certain value.
+
+Problem 3:
+
+Part A: Use decision trees and follow the solution for problem 2 HW 2.
+
+It boils down the the inequality:
+
+h > lg (PI{i=1..n-1}(i!*i!) = SIGMA{i=1..n-1} (2lg(i!)) > 
+> SIGMA{i=1..n-1} (2lg((i/2)^(i/2))) > SIGMA{i=1..n-1} (i lg(i))
+> (n^2/8) * lg(n/2) = O(n^2 lg n)
+
+Part B:  All such matrices are in diagonally-sorted order.
+
+Problem 4:
+
+We want to compute a matrix C where C[i,j] is the number of objects
+with property 1 <= i and property 2 <= j.  
+
+From this, the answer to the range query (r1,s1,r2,s2) =
+
+C[s1,s2] - C[s1,r2] - C[r1,s2] + C[r1,r2]
+
+To compute this array, first set C[i,j] to the number of elements with
+p1 = i and p2 = j.  To do this, just use the counting sort method.
+This take O(n) time.  
+
+Then to compute the final values, use the following equation:
+
+C'[i,j] = C[i,j] + C'[i-1,j] + C'[i,j-1] - C'[i-1,j-1]
+
+where C' is the new array, and C is the initial array.
+
+This takes a constant amount of time for each element, and there are
+k1*k2 elements.  Therefore, the total time is O(k1*k2)
+
+Problem 5: 
+
+Optimal Substructure: Given an optimal solution, for n problems in t
+time, the solution must be optimal for solving the first k of the n
+problems in however long the solution allocated for those k problems.
+
+C[i,t] =  points obtained for problems up through i in time t
+
+C[m,t] = Max{i=1..t} (points[m,t] + C[m-1,t-i])
+
+S[m,t] = Above with Argmax
+
+To compute bottom up, start with C[i,0] and initialize to 0.  Then
+begin at C[1,1] and compute each row in order, from column 1 to column
+n.  Then compute the next row.  Once all the rows are completed, the
+problem is finished.  
+
+To find the solution, start with S[n,t] and walk backwards by one
+problem and time[n,S[n,t]].
+
+Running time:  For each element in C and S, we must take the maximum
+over at most t elements.  There are n*m elements in C/S.  Therefore,
+the algorithm runs in O(nmt) time.  
+
+Problem 6:
+
+Part i:  Simply select books until they no longer fit on the shelf.
+Then move to the next shelf, and repeat.  
+
+This does a constant amount of work per book, and thus takes O(n)
+time.  
+
+To see that it is correct, assume there was a solution that used
+fewer shelves.  Then this solution must have more books on some shelf
+than the solution produced by the above algorithm.  Consider that
+shelf.  It must have all the books that the greedy solution allocated,
+to it, and at least one more.  But the greedy solution selected books
+until they no longer fit.  Therefore, the additional book cannot fit
+on the shelf.  Thus, no such more optimal solution exists.  
+
+Part ii:  
+
+Optimal substructure:  Consider an optimal solution to the problem.
+This solution must place some k of the n books on the first m
+shelves, taking up some s height.  This must be the optimal area
+achieveable with those books, since otherwise we could replace that
+portion of the solution with the better solution, and have a better
+overall solution, contradicting the assumption of optimality.  
+
+Recursive formulation:
+
+Let C[i] be the optimal area taken up by shelves containing books 1
+through i.  Then the optimal solution for book i+1 is to place it on
+the current top shelf if it does not increase the area at all.  If it
+would increase the area at all, 
+
+Problem 7:
