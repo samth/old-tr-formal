@@ -1,13 +1,3 @@
-Problem set 2:
-
-
-
-
-
-
-
-Problem set 3:
-
 Problem 1:
 
 The optimal substructure is as follows:
@@ -29,6 +19,12 @@ Problem 2:
 Problem 3:
 
 Identical to 0-1 knapsack.  But calculation is different.
+
+Optimal substructure:
+
+Given an optimal solution which uses items up to i with weight limit
+w.  Assume there are k items of number i. Then the solution without the i items is optimal for items 1 .. i-1 and weight limit w - k*w_i 
+
 
 C[i,j] = max value with weight j and items 1 thru i.
 
