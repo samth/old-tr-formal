@@ -116,7 +116,8 @@
        (let ((new-t (update-type-cdr (lookup v env) transform)))
          (extend env v new-t))]
       [(? symbol? v)
-       (transform (lookup v env))]
+       (let ((new-t (transform (lookup v env))))
+         (extend env v new-t))]
       [_ (error "bad cond question exp")]
       ))
   
@@ -148,7 +149,7 @@
       [($ ty-ref t) (car-of-ty (lookup t tyenv))]
       [(a . _) a]
       [($ union-ty (cl ...))
-       (mk-union-ty (map-opt car-of-ty cl))]
+       (mk-union-ty (map car-of-ty cl))]
       [_ #f]))
   
   (define (cdr-of-ty t)
@@ -159,12 +160,20 @@
        (mk-union-ty (map-opt cdr-of-ty cl))]))  
   
   
-  (define (check-cond-clause question answer goal env)
-    (let ((new-env (extend-env-from-q question env)))
-      (check-exp answer goal new-env)))
+  (define (check-cond-clause clause goal env)
+    (match clause
+      [('else _) (error "else not supported")]
+      [(question answer)
+       (let ((new-env (extend-env-from-q question env)))
+         (check-exp answer goal new-env))]))
+  
+  (define (check-cond clauses goal env)
+    (for-each (lambda (cl) (check-cond-clause cl goal env)) clauses) 
+    goal)
   
   (define (check-exp expr goal env)
     (match expr
+      [('cond clauses ...) (check-cond clauses goal env)]
       [(or 'empty '()) (check-equal-ty goal 'Empty) goal]
       [(? number? e) (check-equal-ty goal 'Number) goal]
       [('car e) (let* ((t (check-exp e 'Any env))
@@ -172,16 +181,34 @@
                       (check-equal-ty goal car-t)
                   car-t)]
       [('cdr e) 
-       (printf "env: ~a" env)
+;       (printf "env: ~a" env)
        (let* ((t (check-exp e 'Any env))
               (cdr-t (cdr-of-ty t)))
          (check-equal-ty goal cdr-t)
          cdr-t)]
-      [(? symbol? exp) (let ((var-ty (lookup exp env)))
-                         (check-equal-ty goal var-ty)
-                         var-ty)]
+      [(? symbol? exp) 
+       (newline)
+       (display env)
+       (let ((var-ty (lookup exp env)))
+         (check-equal-ty goal var-ty)
+         var-ty)]
       ))
   
+  (define (check-def def env)
+    (match def
+      [('define (fun (and args ((arg ty) ...))) result
+         body)
+       (let ((new-env (append args env)))
+         (display new-env)
+         (check-exp body result new-env))]))
+  
+  (define simple-def `(define (foo ((ll ,(make-ty-ref 'nelon)))) Number
+                        (cond [(empty? (cdr ll)) 1]
+                              [(cons? (cdr ll)) (car (cdr ll))])))
+  
+  (define wrong-def `(define (foo ((ll ,(make-ty-ref 'nelon)))) Number
+                       (cond [(empty? ll) 1]
+                             [(cons? ll) (car (cdr ll))])))
   (define simple-env 
     `((l ,(make-ty-ref 'LoN))
       (l2 ,(make-ty-ref 'nelon))))
