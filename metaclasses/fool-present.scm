@@ -79,7 +79,7 @@
                (page-para (ht-append (t "Consider Harry. ") (bitmap "eagle.JPG")))
                'next
                (page-para "Harry is an eagle." )
-               #;(page-para "Now consider " (it "Eaglensis Latinus") "."
+               #;(page-para "Now consider" (it "Eaglensis Latinus") "."
                           "This is the species Harry belongs to.")
                'next
                (page-para "This relationship is easy to model in an object-oriented world.")
@@ -92,7 +92,7 @@
                           "even ask this question:")
                (jcode "Eagle.isEndagered()")
                'next
-               (page-para "But if " (jcode "Salmon") "is a species, will this work?")
+               (page-para "But if" (jcode "Salmon") "is a species, will this work?")
                (jcode "Salmon.isEndangered()")
                'next
                (blank)
@@ -127,15 +127,15 @@
                'next
                (page-para "That sounds an awful lot like a type.")
                (blank) (blank)
-               (page-para "What if we could make " (jcode "Species")
-                          "the type of " (jcode "Eagle") "?")
+               (page-para "What if we could make" (jcode "Species")
+                          "the type of" (jcode "Eagle") "?")
                (jcode "Eagle : Species")
                'next
                (page-para "Then we have a guarantee about the behavior of "(jcode "Eagle")
                           ","
-                          "since it is an element of " (jcode "Species") ".")
+                          "since it is an element of" (jcode "Species") ".")
                (page-para "And this guarantee holds for other such elements,"
-                          "such as " (jcode "Salmon") ".")
+                          "such as" (jcode "Salmon") ".")
                )
 
   (slide/title "Modeling Dimensions"
@@ -153,7 +153,7 @@
                (blank)
                (page-para "To appropriately model dimensions, we need"
                           "to express relationships between classes that are not subtypes.")
-               (page-para "See " (it "Object-Oriented Units of Measurement") "in OOPSLA 2004."))
+               (page-para "See" (it "Object-Oriented Units of Measurement") "in OOPSLA 2004."))
 
     
   (slide/title "Where are we now?"
@@ -181,7 +181,7 @@
                (blank)
                
                'next
-               (page-item "Classes have " (jcode "class") "members, which are the methods of the class when used as an expression.")
+               (page-item "Classes have" (jcode "class") "members, which are the methods of the class when used as an expression.")
  ;              (blank)
                
                (jcode "class Eagle { "
@@ -190,7 +190,7 @@
                (blank)
                'next
                
-               (page-item "Every class has a metaclass (also referred to as " 
+               (page-item "Every class has a metaclass (also referred to as" 
                           (it "kind" )"), and is an instance of its metaclass.")
 ;               (blank)
                (jcode "class Eagle kind Species")
@@ -222,9 +222,9 @@
                (page-para "All of the following are valid expressions:")
                (page-subitem (jcode "C"))
                (page-subitem (jcode "MyClass.x"))
-               (page-subitem/color (jcode "mc.m(5)") "blue" "   if " (jcode "mc") 
+               (page-subitem/color (jcode "mc.m(5)") "blue" "   if" (jcode "mc") 
                             "is an instance of" (jcode "MyClass"))
-               (page-subitem/color  (jcode "c.x") "blue" "  if " (jcode "c") "is an instance of "
+               (page-subitem/color  (jcode "c.x") "blue" "  if" (jcode "c") "is an instance of "
                             (jcode "C"))
                )
   
@@ -258,7 +258,7 @@
                           "and produces an instance of C.")
                'next
                (blank)
-               (page-para "For parametric classes, " (jcode "new") "can take type parameters.")
+               (page-para "For parametric classes," (jcode "new") "can take type parameters.")
                (jcode "new<T>(e1,e2)")
                'next 
                (blank)
@@ -270,26 +270,31 @@
                           "also creates an instance.")
                (page-para "So how do we initialize fields?")
                'next
-               (page-para "We have to give values to all " (jcode "class") "fields,"
+               (page-para "We have to give values to all" (jcode "class") "fields,"
                           "including those inherited from the kind.")
                'next
                (jcode "class MyClass kind C {"
                                  "    class int x = 5;"
                                  "    int m(int y) { y+2; }"
                                  "}")
-               (page-para "We initialize the inherited class field " (jcode "x"))
+               (page-para "We initialize the inherited class field" (jcode "x"))
                )
   
-  (slide/title "Method Dispatch"
-               (page-para "Where do we look to find the method to call?")
-               (blank)
-               'alts
-               (list 
-                (list
-                 (page-para "For invoking methods on" 
-                            (colorize (t "objects created by constructors") "green") ":")
-                 (page-item/bullet (colorize (t "1") "blue")
-                                   "Look in the definition of the class for which " 
+  (let ((item-0 (colorize (page-item/bullet 
+                           (colorize (t "0") "blue")
+                           "Look in the definition of the class.") "green")))
+    (slide/title "Method Dispatch"
+               
+                 (page-para "Where do we look to find the method to call?")
+                 (blank)
+                 'alts
+                 (list 
+                  (list
+                   (page-para "For invoking methods on" 
+                              (colorize (t "objects created by constructors") "green") ":")
+                   (ghost item-0)
+                   (page-item/bullet (colorize (t "1") "blue")
+                                     "Look in the definition of the class for which" 
                                    "this" (colorize (t"object") "green") "is an instance.")
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
@@ -298,11 +303,10 @@
                 (list
                  (page-para "For invoking methods on" 
                             (colorize (t "instance classes") "green") ":")
-                 (colorize
-                  (page-item/bullet (colorize (t "0") "blue")
-                                    "Look in the definition of the class.") "green")
+                 
+                  item-0
                  (page-item/bullet (colorize (t "1") "blue")
-                                   "Look in the definition of the class for which " 
+                                   "Look in the definition of the class for which" 
                                    "this" (colorize (t"class") "green")"is an instance.")
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
@@ -314,7 +318,7 @@
                'next
                (page-para (bt "No.")  "Step 0 above has no analogue for"
                           "instances that are not classes.")
-               )
+               ))
   
   (outline 'benefit)
   

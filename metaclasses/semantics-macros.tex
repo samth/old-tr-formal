@@ -1,38 +1,41 @@
 % Simple Syntactic Constructs
 % ======================
+
+\newcommand{\mtt}[1]{\ensuremath{\mathtt{{#1}}}}
+
 \newcommand{\Object} {\mbox{\tt Object}}
 \newcommand{\Class} {\mbox{\tt Class}}
-\newcommand {\boolean} {\mbox{\tt boolean}}
+%\newcommand {\boolean} {\mbox{\tt boolean}}
 %\newcommand {\true} {\mbox{\tt true}}
 %\newcommand {\false} {\mbox{\tt false}}
-\newcommand {\class} {\mbox{\tt class}}
-\newcommand {\type} {\mbox{\tt type}}
+\newcommand {\class} {\mtt {class}}
+%\newcommand {\type} {\mbox{\tt type}}
 %\newcommand {\super} {\mbox{\tt super}}
-\newcommand {\kind} {\mbox{\tt kind}}
-\newcommand {\interface} {\mbox{\tt interface}}
-\newcommand {\extends} {\mbox{\tt extends}}
-\newcommand {\implements}{\mbox{\tt implements}}
-\newcommand {\cimplements}{\mbox{\tt class-implements}}
-\newcommand {\new}[2] {\mbox{\tt new\angles{\ensuremath {\ov #1}}\parens{\ensuremath {\ov #2}}}}
-\newcommand {\newsub}[3] {\mbox{\tt new$_{#1}$\angles{\ensuremath {\ov {#2}}}\parens{\ensuremath {\ov #3}}}}
-\newcommand {\instanceof} {\mbox{\tt instanceof}}
-\newcommand {\this} {\mbox{\tt this}}
-\newcommand {\init} {\mbox{\tt init}}
-\newcommand {\return} {\mbox{\tt return}}
-\newcommand {\with} {\mbox{\tt with}}
-\newcommand{\semicolon}{\mbox{\tt ;}}
-\newcommand{\eq}{\mbox{\tt\ =\ }}
-\newcommand{\invoke}[2]{\mbox{{\ensuremath {#1}}{\tt .}{\ensuremath{#2}}}}
-\newcommand{\comma}{\mbox{\tt ,}}
-\newcommand{\assign}{\mbox{\tt\ = }}
+\newcommand {\kind} {\mtt {kind}}
+%\newcommand {\interface} {\mbox{\tt interface}}
+\newcommand {\extends} {\mtt {extends}}
+%\newcommand {\implements}{\mbox{\tt implements}}
+%\newcommand {\cimplements}{\mbox{\tt class-implements}}
+\newcommand {\new}[2] {\mtt{new}\angles{\ensuremath {\ov #1}}\parens{\ensuremath {\ov #2}}}
+\newcommand {\newsub}[3]{\ensuremath{\mathtt{new}_{#1}\angles{\ov {#2}}\parens{\ov #3}}}
+\newcommand {\instanceof} {\mtt {instanceof}}
+\newcommand {\this} {\mtt {this}}
+%\newcommand {\init} {\mbox{\tt init}}
+\newcommand {\return} {\mtt {return}}
+%\newcommand {\with} {\mbox{\tt with}}
+\newcommand{\semicolon}{\mtt{;}}
+\newcommand{\eq}{\mtt{\ =\ }}
+\newcommand{\invoke}[2]{ {#1}{\mathtt .}{#2}}
+\newcommand{\comma}{\mtt {,}}
+\newcommand{\assign}{\mtt{\ = }}
 \newcommand{\parens}[1]{\mbox{\tt (}#1\mbox{\tt )}}
-\newcommand{\angles}[1]{\mbox{\tt <}#1\mbox{\tt >}}
+\newcommand{\angles}[1]{\mtt {<}#1\mtt {>}}
 \newcommand{\braces}[1]{\mbox{\tt \{}#1\mbox{\tt \}}}
-\newcommand{\brackets}[1]{\mbox{\tt [}#1\mbox{\tt ]}}
+\newcommand{\brackets}[1]{\mtt {[}#1\mtt {]}}
 \newcommand{\fieldAnnotation}[1]{{\mbox {\tt \$}}#1}
-\newcommand{\typeof}[1]{{\mbox {\tt typeOf\brackets {\ensuremath{#1}}}}}
+\newcommand{\typeof}[1]{\mtt {typeOf}\brackets {\ensuremath{#1}}}
 
-\def\txt{\tt \small}
+\def\txt{\mono}
 
 \newcommand{\cast}[2]{\mbox{\tt \parens{#1}{\ensuremath {#2}}}}
 
@@ -138,10 +141,10 @@
 \newcommand{\A}{\mbox {\tt A}}
 \newcommand{\B}{\mbox {\tt B}}
 \newcommand{\CL}{\mbox {\tt CL}}
-\newcommand{\C}{\mbox {\tt C}}
+\newcommand{\C}{\mtt C}
 \newcommand{\D}{\mbox {\tt D}}
 \newcommand{\F}{\mbox {\tt F}}
-\newcommand{\GG}{\mbox {\tt G}}
+\newcommand{\GG}{\mtt G}
 \newcommand{\HH}{\mbox {\tt H}}
 \newcommand{\Gp}{\mbox {\tt G$'$}}
 \newcommand{\Ip}{\mbox {\tt I$'$}}
@@ -158,9 +161,9 @@
 \newcommand{\Q}{\mbox {\tt Q}}
 \newcommand{\R}{\mbox {\tt R}}
 \newcommand{\SSS}{\mbox {\tt S}}
-\newcommand{\Sp}{\mbox {\tt S$'$}}
-\newcommand{\Tp}{\mbox {\tt T$'$}}
-\newcommand{\T}{\mbox {\tt T}}
+\newcommand{\Sp}{\mtt S'}
+\newcommand{\Tp}{\mtt {T'}}
+\newcommand{\T}{\mtt {T}}
 \newcommand{\Upp}{\mbox {\tt U$''$}}
 \newcommand{\Up}{\mbox {\tt U$'$}}
 \newcommand{\U}{\mbox {\tt U}}
@@ -270,6 +273,7 @@
 %\newcommand{\transarrow}{\ensuremath{\sideset{}{^*}\rightarrow}} % looks better, gives error
 \newcommand{\trans}[2]{\ensuremath{{#1}} \ensuremath {\rightarrow} \ensuremath{#2}}
 \newcommand{\phiof}[2]{\Phi_{\ensuremath {#1}}({\ensuremath {#2}})}
+\newcommand{\phivof}[2]{\Phi_{\ensuremath {#1}}^v({\ensuremath {#2}})}
 
 % Typing Constructs (used in Typing Rules, below)
 % =======================================
@@ -278,8 +282,8 @@
 \newcommand{\typeEnv}[2]{\overline{#1} : \overline{#2}}
 \newcommand{\mapping}[3]{\{{#1} \mapsto {\ensuremath {#2}}\}_{\ensuremath #3}}
 \newcommand{\substitute}[2]{[{#1} \mapsto {#2}]}
-\newcommand{\substituteTwoArg}[4]{[{#1} \mapsto {#2},{#3} \mapsto {#4}]}
-\newcommand{\substituteThreeArg}[6]{[{#1} \mapsto {#2},{#3} \mapsto {#4},{#5} \mapsto {#6}]}
+\newcommand{\substituteTwoArg}[4]{[{#1} \mapsto {#2}, {#3} \mapsto {#4}]}
+\newcommand{\substituteThreeArg}[6]{[{#1} \mapsto {#2}, {#3} \mapsto {#4}, {#5} \mapsto {#6}]}
 \newcommand{\methType}[4]{\langle \overline{#1} \triangleleft \overline{#2} \rangle \overline{#3} \rightarrow #4}
 
 % Helper Expressions
@@ -288,8 +292,8 @@
 %\newcommand{\typeArgs}[1] {\angles{\overline{#1}}}
 \newcommand{\typeArg}[2] {{#1}\angles {#2}}
 \newcommand{\typeArgs}[2] {{#1}\angles {\overline{#2}}}
-\newcommand{\typeArgsBounds}[4] {{#1}\angles {\overline{#2} \superSym {\parens {{\overline{#3}}, {\overline{#4}}} }}}
-\newcommand {\typeParams}[3]{\angles{{\overline{#1}\ \extends\ {\overline{#2}}\ \with\ \overline{\braces{\overline{#3}}}}}}
+\newcommand{\typeArgsBounds}[4] {{#1}\angles {\overline{#2} \superSym  \overline{#3} \kindSym {\overline{#4}}}}
+\newcommand{\typeParams}[3]{\angles{{\overline{#1}\ \extends\ {\overline{#2}}\ \with\ \overline{\braces{\overline{#3}}}}}}
 \newcommand{\params}[2]{\parens{\overline{#1}\ \overline{#2}}}
 \newcommand{\args}[1]{\parens{\overline{#1}}}
 \newcommand{\body}[1]{{\tt \{ return\ }{#1}{\tt ; \}}}

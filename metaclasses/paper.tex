@@ -67,35 +67,62 @@ show how our calculus integrates several such patterns cleanly.
 One of the stated benefits of object-oriented languages is their
 ability to model aspects of the world in the object hierarchy.
 However, most such languages are unable to model many simple and
-common relationships. For example, consider the relationship between
+common relationships. 
+
+An excellent example is provided by Welty and Ferrucci in \cite{FW96}, where
+they show the difficulties in modeling a simple
+ontology including the notions {\txt{Species}} and {\txt{Eagle}}, while
+also capturing the relationship between {\txt{Eagle}} and {\txt{Harry}},
+a particular eagle.  
+
+To see the problem, consider a system with a class \txt{Eagle} and an
+instance \txt{Harry}.  The static type system can ensure that any
+messages that \txt{Harry} responds to are also understood by any other
+instance of \txt{Eagle}.  
+
+However, even in a language where classes themselves can have methods,
+such relationships cannot be expressed.  For example, in a language
+with static methods, we can write the expression
+\txt{Eagle.isEndangered()}
+
+However, if \txt{Salmon} is a species, our type system provides us no
+way of requiring that it also have an \txt{isEndangered} method.  The
+solution that Ferruci and Welty suggest, and that we develop in this
+paper, is to allow a consistent treatment of both instances such as
+\txt{Harry} and classes such as \txt{Eagle}.
+
+One solution they consider and reject is to separate the notion of
+``eagle'' into two concepts: {\txt{the Eagle}} and {\txt{Eagle}}, with
+the former an instance of {\txt{Species}} and the latter a class whose
+instances are specific birds.  This approach is inadequate because it
+fails to express a relationship between the notions {\txt{the Eagle}}
+and {\txt{Eagle}}.  Therefore, if we create another species such as
+\txt{Salmon} in our universe, we must define one new class and one new
+instance.  This adds new invariants which the programmer must
+maintain, with no help from the type system.  Instead, we propose that
+the type system should allow the programmer to express the desired
+relationship directly, and enforce the invariants naturally.  
+
+
+For example, consider the relationship between
 physical quantities, units of measurement, and physical dimensions. It
 is obvious that ``length'' is a dimension, and that ``3 feet'' is a
 length.  However, modeling this relationship in a conventional
 language such as the Java Programming Language is difficult without
 attributing to some of these concepts properties which do not properly
-belong to them.  It is natural to model {\txt 3 feet} as an instance
-of a class {\txt Length}. But if we were to define a class {\txt
-Dimension} and define {\txt Length} to be an instance of class {\txt
-Dimension}, then {\txt Length} could not be a class and so {\txt 3
-feet} could not be an instance of {\txt Length}. Alternatively, we
-might define {\txt Length} to be a subclass of {\txt Dimension}. But
+belong to them.  It is natural to model {\txt{3 feet}} as an instance
+of a class {\txt{Length}}. But if we were to define a class {\txt
+Dimension} and define {\txt{Length}} to be an instance of class {\txt
+Dimension}, then {\txt{Length}} could not be a class and so {\txt 3
+feet} could not be an instance of {\txt{Length}}. Alternatively, we
+might define {\txt{Length}} to be a subclass of {\txt{Dimension}}. But
 then we still cannot define {\txt 3 feet} to be an instance of {\txt
-Length} because anything that is an instance of {\txt Length} would
-also be an instance of class {\txt Dimension} and {\txt 3 feet} is
+Length} because anything that is an instance of {\txt{Length}} would
+also be an instance of class {\txt{Dimension}} and {\txt 3 feet} is
 obviously not a dimension. The key limitation preventing us from
 modeling this domain properly is that we cannot define a single
 concept to serve both as a class and as an instance of a class.
 
-Another example is provided by Welty and Ferrucci in \cite{FW96}, where
-they show the difficulties in modeling a simple
-ontology including the notions {\txt Species} and {\txt Eagle}, while
-also capturing the relationship between {\txt Eagle} and {\txt Harry},
-a particular eagle.  One solution they consider and reject is to
-separate the notion of ``eagle'' into two concepts: {\txt the Eagle}
-and {\txt Eagle}, with the former an instance of {\txt Species} and
-the latter a class whose instances are specific birds.  This approach
-is inadequate because it fails to express a relationship between the
-notions {\txt the Eagle} and {\txt Eagle}.
 Again, the limitation is that we cannot define a class as an instance of another class.
 %Welty and Ferrucci proceed to explain how this limitation prevents conventional modeling
 %languages from capturing many important aspects of the world.  
@@ -123,7 +150,7 @@ the clone can be modified and added to at will, dispensing with class
 relationships entirely and making static checking difficult.
 
 A more expressive metaclass system in ObjVlisp, described informally
-by Conte in \cite{objvlisp}.  In ObjVlisp, there is no restriction on
+by Cointe in \cite{objvlisp}.  In ObjVlisp, there is no restriction on
 the number of instances of a metaclass, and metaclasses are not
 required to share a common superclass. The instance methods of a
 metaclass are inherited as the static members of its instances.  Conte
@@ -207,8 +234,8 @@ describe conclusions and future directions.
 
 \label{MCJintro}
 
-MCJ is a generically-typed object-oriented calculus based on
-Featherweight GJ that includes metaclasses. An MCJ program consists of
+MCJ is a object-oriented calculus with generic types based on
+Featherweight GJ which includes metaclasses. An MCJ program consists of
 a sequence of class definitions followed by a trailing
 expression. This trailing expression is evaluated in the context of
 the class table induced by the class definitions.  Before discussing
@@ -216,7 +243,7 @@ the formal specification of MCJ, we first give a high-level overview
 of the nature of MCJ class definitions.
 
 Each class is an instance of a \emph{metaclass}.  A metaclass is
-either a user-defined class or class {\txt Object}.  We say that if a
+either a user-defined class or class {\txt{Object}}.  We say that if a
 class {\txt C} is an instance of a class {\txt D}, then {\txt C} is an
 \emph{instance class} of {\txt D}, and that {\txt D} is the
 \emph{immediate containing class}, or \emph{kind}, of {\txt C}.  If
@@ -234,18 +261,20 @@ A class definition consists of a header plus a collection of fields
 and methods associated with the class.  The header names the class and
 specifies the type parameters, as well as the superclass and the kind.
 For example, the following header declares a class {\txt C} with
-superclass {\txt Object} and kind {\txt D} and no type parameters:
+superclass {\txt{Object}} and kind {\txt D} and no type parameters:
 
 \begin{verbatim}
 class C kind D extends Object {...}
 \end{verbatim}
+\footnote{In other examples, we will leave out the \kind\ and \extends\
+declaration when they refer to \Object.}
 
 Each class may have both class members and instance members. Class
 members define the behavior of the class when used as an
 instance. Instance members define the behavior of instances of a
 class.  In the abstract syntax presented in this paper, class members
 are distinguished from instance members by order, and with the keyword
-{\txt class} \footnote{This syntax is not ambiguous because MCJ has no
+\class \footnote{This syntax is not ambiguous because MCJ has no
 inner classes.}.  Members of a class definition are laid out as
 follows: first, class fields are defined, followed by class methods,
 then instance fields and finally instance methods.  For example, the
@@ -253,7 +282,7 @@ following class definition includes a class method {\txt m} and an
 instance method {\txt n}:
 
 \begin{verbatim}
-class C kind Object extends Object {
+class C {
    class Object m() {...}
    Object n() {...}
 }
@@ -269,7 +298,7 @@ same signature as the overridden method). Note that if an instance
 class {\txt C} of type {\txt T} is assigned to a variable {\txt v} of
 type {\txt T}, references to the instance members of {\txt v} refer to
 the class members of {\txt C}.  As in \cite{DimUnits}, a class is
-allowed to define both a static method and an instance method of the
+allowed to define both a class method and an instance method of the
 same name. We prevent ambiguity in member references by requiring that
 all references to class members in MCJ must explicitly denote the
 receiver.
@@ -287,9 +316,9 @@ instance of {\txt D}.
 For example, consider the following class definitions:
 
 \begin{verbatim}
-class A kind Object extends Object {...}
-class B kind Object extends A {...}
-class C kind B extends Object {...}
+class A {...}
+class B extends A {...}
+class C kind B {...}
 \end{verbatim}
 
 To resolve the method call $\invoke \C {\mof {}}$ first the class
@@ -323,10 +352,11 @@ preventing the use of type erasure as an implementation technique. In
 addition, the receiver of a reference to a class member may be a type
 variable. Unlike the system presented in \cite{MixGen}, MCJ does not
 support first-class genericity because a naked type variable must not
-appear in the {\txt extends} clause or {\txt kind} clause of a class
-definition and {\txt new} expressions on naked type variables are not
-supported. Also, polymorphic methods (which are orthogonal to the
-features we explore) are not supported.
+appear in the \extends\ clause or \kind\ clause of a class definition
+and {\txt{new}} expressions on naked type variables are not
+supported.\footnote{First-class genericity is difficult to integrate
+with our presentation of constructors.} Also, polymorphic methods
+(which are orthogonal to the features we explore) are not supported.
 
 Because classes can be used as expressions, we need a bound on the
 behavior of classes when used in expression contexts.  Therefore, we
@@ -339,9 +369,7 @@ be instantiated with a type of kind {\txt D} that is a subtype of
 {\txt E}:
 
 \begin{verbatim}
-class C<T extends (D,E)>
-   kind Object
-   extends Object {...}
+class C<T extends D kind E> {...}
 \end{verbatim}
 
 
@@ -359,22 +387,46 @@ passed as a type parameter and factory methods can be called on the
 class instance to construct new instances without stipulating the
 class of the constructed instance. This flexibility is similar to that
 provided with first-class genericity \cite{NextGen, MixGen}, but
-obviates the need for {\txt with} clauses because the bound on the
+obviates the need for {\txt{with}} clauses because the bound on the
 kind of a type variable stipulates what factory methods can be called
-on it.  A class can define class methods with arbitrary signatures
-that return new instances of the class, but each such method must
-ultimately include a {\txt new} expression, which can occur only
-within the scope of the class whose instance it returns. A {\txt new}
-expression looks like a call to method named {\txt new}, that takes a
-single argument for each type parameter and each instance field of the
-syntactically enclosing class. The result of a {\txt new} expression
+on it.  
+
+For example, in MixGen the following program is legal:
+
+\begin{verbatim}
+class C<T extends S with T()> {
+  T foo() { return new T(); }
+}
+\end{verbatim}
+
+However, to make this program compile, a \txt{with} clause is required
+on the type parameter \txt{T}.  This is because the type associated
+with a class does not describe its constructors.  
+
+In MCJ, this program can be naturally rewritten with a factory method.
+
+\begin{verbatim}
+class C<T extends S> {
+  T foo() { return T.make(); }
+}
+\end{verbatim}
+
+Here, no with clause is required.  
+
+A class can define class methods with arbitrary signatures that return
+new instances of the class, but each such method must ultimately
+include a {\txt{new}} expression, which can occur only within the
+scope of the class whose instance it returns. A {\txt{new}} expression
+looks like a call to method named {\txt{new}}, that takes a single
+argument for each type parameter and each instance field of the
+syntactically enclosing class. The result of a {\txt{new}} expression
 is a new instance of the enclosing class whose type parameters are
 instantiated with, and whose fields are initialized with, the given
-arguments. In our formal semantics, {\txt new} expressions are
+arguments. In our formal semantics, {\txt{new}} expressions are
 annotated with the name of the enclosing class. These annotations need
-not be added by a programmer; they could be added easily by a
+not be added by a programmer; they can be added easily by a
 straightforward syntactic preprocessing over the program, since they
-can be determined merely by the lexical scopes of the {\txt new}
+can be determined merely by the lexical scopes of the {\txt{new}}
 expressions.
 
 All uses of constructors in \FGJ\ \cite{FJ} are macro-expressible
@@ -404,7 +456,7 @@ require that \emph{all class fields, including those obtained by
 inheritance, must be redeclared} and provided with values.  
 
 
-% In a {\txt new} expression, all instance fields must be initialized at
+% In a {\txt{new}} expression, all instance fields must be initialized at
 % creation time. This requirement eliminates the problem of
 % uninitialized instance fields. However, when a class is the kind of
 % another class, the instance fields of the kind become class fields of
@@ -427,17 +479,19 @@ properties of the class as a value.  For example, a class may add new
 class fields or class methods which are not present in the kind.
 Therefore, each class freely generates a new type, which is the type
 of the class considered as a value.  We represent this type with the
-{\txt typeOf} operator, which takes a class instantiation and produces
+{\txt{typeOf}} operator, which takes a class instantiation and produces
 a type that is not also a class.  Because this type is not a class, it
 cannot be the superclass or kind of another class, and it cannot serve
-as the instantiation of a generic type parameter.
+as the instantiation of a generic type parameter.  We refer to this as
+{\txt{typeOf}} because it is the type of the expression that is its
+argument.  
 
 These new types can create complex relationships between classes and types.  For
 example, the following class headers:
 
 \begin{verbatim}
-class A() kind Object extends Object {...}
-class B() kind A extends Object {...}
+class A {...}
+class B kind A {...}
 \end{verbatim}
 
 induce the following type relationships:
@@ -445,36 +499,36 @@ induce the following type relationships:
 \begin{array}{c}
 \typ \B {\typeof \B} \\
 \subtype {\typeof \B} \A \\
-\B~ {\txt instanceof}\ \A
+\B~ {\mathtt {instanceof}}\ \A
 \end{array}
 \end{displaymath}
 
-\hspace{-.43cm}where we use the convention that {\txt A:B} denotes
-that {\txt A} has type {\txt B}, and {\txt A<:B} denotes that {\txt A}
+\hspace{-.43cm}where we use the convention that {\txt{A:B}} denotes
+that {\txt A} has type {\txt B}, and {\txt{A<:B}} denotes that {\txt A}
 is a subtype of {\txt B}.
 
-The name {\txt typeOf} has been used in other contexts to refer to a
+The name {\txt{typeOf}} has been used in other contexts to refer to a
 runtime operation that determines the dynamic type of a object.
 However, despite the name similarity, this function bears no
 relationship to the operator described here.  In MCJ, an application
-of {\txt typeOf} is a static type reference.
+of {\txt{typeOf}} is a static type reference.
 
 \paragraph{Non-transitivity}
 
 The standard subclassing relationship, like subtyping, is transitive.
 That is, if $\B$ is a subclass of $\C$ and $\C$ is a subclass of $\D$,
 then $\B$ is a subclass of $\D$.  However, this relationship does not
-hold for {\txt instanceof} relationships.  In general, if $\B$ is an
+hold for {\txt{instanceof}} relationships.  In general, if $\B$ is an
 instance of $\C$ and $\C$ is an instance of $\D$, no judgment
 about the relationship of $\B$ to $\D$ can be inferred.
 
-Another difference between subclassing and {\txt instanceof}
+Another difference between subclassing and {\txt{instanceof}}
 relationships is that cycles can occur among instance class
 relationships. The simplest such cycle is:
 
-\begin{displaymath}
-\typeFront {\typeArg \C{}} {\typeArg \C {}} \Object \braces{}
-\end{displaymath}
+\begin{verbatim}
+class C kind C {}
+\end{verbatim}
 
 Although this pathology appears to be dangerously close to Russell's
 paradox, it does not lead to inconsistencies.  Class \C\ is an
@@ -482,8 +536,11 @@ instance of itself. It can be used in any context where one of its
 instances can be used.  \C\ can be thought of as a self-replicating
 value. This class hierarchy causes no problems for method lookup
 because method resolution never proceeds through more than a single
-containing class to an instance class. Therefore, we see no reason to
-disallow it.
+containing class to an instance class. If the programmer uses a field
+of \C\ to initialize a class field of \C\, the evaulation of the
+expression \C\ may fail to terminate.  But this is no different than
+the possibility of non-termination from any other self-reference.
+Therefore, we see no reason to disallow it.
 
 
 \subsection{Examples, Reprised}
@@ -497,12 +554,12 @@ many subtleties, not captured here.  All we present is the essence of
 the type relationships.} We define 
 
 \begin{verbatim}
-class Dimension kind Object extends Object { ... }
-class Length kind Dimension extends Object { ... }
-class Meter kind Length extends Object { ... }
+class Dimension { ... }
+class Length kind Dimension { ... }
+class Meter kind Length { ... }
 \end{verbatim}
 
-Here {\txt Meter} is a singleton class (there is only one Meter, in
+Here {\txt{Meter}} is a singleton class (there is only one Meter, in
 the Platonic sense).  We have easily expressed the desired type
 relationships, and can statically check program invariants that rely
 on dimensional relationships.
@@ -510,8 +567,8 @@ on dimensional relationships.
 The example from \cite{FW96} is also easily expressed:
 
 \begin{verbatim}
-class Species kind Object extends Object { ... }
-class Eagle kind Species extends Object {
+class Species { ... }
+class Eagle kind Species {
       class Eagle make(String name) { ... }
 }
 Eagle harry = Eagle.make("Harry")
@@ -522,14 +579,14 @@ an Eagle.  The naive implementation of the above code in a
 conventional OO language would look something like this:
 
 \begin{verbatim}
-class Species extends Object { ... }
+class Species { ... }
 class TheEagle extends Species { ... }
-class Eagle extends Object { ... }
+class Eagle { ... }
 Eagle harry = new Eagle("Harry")
 \end{verbatim}
 
 There are at least two substantial problems with this code.  First,
-{\txt TheEagle} and {\txt Eagle} have no relationship to each other in
+{\txt{TheEagle}} and {\txt{Eagle}} have no relationship to each other in
 the type system.  One is a singleton class, representing a particular
 species, and one is a name for a set of objects, being the members of
 that species.  The fundamental nature of species has a two-level
@@ -539,34 +596,60 @@ cannot help us avoid mistakes.
 
 Another problem, which is in some ways just a symptom of the first
 problem but which bears special attention, is the use of generic
-types.  Imagine the following method, where T is a type parameter in
-scope:\footnote{Generic methods would be straightforward to add to
-MCJ, but we exclude them to simplify the presentation of the type
-system and to focus on the important interactions of metaclasses with
-other language features.}
+types.  Consider the following class definition, added to the
+definitions of \txt{Species}, \txt{theEagle}, etc. above.  
 
 \begin{verbatim}
-foo(T x) { ... }
+class C<T extends X> {
+   foo(T x) { return T.isEndangered() }
+}
 \end{verbatim}
 
-If we want to perform the call {\txt foo(harry)}, then the bound on
-{\txt T} must be either {\txt Object}, in which case {\txt foo} must
-have no knowledge of the object, or Eagle, in which case the function
-cannot handle multiple {\txt Species}.  The ``solution'' in
-conventional languages is to use a bound of {\txt Object} and insert a
-downcast, which fails at runtime if the wrong argument is passed.  In
-MCJ {\txt T} can be bound by kind {\txt Species}, and instantiated
-with {\txt Eagle}, allowing the original call to be type-checked.
+If we want to perform the call {\txt{foo(harry)}}, then we have two
+choices for the bound \txt{X} on {\txt T}.  It must be either \Object,
+in which case {\txt{m}} must be a method that \Object\
+understands. Otherwise, it must be \txt{Eagle}, in which case the
+function cannot handle multiple {\txt{Species}}.  The ``solution'' in
+conventional languages is to use a bound of \Object\ and insert a
+downcast, which fails at runtime if the wrong argument is passed.
+This is the problem that generics were intended to alleviate.  In
+MCJ {\txt T} can be bound by kind {\txt{Species}}, and instantiated
+with {\txt{Eagle}}, allowing the original call to be type-checked.
 This gives the programmer both safety and expressiveness.
+
+\paragraph{Metaclasses and Nested Classes}
+Some of the problems are alleviated in a language with nested, or
+inner classes.  In the language Scala\cite{Scala} the following
+program expresses some of the desired invariants:
+
+\begin{verbatim}
+class Species {
+  class Member {}
+}
+object Eagles extends Species;
+class Eagle() extends Eagles.Member;
+val harry = new Eagle;
+\end{verbatim}
+\footnote{This example, and this discussion, was suggested by an
+anonymous reviewer.}
+
+This program automates many of the invariants required in a language
+without metaclasses.  However, two seperate classes must still be
+constructed per \txt{Species}.  Further, the fundamental problem, of
+not being able to group classes by functionality in the same way as
+instances, still remains.  Inner classes are not constrained by
+invariants imposed by their container.  In MCJ, the invariants of the
+kind are enforced by the type system.  
+
 
 \section{Design Patterns as Language Features}
 \label{designpatterns}
 
-Design Patterns, as exemplified in \cite{GOF}, have had a
-substantial impact on the world of object-oriented programming and
-beyond.  Design patterns allow programmers to increase the flexibility
-and abstraction of their software designs.  However, few design
-patterns have been integrated into programming languages.
+Design Patterns, as exemplified in \cite{GOF}, have had a substantial
+impact on the world of object-oriented programming and beyond.  Design
+patterns allow programmers to increase the flexibility and abstraction
+of their software designs.  However, few design patterns have been
+integrated into programming languages.
 
 One of the advantages of our metaclass framework is that it allows
 clean expression of several common design patterns in the language,
@@ -577,14 +660,18 @@ in section \ref{privconst}.  It is clear that the concept of a Factory
 method is easily (and necessarily) expressed in MCJ.  However, a
 number of other patterns also find easy expression.  The Abstract
 Factory pattern is a simple application of inheritance in the
-metaclass hierarchy.  The Prototype pattern is, as mentioned in the
-Design Patterns book, supported in languages with metaclasses.
-Finally, there is no need for the Singleton pattern; a class itself
-can serve as a singleton.  While classes can be used as limited
-singletons in the Java Programming Language and in \Cpp, doing so is
-undesirable because the static behavior of a class cannot inherit from
-another class.  In fact, the inflexibility of class or static
-operations is one of the rationales cited for the Singleton pattern.
+metaclass hierarchy.  In this, several classes could share a kind,
+giving them all a single interface for construction. The Prototype
+pattern is, as mentioned in the Design Patterns book, supported in
+languages with metaclasses.  A class is in many ways a clone of its
+metaclass.  Finally, there is no need for the Singleton pattern; a
+class itself can serve as a singleton. If no factory methods are
+provided, no instances can be created at runtime.  While classes can
+be used as limited singletons in the Java Programming Language and in
+\Cpp, doing so is undesirable because the static behavior of a class
+cannot inherit from another class.  In fact, the inflexibility of
+class or static operations is one of the rationales cited for the
+Singleton pattern.
 
 Seeing that a number of patterns can be expressed quite simply in MCJ,
 the question arises: is the simple expression of these patterns a
@@ -634,7 +721,7 @@ $\oX$, which can be applied to either an expression or a type, and
 which can substitute either type or expression variables.
 
 A number of symbols are used to abbreviate keywords: $\superSym$
-stands for {\txt extends} and $\kindSym$ stands for {\txt kind}. Also
+stands for \extends\ and $\kindSym$ stands for \kind. Also
 $@$ represents concatenation of sequences of syntactic constructs.
 Finally, $CT(\T)$ is a lookup in the class table for the definition of
 $\T$.
@@ -644,7 +731,7 @@ rules.  First, we assume that all sequences of methods and fields are
 free of duplicates.  Second, there is an implicit well-formedness
 constraint on programs that no class be a superclass of itself, either
 directly or indirectly (however, as discussed below, cycles in the
-kind hierarchy are allowed).  Third, we assume that {\txt this} is
+kind hierarchy are allowed).  Third, we assume that \this is
 never used as the name of a variable, method or field.  We also take
 \Object\ to be a distinguished member of the hierarchy, with no
 specific definition, which does not have a superclass or a kind.
@@ -655,28 +742,29 @@ For example, the simplest MCJ class is:
 $\typeFront {\typeArg \C {}}  {\Object} \Object \braces{}$
 \vspace{.1cm}
 
-This is a class named $\C$, with no type arguments, with kind
-$\Object$ and superclass $\Object$, which has no fields or methods
-whatsoever.  In examples that follow, we omit empty {\txt <>}.  Note
-that both the kind and the superclass are $\Object$.  MCJ does not
-have a distinguished class $\Class$.  Interestingly, we determined
-that a class $\Class$ would need no consideration from the type
-system.  Because both $\Class$ and $\Object$ would sit atop the
-hierarchy with no contents, there is no need to include
-both of them.  In a more substantial language, where $\Object$ might
-have methods or fields, there might be a use for a distinguished
-$\Class$ class, but it would not need any special treatment by
-the type system.
+This is a class named $\C$, with no type arguments, with kind \Object\
+and superclass \Object\, which has no fields or methods whatsoever.
+In examples that follow, we omit empty type parameter lists.  Note
+that both the kind and the superclass are $\Object$.  Unlike Smalltalk
+or ObjVLisp, MCJ does not have a distinguished class
+$\Class$.\footnote{This is not the same as the \Class\ class used in
+reflection.}  Interestingly, we determined that a class $\Class$ would
+need no consideration from the type system.  Because both $\Class$ and
+$\Object$ would sit atop the hierarchy with no contents, there is no
+need to include both of them.  In a more substantial language, where
+$\Object$ might have methods or fields, there might be a use for a
+distinguished $\Class$ class, but it would not need any special
+treatment by the type system.
 
-A more complicated MCJ class is:\footnote{Here we use {\txt extends}
-for $\superSym$ and {\txt kind} for $\kindSym$.}
+A more complicated MCJ class is:
 
 \begin{verbatim}
-class Pair<A extends (Object, Object),
-           B extends (Object, Object)>
-   kind Object extends Object
+class Pair<A extends Object kind Object,
+           B extends Object kind Object>
 {
- class Pair<A,B> make(A a, B b){ new(A,B) (a,b) } ;
+ class Pair<A,B> make(A a, B b){ 
+    return new <A,B> (a,b) 
+} ;
  A fst;
  B snd;
  Pair<B,B> setfst(B b){
@@ -687,22 +775,22 @@ class Pair<A extends (Object, Object),
 
 This class specifies a polymorphic pair data structure.  It also
 demonstrates a number of important MCJ features.  First, we see two
-different kinds of methods.  The {\txt make} method creates a new
-instance of {\txt Pair}.  This method contains a {\txt new}
+different kinds of methods.  The {\txt{make}} method creates a new
+instance of {\txt{Pair}}.  This method contains a {\txt{new}}
 expression, which initializes the instance fields of the class
-positionally, so that the first argument to {\txt make} becomes {\txt
- fst}, and the second becomes {\txt snd}.  Also, note that we must
-mention the type parameters of the newly created instance.
+positionally, so that the first argument to {\txt{make}} becomes
+{\txt{fst}}, and the second becomes {\txt{snd}}.  Also, note that we
+must mention the type parameters of the newly created instance.
 
-Second, we have an instance method, {\txt setfst}, which creates a new
+Second, we have an instance method, {\txt{setfst}}, which creates a new
 pair with the old second element, and a new first element which has
 the same type as the second element.
 
-Finally, adding the following to the above definition of {\txt Pair}
+Finally, adding the following to the above definition of {\txt{Pair}}
 gives a full MCJ program:
 
 \begin{verbatim}
-class O kind Object extends Object
+class O
 {
  class O make(){return new () ()};
 }
@@ -711,38 +799,37 @@ Pair<O,O>.make(O.make(), O.make()).fst
 \end{verbatim}
 
 This program, which creates two instances of {\txt O}, then creates
-a {\txt Pair} to hold them both, and finally selects one of the two to
+a {\txt{Pair}} to hold them both, and finally selects one of the two to
 become the value of the program, demonstrates three of the expression
-forms in MCJ.  {\txt Pair<O,O>} is a type, which, by itself, can
-be a value.  {\txt O.make()} is a method invocation (here with a
+forms in MCJ.  {\txt{Pair<O,O>}} is a type, which, by itself, can
+be a value.  {\txt{O.make()}} is a method invocation (here with a
 class, not an instance, as the receiver).  The entire expression is a
-field access, of the {\txt fst} instance field.
+field access, of the {\txt{fst}} instance field.
 
-Other kinds of expressions are seen in the body of the {\txt Pair}
-class.  {\txt new<A,B> (a,b)} is a new expression, which creates an
-instance of the enclosing class (here {\txt Pair}).  In the body of
-{\txt make} is a reference to the variable {\txt b}, which has the
-obvious value.  The final form of expression writable by the
-programmer is the cast, with the usual semantics. For example, {\txt
-(Object)O.make()}\ is an expression of type \Object that evaluates to
-an instance of {\txt O}.
+Other kinds of expressions are seen in the body of the {\txt{Pair}}
+class.  {\txt{new<A,B> (a,b)}} is a new expression, which creates an
+instance of the enclosing class (here {\txt{Pair}}).  In the body of
+{\txt{make}} is a variable reference to {\txt b}.  The final form of
+expression writable by the programmer is the cast, with the usual
+semantics. For example, {\txt{(Object)O.make()}}\ is an expression of
+type \Object\ that evaluates to an instance of {\txt O}.
 
 With an understanding of expressions, we can examine the rest of the
-{\txt Pair} class.  There are two methods: a class method ({\txt
-make}) and an instance method ({\txt setfst}).  There are also two
-fields, both of which are instance fields and initialized the {\txt
-new} expressions. In MCJ, a {\txt new} expression is different from
-those in \FGJ; each {\txt new} expression evaluates to an instance of
-the syntactically enclosing class.\footnote{In the grammar of figure
-\ref{fig:syntax}, {\txt new} expressions are annotated with this
-enclosing class.  In the examples, this redundant information is
-elided.}  Had there been additional fields in the superclass of {\txt
-Pair}, it would have been necessary to initialize them in the {\txt
-new} expression as well. {\txt new} expressions are explained in
-detail in section \ref{privconst}.
+{\txt{Pair}} class.  There are two methods: a class method
+({\txt{make}}) and an instance method ({\txt{setfst}}).  There are
+also two fields, both of which are instance fields and initialized the
+{\txt{new}} expressions. In MCJ, a {\txt{new}} expression is different
+from those in \FGJ; each {\txt{new}} expression evaluates to an
+instance of the syntactically enclosing class.\footnote{In the grammar
+of figure \ref{fig:syntax}, {\txt{new}} expressions are annotated with
+this enclosing class.  In the examples, this redundant information is
+elided.}  Had there been additional fields in the superclass of
+{\txt{Pair}}, it would have been necessary to initialize them in the
+{\txt{new}} expression as well. {\txt{new}} expressions are explained
+in detail in section \ref{privconst}.
 
 %\footnote{There is a strong
-%resemblance between the {\txt new} expressions here and the
+%resemblance between the {\txt{new}} expressions here and the
 %constructors of \FJ.  However, in MCJ they are a part of the
 %language, whereas in \FJ\ they are a restriction on a more general form.}
 
@@ -763,19 +850,20 @@ ground type. Mappings from a sequence of fields $\of$ to a sequence of
 expressions $\oe$ with type $\GG$ are written $\mapping \of \oe \GG$.
 A mapping denoting an instance class {\txt C} consists of a sequence
 of class fields mapped to a sequence of expressions and is annotated
-with the type {\txt typeOf(C)}. Note that the right hand sides of such
+with the type \typeof{\C}. Note that the right hand sides of such
 maps need not always be values, and thus computation can take place
 inside of a mappings.  Mappings are not available to the programmer,
 and thus can only be created by operation of the reduction rules.
 Therefore, unlike \FJ, our reductions do not operate entirely in the
-expressible syntax of the language.  We use the metavariable $\Phi$ to
+user-level syntax of the language.  We use the metavariable $\Phi$ to
 range over mappings.  When we need to refer to the type annotation of
-a mapping explicitly, the metavariable is written $\Phi_{\GG}$.
+a mapping explicitly, the metavariable is written $\Phi_{\GG}$.  A
+mapping whose right-hand sides are all values is itself value, and
+will be written $\Phi_{\GG}^v$.  
 
-The
-semantics are given in figures \ref{fig:subtype}, \ref{fig:exprty}
-,\ref{fig:wf}, and \ref{fig:comp} with auxiliary functions given in
-figure \ref{fig:aux}.
+The semantics are given in figures \ref{fig:subtype},
+\ref{fig:exprty}, \ref{fig:wf}, and \ref{fig:comp} with auxiliary
+functions given in figure \ref{fig:aux}.
 
 
 \subsubsection{Typing}
@@ -790,7 +878,7 @@ $bound_{\Delta}$ function is defined as follows:
 \end{array}
 \end{displaymath}
 
-This function maps type variables and {\txt typeOf} applied to type
+This function maps type variables and {\txt{typeOf}} applied to type
 variables to their bounds, and leaves others unchanged.
 
 The metavariables $\Delta$ and $\Gamma$ range over bounds
@@ -807,7 +895,7 @@ header.
 Type judgments are of the form $\dgprove {\typ \e \T}$, which states
 that in bounds environment $\Delta$ and type environment $\Gamma$,
 expression $\e$ has type $\T$.  Type judgments are not transitive in
-the way that {\txt instanceof} relationships are with respect to
+the way that {\txt{instanceof}} relationships are with respect to
 subtyping: if $\dgprove {\typ \e \T}$, and $\dproves {\subtype \T
 \SSS}$, it is not necessarily the case that $\dgprove {\typ \e \SSS}$.
 This is important, since our proofs depend on having unique
@@ -846,7 +934,7 @@ Class well-formedness involves all of the above checks.
 All methods must be well-formed, and all class fields must
 have correct initialization expressions.  Further, class fields
 must contain the instance fields of the kind.  Finally, all
-{\txt new} expressions must have the correct class name annotation.
+{\txt{new}} expressions must have the correct class name annotation.
 
 
 \figExprty
@@ -883,7 +971,7 @@ expression $\e$ is a bad cast iff $\e = \cast \SSS {\Phi_{\T}}$ where
 \SSS\ is not a supertype of \T.
 
 The evaluation relation given here is non-deterministic. For example,
-no order is prescribed for evaluating the arguments to a {\txt new}
+no order is prescribed for evaluating the arguments to a {\txt{new}}
 expression or method call, or for evaluating the initializers for
 class fields.  There are also a number of places where either
 congruence or reduction rules can be applied.  Therefore, in the
@@ -1037,11 +1125,11 @@ proof of soundness.
 
 In addition to this contribution, we have elucidated several other
 important points about the integration of metaclasses into an
-object-oriented system.  The {\txt typeOf} type operator is to our
+object-oriented system.  The {\txt{typeOf}} type operator is to our
 knowledge unique, and plays a key role in the soundness of the
-system.  The discovery that the {\txt Class} class played no special
+system.  The discovery that the {\txt{Class}} class played no special
 role, and that thus the class and metaclass hierarchies could both be
-rooted at {\txt Object} is also novel.  Finally, we have shown how an
+rooted at {\txt{Object}} is also novel.  Finally, we have shown how an
 expressive framework of metaclasses has positive effects in other
 areas of the language, such as mechanisms for object construction.  
 
@@ -1049,16 +1137,30 @@ A natural extension of the work in this paper is to expand MCJ to
 include more of the features presented in \cite{DimUnits}, so as to
 allow inclusion of the system for checking dimensions of physical
 quantities. Such an extension would allow for a proof of  ``dimensional
-soundness'' in the resulting system.  Further, any realistic system
-will have imperative features, and while such features do not seem
-likely to interact badly with metaclasses, no sound system is built on
-such assumptions.  
+soundness'' in the resulting system.  Further, the calculus presented
+here is sufficent for demonstrating the techincal detail, but not for
+practical programming.  Many extensions would be neccessary for MCJ to
+become a usable language in practice.
+
+One of the most important extensions is a mechanism for side effects.
+Imperative features present a some difficulties for this calculus as
+formulated.  The most important problem is that the initializers for
+class fields are re-evaluated every time the class is used as an
+expression.  If those expressions had side effects, this prospect
+would make class fields unusable.  One potential solution is to
+remember the previously evaluated results, but much more work remains
+in this area.
 
 Another interesting extension would be to expand our calculus to
 include either multiple inheritance (as does Python) or some
 alternative such as mixins or traits, as there may be interesting
 interactions between metaclasses and these features that have yet to
 be discovered.
+
+Finally, the language has not yet been implemented.  An implementation
+might suggest changes to the language, or make the differences with
+other languages clearer.  Further, an implementation on the Java
+Virtual Machine would be a useful are of exploration.
 
 \section*{Acknowledgments}
 

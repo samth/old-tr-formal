@@ -5,18 +5,18 @@
                \CL     & \production   & \fullClassSyntax  & \textrm{class declaration}\\ [2mm]
 
                \N      & \production    & \simpleMethodSyntax & \textrm{method declaration}\\
-	       \M      & \production	& {\txt class}\ \simpleMethodSyntax & \textrm{class method declaration}\\[2mm]
+	       \M      & \production	& {\class}\ \simpleMethodSyntax & \textrm{class method declaration}\\[2mm]
 
                \e      & \production    & \x                                           & \textrm{variable reference}\\
                        & |                     & {\invoke \e \f}                               & \textrm{field access}\\
                        & |                     & {\invoke \e {\mof \e}} & \textrm{method invocation}\\
-                       & |                             & {\newsub \C \R  \e}                   & \textrm{instance creation}\\
+                       & |                             & {\newsub {\C} {\R} {\e}}                   & \textrm{instance creation}\\
                        & |                             & {\cast \T \e}                         & \textrm{cast}\\
                        & |                             & {\R} & \textrm{type reference}\\
 			& |				& {\Phi_{\GG}} & \textrm{mapping}\\[2mm]
 
-               \T      & \production   & \R & \textrm{non-{\txt typeOf} type}\\
-                       & |             & {\typeof \R}                                          & \textrm{{\txt typeOf} application}\\ [2mm]
+               \T      & \production   & \R & \textrm{non-{\tt {typeOf}} type}\\
+                       & |             & {\typeof \R}                                          & \mathtt {typeOf} \textrm{ application}\\ [2mm]
 
                \R      & \production   & \X                                            & \textrm{type variable}\\
                        & |             & \A                                            & \\ [2mm]
@@ -49,7 +49,7 @@
 
 \newcommand{\simpleClass}{\typeDefShort {\typeArgsBounds \C \X \I \J} \B \A}
 \newcommand{\fullClass}{\typeDef {\typeArgsBounds \C \X \I \J} \B \A {{\ov \T}\ {\ov \f}\ {\ov \e}} {\ov \M} {{\ov \W}\ {\ov \g}} {\ov \N}}
-\newcommand{\fullClassSyntax}{\typeDef {\typeArgsBounds \C \X \T \T} \A \A {{\txt class}\ \Tfe} \oM {\oT\ \of} \oN}
+\newcommand{\fullClassSyntax}{\typeDef {\typeArgsBounds \C \X \T \T} \A \A {\class\ \Tfe} \oM {\oT\ \of} \oN}
 \newcommand{\simpleInter}{\interfaceShort {\typeArgsBounds \I \X \L \Lp} \J}
 \newcommand{\fullInter}{\interfaceDef {\typeArgsBounds \I \X \L \Lp} \J \oM}
 
@@ -212,16 +212,16 @@
 \newcommand{\methodOK}
 {
  \newinfruleFour
-     { {\typeparams \GG}  = {\oX \implSym {\parens {\oI, \oJ}}}}
+     { {\typeparams \T}  = {\oX \implSym {\parens {\oI, \oJ}}}}
      {
        \begin{array}{cc}
          {\deltaDef} &
-         {\Gamma = \{{\typ {\ov \x} {\ov \T}}, {\typ \this \GG}\}}
+         {\Gamma = \{{\typ {\ov \x} {\ov \T}}, {\typ \this \T}\}}
        \end{array}
      }
      {
        \begin{array}{ccc}
-         {\dprovesok {\ov \T}} & {\dprovesok \U} & {\override \m {\super \GG} {\arrType {\ov \T} \U}}
+         {\dprovesok {\ov \T}} & {\dprovesok \U} & {\override \m {\super \T} {\arrType {\ov \T} \U}}
        \end{array}
      }
      {
@@ -230,7 +230,7 @@
          {\dproves {\subtype \W \U}}&
        \end{array}
      }
-     {\simpleMethod \okin \ \GG}
+     {\simpleMethod \okin \ \T}
      {WF-Method}
 }
 
@@ -329,7 +329,7 @@
 \newcommand{\fieldComp}
 {
  \newrule
-     {\trans {\invoke {\ensuremath {\Phi_{\GG}}} \f} {\phiof \GG \f}}
+     {\trans {\invoke {\Phi_{\GG}^v} \f} {\phivof \GG \f}}
      {R-Field}
 }
 
@@ -347,7 +347,7 @@
 {
  \newinfrule
      {{\mbody \m \GG} = ( {\overline {\x} }, {\ov \e_0} ) }
-     {\trans {\invoke {\Phi_{\GG}} {\mof \dd}} {{\substituteTwoArg {\overline {\x}} {\ov \dd}  \this {\Phi_{\GG}}} {\ov \e_0}}}
+     {\trans {\invoke {\Phi_{\GG}^v} {\mof \dd}} {{\substituteTwoArg {\overline {\x}} {\ov \dd}  \this {\Phi_{\GG}^v}} {\ov \e_0}}}
      {R-Invk}
 }
 

@@ -68,6 +68,8 @@ Object |              |   5
 The <T extends (X,Y)> syntax is terrible.  We should use <T extends X
 kind Y>
 
+FIXED (mostly)
+
 * Values
 
 - We need to emphasize that the mapping that is the reciver of a
@@ -75,6 +77,8 @@ method invocation or field reference must be a value.  I like the
 following syntax:
 
 \Phi\sub{G}\super{value}
+
+FIXED
 
 * field-vals:
 
@@ -86,6 +90,8 @@ expression then mean?  Could we just leave it off?
 * We should mention ObjVLisp earlier in the paper, since our system is
 so similar.  The other distinction with that paper is that they have a
 class Class.  
+
+FIXED
 
 * Mitch Wand suggests looking at early work on lisp reflection.
 
@@ -111,5 +117,5 @@ about enabling more checking, we should think about this.
 * We shouldn't use the metavariable G (ranges over ground types) in
 rule WF-Method, since the constrait is that it is not a naked type
 variable (or typeOf[X] where X is a naked type var).
-
+FIXED
 
