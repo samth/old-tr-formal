@@ -1,17 +1,25 @@
 (module cairo mzscheme
   (require (lib "foreign.ss"))
-;  (require "libc.ss")
-  
+  ;(require "libc.ss")
   (unsafe!)
   
+  (define libcairo (ffi-lib "libcairo"))
+
   (define _FILE _int)
   
-  (define fopen (get-ffi-obj "fopen" "" (_fun _string _string -> _FILE)))
+  (define fopen (get-ffi-obj "fopen" #f (_fun _file _file -> _FILE)))
 
-  (define fclose (get-ffi-obj "fclose" "" (_fun _FILE -> _int)))
-  
-  (define libcairo (ffi-lib "libcairo"))
-  
+  (define fclose (get-ffi-obj "fclose" #f (_fun _FILE -> _int)))
+
+  (provide (all-defined-except libcairo _cairo* deflots
+                               _FILE
+                               fopen
+                               fclose
+                               defcairo
+                               defcairo-full
+                               set-target-png
+                               set-target-ps
+                               current-cairo-state))
   
   (define-cpointer-type _cairo)
   (define-cpointer-type _cairo_surface)
@@ -49,12 +57,15 @@
              operator-add
              operator-saturate)))
   
+  
   (define-syntax defcairo-full
     (syntax-rules (:)
       [(_ nm : ty ...)
-       (define nm
-         (get-ffi-obj (regexp-replaces (quote nm) '((#rx"-" "_") (#rx"^" "cairo_")))  
-                      libcairo (_fun ty ...)))]))
+       (begin 
+         (define nm
+           (get-ffi-obj (regexp-replaces (quote nm) '((#rx"-" "_") (#rx"^" "cairo_")))  
+                        libcairo (_fun ty ...)))
+         )]))
   
   (defcairo-full create : -> _cairo)
   
@@ -87,16 +98,41 @@
          body ...
          (restore))]))
   
+  
   (defcairo-full copy : _cairo -> _void)
   
   (defcairo set-target-surface : _cairo)
   
   (defcairo set-target-image : _bytes _format _int _int _int)
   
+  (define-syntax with-output-png
+    (syntax-rules ()
+      [(_ (file w h) code ...)
+       (with-output-png (file w h 'format-argb32) code ...)]
+      [(_ (file w h fmt) code ...)
+       (let ((fn (fopen file "w")))
+         (begin
+           (current-cairo-state (create))
+           (set-target-png fn fmt w h)
+           code ...
+           (destroy)
+           (fclose fn)))]))
+  
+  (define-syntax with-output-ps
+    (syntax-rules ()
+      [(_ (file d1 d2 d3 d4) code ...)
+       (let ((fn (fopen file "w")))
+         (begin
+           (current-cairo-state (create))
+           (set-target-ps fn d1 d2 d3 d4)
+           code ...
+           (destroy)
+           (fclose fn)))]))
+  
   (defcairo set-target-ps : _FILE _double* _double* _double* _double*)
-  
+
   (defcairo set-target-png : _FILE _format _int _int)
-  
+
   (defcairo set-operator : _operator)
   
   (defcairo set-rgb-color : _double* _double* _double*)
@@ -187,40 +223,40 @@
 
   (defcairo fill-extents : _double* _double* _double* _double*)
   
-  (define-cpointer-type _cairo_font)
-  
-  (define-cstruct _cairo_glyph
-                  ((index _ulong)
-                   (x _double*)
-                   (y _double*)))
-  
-  (define-cstruct _cairo_text_extents
-                  ((x_bearing _double*)
-                   (y_bearing _double*)
-                   (width _double*)
-                   (height _double*)
-                   (x_advance _double*)
-                   (y_advance _double*)))
-                  
-  (define-cstruct _cairo_font_extents
-                  ((ascent _double*)
-                   (descent _double*)
-                   (height _double*)
-                   (max_x_advance _double*)
-                   (max_y_advance _double*)))
-  
-  (define _cairo_font_slant
-    (_enum
-     '(font-slant-normal
-       font-slant-italic
-       font-slant-oblique)))
-
-  (define _cairo_font_weight
-    (_enum
-     '(font-weight-normal
-       font-weight-bold)))
-  
-  (defcairo select-font : _string _cairo_font_slant _cairo_font_weight)
+;  (define-cpointer-type _cairo_font)
+;  
+;  (define-cstruct _cairo_glyph
+;                  ((index _ulong)
+;                   (x _double*)
+;                   (y _double*)))
+;  
+;  (define-cstruct _cairo_text_extents
+;                  ((x_bearing _double*)
+;                   (y_bearing _double*)
+;                   (width _double*)
+;                   (height _double*)
+;                   (x_advance _double*)
+;                   (y_advance _double*)))
+;                  
+;  (define-cstruct _cairo_font_extents
+;                  ((ascent _double*)
+;                   (descent _double*)
+;                   (height _double*)
+;                   (max_x_advance _double*)
+;                   (max_y_advance _double*)))
+;  
+;  (define _cairo_font_slant
+;    (_enum
+;     '(font-slant-normal
+;       font-slant-italic
+;       font-slant-oblique)))
+;
+;  (define _cairo_font_weight
+;    (_enum
+;     '(font-weight-normal
+;       font-weight-bold)))
+;  
+;  (defcairo select-font : _string _cairo_font_slant _cairo_font_weight)
 
   (define-syntax deflots
     (syntax-rules ()
@@ -229,15 +265,15 @@
          (defcairo dc ...) ...)]
       ))
   
-  (deflots
-   (scale-font : _double*)
-   (transform-font : _cairo_matrix)
-   (show-text : _string)
-   (show-glyphs : _cairo_glyph-pointer _int)
-   (current-font : -> _cairo_font)
-   (current-font-extents : _cairo_font_extents-pointer)
-   (set-font : _cairo_font)
+;  (deflots
+;   (scale-font : _double*)
+;   (transform-font : _cairo_matrix)
+;   (show-text : _string)
+;   (show-glyphs : _cairo_glyph-pointer _int)
+;   (current-font : -> _cairo_font)
+;   (current-font-extents : _cairo_font_extents-pointer)
+;   (set-font : _cairo_font)
    
-   )
+ ;  )
 
   )
