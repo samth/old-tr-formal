@@ -39,6 +39,7 @@
       ))
   
   (define (sub a b) (ensuremath (format "~a_{~a}" a b)))
+  (define (super a b) (ensuremath (format "~a^{~a}" a b)))
   
   (define (package sym)
     (format "\\usepackage{~v}" sym))
