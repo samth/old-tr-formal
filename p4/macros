@@ -1,0 +1,106 @@
+We've now seen the use of quasiquote and grammars to embed a DSL in
+OCaml.  But with extensible grammars we can extend the grammar of
+OCaml itself.  
+
+Consider the following scheme macro:
+
+(define-syntax or
+  (syntax-rules ()
+    [(or a b)
+     (let ((tmp a)) 
+       (if tmp tmp b))]))
+
+or similarly:
+
+(define-macro (or a b)
+  (let ((tmp (gensym "tmp")))
+    `(let ((,tmp ,a))
+       (if ,tmp ,tmp ,b))))
+
+we can translate this into OCaml as follows:
+
+open Pcaml
+
+let gensym =
+  let cnt = ref 0 in
+  fun var ->
+    let x = incr cnt; !cnt in
+    var ^ "_gensym" ^ string_of_int x
+
+let gen_or loc a b =
+  let tmp = gensym "tmp" in
+  <:expr<
+    let $lid:tmp$ = $a$ in
+    if $lid:tmp$  then $lid:tmp$ else $b$
+   >>
+
+EXTEND
+  expr: LEVEL "expr1"
+    [ [ "orr"; "("; a = expr LEVEL "simple";   
+        b = expr LEVEL "simple"; ")" -> gen_or loc a b ] ];
+END
+
+Now at the OCaml repl, the following works:
+
+orr(true false)
+
+A more complicated or macro, allowing arbitrary arguments, can be
+defined as follows:
+
+
+let rec gen_or loc =
+  function 
+      [] -> <:expr< false >>
+    | [a]  -> <:expr< $a$ >>
+    | a::b -> 
+	 let tmp = gensym "tmp" in
+	 <:expr<
+	 let $lid:tmp$ = $a$ in
+	 if $lid:tmp$  then $lid:tmp$ else $gen_or loc b$
+	 >>
+
+EXTEND
+  expr: LEVEL "expr1"
+    [ 
+      [ "orr";  a = LIST0 expr LEVEL "simple"  -> gen_or loc a ]   
+    ];
+END
+
+The LIST0 operator means 0 or more repetitons.  There are similar ones
+for lists with seperators, and with at least one element.
+
+We can also define for as follows in OCaml:
+
+let gen_for loc v iv wh nx e =
+  let loop_fun = gensym "iter" in
+  <:expr<
+  let rec $lid:loop_fun$ $lid:v$ = 
+    if $wh$ then do { $e$; $lid:loop_fun$ $nx$ } else ()
+  in
+  $lid:loop_fun$ $iv$ >>
+
+EXTEND 
+    expr: LEVEL "expr1"
+    [ [ "for"; v = LIDENT; iv = expr LEVEL "simple";
+	wh = expr LEVEL "simple"; nx = expr LEVEL "simple";
+	"do"; e = expr; "done" -> gen_for loc v iv wh nx e ] ]
+    ;
+  END
+
+for v 0 (c<10) (c+1) do print_int c; done
+
+or in Scheme:
+
+(define-macro (for v iv wh nx do e)
+  (if (eq? do 'do)
+      (let ((loop-fun (gensym "iter")))
+        `(let ,loop-fun ((,v ,iv))
+              (if ,wh (begin ,e (,loop-fun ,nx)))))
+      (error "bad keyword")))
+
+(for c 1 (< c 10) (add1 c) do (display c))
+
+It's possible, of course, to write much more complex macros in OCaml.
+An example is given in the tutorial where printers are created for
+algebraic data types, which involves introducing identifiers
+non-hygenically.

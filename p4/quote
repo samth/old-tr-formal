@@ -1,0 +1,74 @@
+Quasiquote in OCaml looks like this:
+
+  <:expr< let x = 1 in x+1 >>
+
+The :expr says that it should use the expr quotation expander,
+basically that it should generate an expression.
+
+
+However, quotations are much more interesting than just that.  We can
+write arbitrary expanders ourselves.
+
+ let expand _ s = 
+  match s with
+  "PI" -> "3.14159"
+  | _ -> "2.71828";;
+
+ Quotation.add "bar" (Quotation.ExStr expand);;
+
+Now <:bar<PI>> expands in to 3.14159 as a float, not a string.
+
+And <:bar< PI >> expands to 2.71828.
+
+And these also work in patterns.
+
+This is kind of exciting, but in the same way that C character-based
+macros are exciting.  For example, what does
+
+<:bar<foo"bar>> 
+
+give you?  2.71828
+
+Much better to generate syntax trees.
+
+We can do this quotations like the <:expr >> example earlier.
+
+We will see how to do this in the context of an example involving the
+lambda calculus:
+
+type term = Var of String | Func of string * term | Appl of term * term
+
+Now, we will provide a way to write the following:
+
+let id = << [x]x >>
+
+let delta = << [x](x x) >>
+let omega = << (^delta ^delta) >>
+
+The interesting part is the following grammar extension:
+
+EXTEND
+  term:
+   [[ "["; x = LIDENT; "]" t = term -> <:expr< Func $str:x$ $t$ >>
+    | "("; t1 = term; t2 = term; ")" -> <:expr< Appl $t1$ $t2$ >>
+    | x = LIDENT -> <:expr< Var $str:x$ >> ]];
+END
+
+Note that in addition to using grammar and quote, we also use unquote,
+represented with $_$.  $foo:_$ specifies certain things to be created
+from that unquote.  Here we are creating strings.  
+
+This takes care of the first two examples, how about omega?
+
+For that we need one more rule:
+
+   | "^"; x = LIDENT -> <:expr< $lid:x$ >>
+
+Here lid stands for lowercase identifier.
+
+So with a combination of quasiquote and grammars, we can embed domain
+specific languages in OCaml.  Of course, what we've really gained with
+the quotations is eliminating the function calls around the string
+from before.  
+
+

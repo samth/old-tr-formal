@@ -2,11 +2,9 @@
 
 (define-macro (for v iv wh nx do e)
   (if (eq? do 'do)
-      (if (symbol? v) 
-          (let ((loop-fun (gensym "iter")))
-            `(let ,loop-fun ((,v ,iv))
-               (if ,wh (begin ,e (,loop-fun ,nx)))))
-          (error "inital arg not a symbol")) 
+      (let ((loop-fun (gensym "iter")))
+        `(let ,loop-fun ((,v ,iv))
+              (if ,wh (begin ,e (,loop-fun ,nx)))))
       (error "bad keyword")))
 
 (for c 1 (< c 10) (add1 c) do (display c))
