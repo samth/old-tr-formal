@@ -44,7 +44,7 @@
 
   ;; lookup-type : type-name -> type<%>
   (define (lookup-type name)
-    (printf "lookup-type: ~a~n" (type-name->string name))
+    ;(printf "lookup-type: ~a~n" (type-name->string name))
     (send (current-class-resolver) resolve-type name))
 
   (provide current-class-resolver class-resolver<%> lookup-package lookup-type))
