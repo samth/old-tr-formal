@@ -135,7 +135,7 @@
   (define*/c (update-type-car ty transform)
              (type/c (type/c . -> . type/c) . -> . type/c)
              (match ty
-               [($ ty-ref t) (update-type-cdr (lookup t tyenv) transform)]
+               [($ ty-ref t) (update-type-car (lookup t tyenv) transform)]
                [($ union-ty (cl ...)) 
                 (mk-union-ty (map-opt (lambda (x) (update-type-car x transform)) cl))]
                [_ (let ((t (transform (car ty))))
@@ -189,7 +189,7 @@
           [(($ ty-ref t) b) (equal-ty (lookup t tyenv) b)]
           [(a ($ ty-ref t)) (equal-ty (lookup t tyenv) a)]
           [(($ union-ty alts1) ($ union-ty alts2))
-           (printf "comparing unions~n~a~n~a~n" a b)
+           ;(printf "comparing unions~n~a~n~a~n" a b)
            (andmap equal-ty (quicksort alts1 cmp2) (quicksort alts2 cmp2))]
           [(($ union-ty ts) t)
            (andmap (lambda (x) (equal-ty t x)) ts)]
@@ -212,8 +212,11 @@
       [($ ty-ref t) (car-of-ty (lookup t tyenv))]
       [(a . _) a]
       [($ union-ty (cl ...))
-       (mk-union-ty (map car-of-ty cl))]
-      [_ #f]))
+       (mk-union-ty (map-opt car-of-ty cl))]
+      [_ 
+       (printf "type error: unable to take car of non-pair type ~a~n" t)
+       (printf "while checking: ~a~n" (current-expr))       
+       #f]))
   
   (define (cdr-of-ty t)
     (match t
@@ -227,7 +230,7 @@
     (match clause
       [('else answer) (check-exp answer goal env)]
       [((and question (or ('cons? _) ('empty? _))) answer)
-       (printf "checking a cons?: ~a~n" question)
+       ;(printf "checking a cons?: ~a~n" question)
        (check-exp question 'Boolean env)
        (let ((new-env (extend-env-from-q question env)))
          (check-exp answer goal new-env))]
@@ -286,10 +289,14 @@
       [('define (fun ((arg ty) ...)) result
          body)
        (let* ((func-ty (make-fun-ty ty result))
-              (new-env (apply extends (extend env fun func-ty) (zip arg ty))))
+              (env/fun (extend env fun func-ty))
+              (new-env (apply extends env/fun (zip arg ty))))
          ;(display new-env)
          ;(newline)
-         (check-exp body result new-env))]))
+         (check-exp body result new-env)
+         (void)
+         ;env/fun
+         )]))
   
   (define simple-def `(define (foo ((ll ,(make-ty-ref 'nelon)))) Number
                         (cond [(empty? (cdr ll)) 1]
