@@ -1,6 +1,6 @@
 (module test mzscheme
   
-  (require (lib "match.ss") (lib "list.ss") (lib "etc.ss") (lib "contract.ss"))
+  (require (lib "match.ss") (lib "list.ss")  (lib "contract.ss"))
   
   (require "useful.scm")
   
@@ -179,6 +179,8 @@
   
   (define back-nelon (make-union-ty `((Number . Empty) (Number . ,(make-ty-ref 'nelon)))))
   
+  (define cmp2 (lambda (x y) (<= (equal-hash-code x) (equal-hash-code y))))
+  
   (define (equal-ty a b)
     (if (equal? a b) #t
         (match (list a b)
@@ -188,11 +190,11 @@
           [(a ($ ty-ref t)) (equal-ty (lookup t tyenv) a)]
           [(($ union-ty alts1) ($ union-ty alts2))
            (printf "comparing unions~n~a~n~a~n" a b)
-           (andmap equal-ty (quicksort alts1 compare) (quicksort alts2 compare))]
+           (andmap equal-ty (quicksort alts1 cmp2) (quicksort alts2 cmp2))]
           [(($ union-ty ts) t)
-           (andmap (lambda (x) (equal? t x)) ts)]
+           (andmap (lambda (x) (equal-ty t x)) ts)]
           [(t ($ union-ty ts))
-           (andmap (lambda (x) (equal? t x)) ts)]
+           (andmap (lambda (x) (equal-ty t x)) ts)]
           [_ #f])))
   
   (define (check-equal-ty goal actual)
