@@ -17,7 +17,6 @@
                  (it (car items))
                  (other-it (cdr items)))
         (cons
-         
          (append
           (map page-item past-it)
           (if si
@@ -59,6 +58,7 @@
   
   ;(outline 'motivation)
   
+  
   (slide/center (titlet "Why Metaclasses?"))
   
   #;(slide/title "Why Metaclasses?"
@@ -85,10 +85,10 @@
   (slide/title "The Complex World (Part 2)"
                (page-para "In a language with static methods, we can "
                           "even ask this question:")
-               (jcode "Eagle.isEndagered()")
+               (jcode "Eagle.isEndangered()")
                ;'next
-               (page-para "But if" (jcode "Salmon") "is a species, will this work?")
-               (jcode "Salmon.isEndangered()")
+               (page-para "But if" (jcode "Salmon") ", like "(jcode "Eagle")", is a species, will it also have an"
+                          (jcode "isEndangered()") "method?")
                'next
                (blank)
                (blank)
@@ -96,8 +96,7 @@
                           "guarantees about the relationship"
                           "between" (jcode "Salmon") "and" (jcode "Eagle") ".")
                ;'next 
-               (page-para "This is because we can't express relationships"
-                          "between classes.")
+               (page-para "This is because we can't express the fact that they are both species.")
                )
   
   (slide/title "Subtyping is not enough"
@@ -163,7 +162,22 @@
                (blank)
                (page-para "The need for more flexible hierarchies, and constraints on the behavior of classes led us naturally to metaclasses."))
   
-  
+      (slide/title "The Current State of the Art"
+                   (page-para "In many languages we can already give behavior to classes"
+                              "as opposed to instances:")
+                   'alts
+                   (list
+                    (list
+                     (page-subitem "Static Methods")
+                     (page-subitem "Constructors"))
+                    (list
+                     (page-subitem "Static Methods - Global Variables in Disguise!")
+                     (page-subitem "Constructors - Complicated and Anomolous!"))
+                    )
+                   (blank)
+                   'next
+                   (page-para "Static behavior is important, but it needs to be done in a principled way."
+                              "Metaclasses offer us a way to do that."))
   ;(outline 'mcj)
   
   (slide/center (titlet "A Simple Language With Metaclasses"))
@@ -177,7 +191,7 @@
                (page-item "Classes have" (jcode "static") "members, which are the methods"
                           "of the class when used as an expression.")
                (jcode "class Eagle { "
-                      "    static population() { return pop; }"
+                      "    static population() { return popl; }"
                       "}")
                (blank)
                'next
@@ -221,7 +235,7 @@
                )
   
   (slide/title "Inheritance"
-               (page-para "As in many other language, classes inherit instance"
+               (page-para "As in many other languages, classes inherit instance"
                           "members from their superclass.")
                (blank)
                'next
@@ -234,7 +248,7 @@
                (page-para "For example, if" (jcode "C") "has kind" (jcode "K") "with the following definitions:")
                (page-para/c (hc-append
                              (jcode "class K {"
-                                    "    static int m() { ... }"
+                                    "    int m() { ... }"
                                     "}")
                              (jcode "class C kind K {"
                                     "    static int n() { ... }"
@@ -271,7 +285,7 @@
   
   (let ((item-0 (colorize (page-item/bullet 
                            (colorize (t "0") "blue")
-                           "Look in the definition of the class.") "green")))
+                           "Look in the definition of the class.") "blue")))
     (slide/title "Method Dispatch"
                
                  (page-para "Where do we look to find the method to call?")
@@ -280,33 +294,28 @@
                  (list 
                   (list
                    (page-para "For invoking methods on" 
-                              (colorize (t "objects created by constructors") "green") ":")
+                              (colorize (t "objects created by constructors") "blue") ":")
                    (ghost item-0)
                    (page-item/bullet (colorize (t "1") "blue")
                                      "Look in the definition of the class for which" 
-                                   "this" (colorize (t"object") "green") "is an instance.")
+                                   "this" (colorize (t"object") "blue") "is an instance.")
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
                  (page-item/bullet (colorize (t "3") "blue")
                                    "Continue up the superclass hierarchy."))
                 (list
                  (page-para "For invoking methods on" 
-                            (colorize (t "instance classes") "green") ":")
+                            (colorize (t "instance classes") "blue") ":")
                  
                   item-0
                  (page-item/bullet (colorize (t "1") "blue")
                                    "Look in the definition of the class for which" 
-                                   "this" (colorize (t"class") "green") "is an instance.")
+                                   "this" (colorize (t"class") "blue") "is an instance.")
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
                  (page-item/bullet (colorize (t "3") "blue")
                                    "Continue up the superclass hierarchy.")))
-               'next
-               (page-para "Since classes" (it "are") "objects, can these definitions can"
-                          "be collapsed?")
-               'next
-               (page-para (bt "No.")  "Step 0 above has no analogue for"
-                          "instances that are not classes.")
+               
                ))
   
   (slide/center (titlet "An Unexpected Benefit"))
@@ -321,7 +330,7 @@
                'next
                (blank)
                (page-para "Static methods give us the ability to define factory methods.")
-               (jcode "Point make_origin() { return new (0,0); }")
+               (jcode "static Point make_origin() { return new (0,0); }")
                )
   
   (slide/title "Mandating Rethinking"
@@ -331,6 +340,12 @@
                'next
                (page-para "So, every constructor is private to the class that it constructs."
                           "Any other creation of objects must go through a factory method."))
+  (slide/title "Why is this an Advantage?"
+               (page-para "What have we gained over factory methods in other languages?")
+               (page-subitem "We can construct instances of type variables easily.")
+               (page-subitem "We can pass around factories without tricks.")
+               (page-subitem "We have static checking on the methods of a factory.")
+               (page-subitem "We've greatly simplified the system for constructors."))
   
   (slide/title "Design Patterns in the Language"
                (page-para "Factory Pattern")
@@ -339,7 +354,8 @@
                (page-para "Singleton Pattern :")
                (jcode "class MySingleton kind C { ... }")
                'next 
-               (page-para "Prototype Pattern") 
+               (page-para "Prototype Pattern")
+               (page-subitem "Kinds resemble prototype classes.")
                )
   
 
