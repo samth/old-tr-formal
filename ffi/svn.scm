@@ -21,12 +21,14 @@
 
 (defapr apr-initialize "apr_initialize" (_fun -> _apr_status_t))
   
-;  (define-cpointer-type _pool _pointer)
-  (define _pool (make-ctype _pointer #f #f))
-  (define _allocator (make-ctype _pointer #f #f))
-  (define _svn_error (make-ctype _pointer #f #f))
-  (define _revnum _long)
+  (define-cpointer-type _pool _pointer)
+  (define-cpointer-type _allocator _pointer)
+  (define-cpointer-type _svn_error _pointer)
+  (define-cpointer-type _client_cxt _pointer)
+
   (define _client_cxt (make-ctype _pointer #f #f))
+
+(define _revnum _long)
   
   (define _revision_kind
     (_enum '(revision_unspecified
@@ -59,7 +61,7 @@
     
   
   (defsvn create-pool "svn_pool_create_ex" 
-    (_fun _pool (_allocator = #f) -> _pool))
+    (_fun _pool/null (_allocator/null = #f) -> _pool))
   
   (define (new-pool) (create-pool #f))
   
@@ -74,7 +76,7 @@
   (_fun _string _client_cxt _pool -> _svn_error))
 
 (defsvn update "svn_client_update"
-  (_fun (_ptr o _revnum) _string _svn_opt_revision_t-pointer (_bool = #t) _client_cxt _pool -> _svn_error))
+  (_fun (_ptr o _revnum) _string _svn_opt_revision_t-pointer/null (_bool = #t) _client_cxt/null _pool -> _svn_error))
 
 (apr-initialize)
 (define pool (new-pool))
