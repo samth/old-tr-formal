@@ -1,8 +1,3 @@
-(define (make-readable x y) x)
-(define id (lambda (x) x))
-(define-values (pass1 pass2 pass3 assemble compile disassemble) (values (lambda (x y) x) id id id id id))
-(define usual-syntactic-environment #t)
-
 (define-syntax DEFINE-VALUES
   (syntax-rules
    ()
@@ -25,6 +20,8 @@
       (define-values-helper (cdr accum) <name2> ...)))))            
        
 
+(define use usual-syntactic-environment)
+
 (define-syntax test-compile
   (syntax-rules ()
       ((test-compile e e1 e2 e3 asm)
@@ -34,4 +31,3 @@
          (define e3 (make-readable (pass3 (pass2 (pass1 e usual-syntactic-environment))) #t))
          (define asm (disassemble (assemble (compile e))))))))
 
-(define e '(+ 2 3))

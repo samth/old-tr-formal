@@ -44,3 +44,11 @@
 ("Peter Evans" 1)
 ("Matt Horan" 1)
 )
+
+; assignment 3 (out of 35)
+ 
+(("Lee Fogel" "Christine Carter" 29)	
+ ("Jerry Mui" 10)
+ ("Mike Reid" "Tom Cody" 'cheat)
+ ("Alex Typaldos" "Erin Tatko" 'cheat)
+)
