@@ -40,4 +40,17 @@
 (defpxst region-subtract : r16 r16)
 (defpxst region-inverse : r16 r16)
 
+(defpx region-num-rects : r16 -> _int)
+(defpx region-rects : r16 -> _box16-pointer)
+
+; This will be changed to an enum
+(define-values (rgnOUT rgnIN rgnPART) (values 0 1 2))
+
+(defpx region-contains-point : r16 _int _int _box16-pointer -> _int)
+(defpx region-contains-rectangle : r16 _box16-pointer -> _int)
+(defpx region-not-empty : r16 -> _bool)
+(defpx region-extents : r16 -> box16)
+(defpx region-append : r16 r16 -> _region_status)
+(defpx region-validate : r16 (_ptr o _int) -> _region_status)
+
 (define r (region-create))

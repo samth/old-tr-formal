@@ -1,4 +1,4 @@
-;(module apr-0 mzscheme
+;(module svn mzscheme
   (require (lib "foreign.ss"))
   (define libapr (ffi-lib "libapr-0"))
   (define libsvn (ffi-lib "libsvn_client-1"))
@@ -22,10 +22,10 @@
 (defapr apr-initialize "apr_initialize" (_fun -> _apr_status_t))
   
   (define-cpointer-type _pool _pointer)
-  (define-cpointer-type _allocator _pointer)
-  (define-cpointer-type _svn_error _pointer)
-  (define-cpointer-type _client_cxt _pointer)
-
+  ;(define _pool (make-ctype _pointer #f #f))
+  (define _allocator (make-ctype _pointer #f #f))
+  (define _svn_error (make-ctype _pointer #f #f))
+  (define _revnum _long)
   (define _client_cxt (make-ctype _pointer #f #f))
 
 (define _revnum _long)
@@ -61,7 +61,7 @@
     
   
   (defsvn create-pool "svn_pool_create_ex" 
-    (_fun _pool/null (_allocator/null = #f) -> _pool))
+    (_fun _pool/null (_allocator = #f) -> _pool))
   
   (define (new-pool) (create-pool #f))
   
@@ -86,4 +86,4 @@
 ;  (provide (all-defined))
   
   
- ; )
+; )
