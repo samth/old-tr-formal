@@ -1,6 +1,6 @@
 (module fool-present (lib "slideshow.ss" "slideshow")
 
-  (require (prefix : (lib "symbol.ss" "texpict")))
+  ;(require (prefix : (lib "symbol.ss" "texpict")))
   (require "jcode.scm")
   
   (define (jcode/l . args) (page-para (apply jcode args)))
@@ -17,12 +17,15 @@
                  (it (car items))
                  (other-it (cdr items)))
         (cons
+         
          (append
           (map page-item past-it)
           (list* (page-item it)
                  (page-subitem si)
                  (map page-item other-it)))
-         (if (null? other-si) '()
+         
+         (if (null? other-si) 
+             '()
              (loop (car other-si) 
                    (cdr other-si)
                    (append past-it (list it))
@@ -34,14 +37,24 @@
    (titlet "A Core Calculus of Metaclasses")
    (blank)
    (blank)
-   (t "Sam Tobin-Hochstadt")
-   (t "Eric Allen")
-   (blank)
-   (small "Sun Microsystems Inc.")
-   (small "Northeastern University")
+
+   (ht-append 
+    (vc-append
+     (t "Sam Tobin-Hochstadt")
+     (ghost (t "blank"))
+     (small "Northeastern University")
+     (small "Sun Microsystems Inc."))
+    (ghost (t "blank"))
+    
+    (vc-append
+     (t "Eric Allen")
+     (ghost (t "blank"))
+     (small "Sun Microsystems Inc.")))
+
+
    )
   
-  (define outline
+  #;(define outline
     (make-outline 
      
      'motivation
@@ -60,7 +73,9 @@
      "Interesting Design Questions"
      #f))
   
-  (outline 'motivation)
+  ;(outline 'motivation)
+  
+  (slide/center (titlet "Why Should We Want Metaclasses?"))
   
   (slide/title "Why Metaclasses?"
                (page-item "Modeling the World")
@@ -69,9 +84,6 @@
                ;(page-item "Design Patterns")
                )
 
-  #;(define (jcode str)
-    (colorize (tt str) "blue"))
-  
   (define fish (standard-fish (* 2 gap-size) gap-size))
 
   
@@ -79,8 +91,6 @@
                (page-para (ht-append (t "Consider Harry. ") (bitmap "eagle.JPG")))
                'next
                (page-para "Harry is an eagle." )
-               #;(page-para "Now consider" (it "Eaglensis Latinus") "."
-                          "This is the species Harry belongs to.")
                'next
                (page-para "This relationship is easy to model in an object-oriented world.")
                (jcode "Harry : Eagle")
@@ -170,36 +180,29 @@
                (page-para "The need for more flexible hierarchies, and constraints on the behavior of classes led us naturally to metaclasses."))
   
   
-  (outline 'mcj)
+  ;(outline 'mcj)
+  
+  (slide/center (titlet "A Simple Language With Metaclasses"))
   
   (slide/title "MCJ: A Extension of FGJ with Metaclasses"
                'next
                (page-item "Classes can be used anywhere an expression is expected.")
-  ;             (blank) 
-
                (jcode "Eagle.population() + 7")
-
                (blank)
-               
                'next
-               (page-item "Classes have" (jcode "class") "members, which are the methods of the class when used as an expression.")
- ;              (blank)
-               
+               (page-item "Classes have" (jcode "static") "members, which are the methods"
+                          "of the class when used as an expression.")
                (jcode "class Eagle { "
-                      "    class population() { return pop; }"
+                      "    static population() { return pop; }"
                       "}")
                (blank)
                'next
-               
                (page-item "Every class has a metaclass (also referred to as" 
                           (it "kind" )"), and is an instance of its metaclass.")
-;               (blank)
                (jcode "class Eagle kind Species")
-
                'next
                (blank)
-               (page-item "Classes inherit some of their class methods from their kinds.")
-               
+               (page-item "Classes inherit some of their static methods from their kinds.")
                )
   
   (define (page-subitem/color first color . rest)
@@ -207,13 +210,13 @@
                                                    (colorize (t x) color)
                                                    (colorize x color))) rest)))
   
-  (slide/title "A Simple Example" ; FIXME - REFORMAT!!
+  (slide/title "A Simple Example"
                'alts
                (let ((class-c (jcode "class C {"
                                  "    int x;"
                                  "}"))
                      (myclass (jcode "class MyClass kind C {"
-                                     "    class int x = 5;"
+                                     "    static int x = 5;"
                                      "    int m(int y) { return y+2; }"
                                      "}") )) 
                  (list 
@@ -223,9 +226,9 @@
                (page-para "All of the following are valid expressions:")
                (page-subitem (jcode "C"))
                (page-subitem (jcode "MyClass.x"))
-               (page-subitem/color (jcode "mc.m(5)") "blue" "   if" (jcode "mc") 
+               (page-subitem/color (jcode "mc.m(5)") "blue" " -- if" (jcode "mc") 
                             "is an instance of" (jcode "MyClass"))
-               (page-subitem/color  (jcode "c.x") "blue" "  if" (jcode "c") "is an instance of "
+               (page-subitem/color  (jcode "c.x") "blue" " -- if" (jcode "c") "is an instance of "
                             (jcode "C"))
                )
   
@@ -234,22 +237,22 @@
                           "members from their superclass.")
                (blank)
                'next
-               (page-para "But classes also inherit class members from their metaclasses."
+               (page-para "But classes also inherit static members from their metaclasses."
                           )
                (page-para "Since classes are instances of their kind, they must inherit the"
-                          (it "instance") "members of their kind as" (it "class") 
+                          (it "instance") "members of their kind as" (it "static") 
                           "members.")
                'next
                (page-para "For example, if" (jcode "C") "has kind" (jcode "K") "with the following definitions:")
                (page-para/c (hc-append
                              (jcode "class K {"
-                                    "    class int m() { ... }"
+                                    "    static int m() { ... }"
                                     "}")
                              (jcode "class C kind K {"
-                                    "    class int n() { ... }"
+                                    "    static int n() { ... }"
                                     "}")))
                (blank)
-               (page-para "Then" (jcode "C") "has two class methods, m and n.")
+               (page-para "Then" (jcode "C") "has two static methods, m and n.")
                )
   
   (slide/title "Object Creation with Constructors"
@@ -271,14 +274,14 @@
                           "also creates an instance.")
                (page-para "So how do we initialize fields?")
                'next
-               (page-para "We have to give values to all" (jcode "class") "fields,"
+               (page-para "We have to give values to all" (jcode "static") "fields,"
                           "including those inherited from the kind.")
                'next
                (jcode "class MyClass kind C {"
-                                 "    class int x = 5;"
+                                 "    static int x = 5;"
                                  "    int m(int y) { y+2; }"
                                  "}")
-               (page-para "We initialize the inherited class field" (jcode "x"))
+               (page-para "We initialize the inherited static field" (jcode "x"))
                )
   
   (let ((item-0 (colorize (page-item/bullet 
@@ -308,7 +311,7 @@
                   item-0
                  (page-item/bullet (colorize (t "1") "blue")
                                    "Look in the definition of the class for which" 
-                                   "this" (colorize (t"class") "green")"is an instance.")
+                                   "this" (colorize (t"class") "green") "is an instance.")
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
                  (page-item/bullet (colorize (t "3") "blue")
@@ -321,7 +324,8 @@
                           "instances that are not classes.")
                ))
   
-  (outline 'benefit)
+  (slide/center (titlet "An Unexpected Benefit"))
+  ;(outline 'benefit)
   
   (slide/title "Rethinking Constructors"
                (page-para "As we have seen, every constructor, as in FGJ,"
@@ -331,7 +335,7 @@
                (page-para "But unlike FGJ, we aren't stuck with this.")
                'next
                (blank)
-               (page-para "Class methods give us the ability to define factory methods.")
+               (page-para "Static methods give us the ability to define factory methods.")
                (jcode "Point make_origin() { return new (0,0); }")
                )
   
@@ -353,11 +357,14 @@
                (jcode "class MySingleton kind C { ... }")
                'next 
                (page-para "Prototype Pattern") 
+               (jcode "FIXME")
                )
   
 
   
-  (outline 'details)
+  ;(outline 'details)
+  
+  (slide/center (titlet "Two Important Details"))
   
   (slide/title "typeOf"
                (page-para "What is the type of the expression" (jcode "C") "?")
@@ -369,7 +376,7 @@
                 (jcode "class D {}"
                        " "
                        "class C kind D {"
-                       "    class int m() { ... }"
+                       "    static int m() { ... }"
                        "}"))
                (blank)
                (page-para "Now" (jcode "C.m()") "will fail to typecheck.")
@@ -384,7 +391,9 @@
                (jcode "T.m()")
                'next
                (page-para "We need to add bounds on the kind of type variables."))
-  
+
+  (slide/center (titlet "Where Are We Now?"))
+
 
   (slide/title "Related Work"
                'alts
@@ -402,20 +411,7 @@
                 (list "OOPSLA 2004"
                       "Insipration for this work, but no semantics")))
                
-  #;(slide/title "Related Work"
-               (page-item "ObjVLisp")
-               (page-subitem "Very similiar model, without types")
-               (page-item "Smalltalk")
-               (page-subitem "Restricted levels")
-               (page-item "MOP")
-               (page-subitem "???")
-               (page-item "Python")
-               (page-subitem "Similar to ObjVLisp, no semantics given")
-               (page-item "SOL?") ;; FIXME
-               (page-subitem "IBM Language from early 90's")
-               (page-item "OOPSLA 2004") ;; FIXME
-               (page-subitem "Inspiration for this work, but not a semantics")
-               ) 
+  
   
   (slide/title "Formalism"
                (page-para "A simple extension of Featherweight GJ")
@@ -442,7 +438,10 @@
                )
   
   (slide/center
-   (bt "Thank You"))
+   (bt "Thank You")
+   (blank)
+   (t "samth@ccs.neu.edu")
+   (t "http://research.sun.com/project/plrg"))
   
   (slide/center
    (t "Auxilliary Slides"))
