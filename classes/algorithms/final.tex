@@ -1,4 +1,3 @@
-
 \documentclass[twoside]{amsart}
 \usepackage{geometry}
 \usepackage{stmaryrd}
@@ -44,22 +43,42 @@ once, and thus takes $O(V + E)$ time.
 \section*{Problem 2}
 
 \subsection*{Part i}
-This conjecture is false.
+This conjecture is false.  No execution of Breadth-First search can
+give the minimal spanning tree of this graph.
 
 \xymatrix{
-  v_1 \ar@{-}[d] \ar@{-}[r] \ar@{-}[dr] & v_2 \ar@{-}[d] \\
-  v_3 \ar@{-}[r] & v_4
+  v_1 \ar@{-}[d]_{100} \ar@{-}[r]^1 \ar@{-}[dr]^1 & v_2 \ar@{-}[d]^{100} \\
+  v_3 \ar@{-}[r]^1 & v_4
 }
+
+Any execution of BFS must begin at one of the four vertices.  It must
+then visit all of the edges incident on that vertex.  For any vertex,
+that includes one of the edges weighted 100.  Thus, that execution
+cannot produce the minimal spanning tree. \qed
 
 \subsection*{Part ii}
-This conjecture is false.
+This conjecture is false. No execution of Depth-First search can
+produce the minimal spanning tree of this graph.
 
 \xymatrix{
-  v_1 \ar@{-}[rr] \ar@{-}[ddr] \ar@{-}[dr]  & \txt{} & v_2 \ar@{-}[ddl]
-  \ar@{-}[dl]    \\
-  \txt{} & v_3 \ar@{-}[d]   & \txt{} \\
+  v_1 \ar@{-}[rr]^{100} \ar@{-}[ddr]_{100} \ar@{-}[dr]^1  & \txt{} & v_2 \ar@{-}[ddl]^{100}
+  \ar@{-}[dl]_1    \\
+  \txt{} & v_3 \ar@{-}[d]^1   & \txt{} \\
   \txt{} & v_4    & \txt{} 
 }
+
+There are two cases.  One, the DFS starts at the center ($v_3$).  Then it
+moves to one of the other vertices (WLOG $v_1$), and it encounters an
+edge weighted 100 to $v_2$, which has not yet been visited.
+Therefore, that edge will be included in the final spanning tree, and
+the tree will not be minimal.
+
+In the other case, the DFS starts on one of the edge vertices (WLOG
+$v_1$).  Either it begins with one of the outer edges, in which case
+the tree cannot be minimal.  Otherwise, it moves to the middle, and
+then to one of the other outer vertices (WLOG $v_2$).  Then there is
+an edge to $v_4$, which is not yet explored, so that edge is taken.
+Therefore, the tree will not be minimal. \qed
 
 \section*{Problem 3}
 
@@ -69,13 +88,28 @@ This conjecture is true.
 
 \subsection*{Part ii}
 
-This conjecture is false.
+This conjecture is false. This graph
 
 \xymatrix{
-  v1 \ar@{-}[r] \ar@{-}[d] & v2 \\
-  v3 \ar@{-}[r] & v4 \ar@{-}[u]
+  v1 \ar@{-}[r]^2 \ar@{-}[d]_2 & v2 \\
+  v3 \ar@{-}[r]_1 & v4 \ar@{-}[u]_1
 }
 
+has the following MMST:
+
+\xymatrix{
+  v1 \ar@{-}[r]^2 \ar@{-}[d]_2 & v2 \\
+  v3  & v4 \ar@{-}[u]_1
+}
+
+but this is an MST with less total weight.
+
+\xymatrix{
+  v1 \ar@{-}[r]^2  & v2 \\
+  v3 \ar@{-}[r]_1 & v4 \ar@{-}[u]_1
+}
+
+\qed
 
 \section*{Problem 4}
 
