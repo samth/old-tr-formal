@@ -1,0 +1,41 @@
+1. Lecture
+
+- Summarizing in prep. for exam
+
+- Monday: S-expression, to play into Tuesday's lab
+
+2. Exam
+
+- done and graded
+- will be handed back on Monday in lecture
+
+3. Office Hours
+
+- We had low turnout this past week.
+
+4. HW Grading
+
+- From now on, the HW will be out in the hall on Fridays, and if not
+picked up then, will be returned in lab on the following Tuesday.
+
+- This weeks HW will be handed out in lab on tuesday.  
+
+5. Lab
+
+The plan is to generate web pages for a CD collection.
+
+The format for the collection is:
+
+(listof (make-cd Artist Title (listof Track)))
+
+Where Artist, Title and Track are Strings.
+
+The students should create one web page per CD.  Optionally, create an
+index page.
+
+More information and sample code will be forthcoming from
+Matthias/Rebecca.  
+
+Everyone neds to send 5 CD's in the above format to Rebecca.
+
+

@@ -158,6 +158,8 @@
       ("Andrew Guida"        15 (16  1) (32  1) (36  1))
       ("Jared Assmus"        20 (16  1) (32  1) (36  1))))
   
-  )
+  
 
 (define all-grades (append jeff-grades carl-grades sam-grades stevie-grades rebecca-grades))
+(provide all-grades)
+  )
