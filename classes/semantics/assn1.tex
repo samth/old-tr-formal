@@ -53,9 +53,12 @@ If $e_0 = ((\lambda x^t.e_1)\ e_2) : t'$, then the desired theorem is
 If $((\lambda x^t.e_1)\ e_2) : t'$ then $e_1[x^t/e_2]:t$.
 \end{theorem}
 
+\begin{proof}
 To prove this, simply consider the typing rules for application and abstraction, which
 shows that the abstraction must have type $t \rightarrow t'$, and therefore
 $e_1 : t'$ and $e_2 : t$, from the typing of the application.  Thus we
 can apply our lemma to obtain the desired conclusion.
+\end{proof}
+
 
 \end{document}
