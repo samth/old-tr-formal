@@ -1,20 +1,20 @@
 (module fool-present (lib "slideshow.ss" "slideshow")
 
   (require (prefix : (lib "symbol.ss" "texpict")))
+  (require "jcode.scm")
 
-  (define (blank2) (vl-append (blank) (blank)))
-  
   (define (small t) (text t (current-main-font) (* 2 (quotient (current-font-size) 3))))
+  (define (sub t) (text t (cons 'subscript (current-main-font)) (current-font-size)))
   
   (slide/center
-   (page-para* (titlet "A Core Calculus of Metaclasses"))
+   (titlet "A Core Calculus of Metaclasses")
    (blank)
    (blank)
-   (page-para* "Sam Tobin-Hochstadt")
-   (page-para* "Eric Allen")
+   (t "Sam Tobin-Hochstadt")
+   (t "Eric Allen")
    (blank)
-   (page-para* (small "Sun Microsystems Inc."))
-   (page-para* (small "Northeastern University"))
+   (small "Sun Microsystems Inc.")
+   (small "Northeastern University")
    )
   
   (define outline
@@ -28,8 +28,8 @@
      "A Simple Language with Metaclasses"
      #f
      
-     'benifit
-     "An Unexpected Benifit"
+     'benefit
+     "An Unexpected Benefit"
      #f
      
      'details
@@ -42,39 +42,40 @@
                (page-item "Modeling the World")
                (page-item "Flexible Hierarchies")
                (page-item "Generalized Statics")
-               (page-item "Design Patterns"))
+               ;(page-item "Design Patterns")
+               )
 
-  (define (code str)
+  #;(define (jcode str)
     (colorize (tt str) "blue"))
   
   (define fish (standard-fish (* 2 gap-size) gap-size))
 
   
   (slide/title "The Complex World (Part 1)"
-               (page-para "Consider Harry. EAGLE IMAGE HERE")
+               (page-para (ht-append (t "Consider Harry. ") (bitmap "eagle.JPG")))
                'next
                (page-para "Harry is an eagle." )
                #;(page-para "Now consider " (it "Eaglensis Latinus") "."
                           "This is the species Harry belongs to.")
                'next
-               (page-para "This relationship is easy to model in a object-oriented world.")
-               (code "Harry : Eagle")
+               (page-para "This relationship is easy to model in an object-oriented world.")
+               (jcode "Harry : Eagle")
                'next
                (page-para "We can easily model other species as well.")
-               (page-para/c fish (code " : Salmon")))
+               (page-para/c fish (jcode " : Salmon")))
   (slide/title "The Complex World (Part 2)"
                (page-para "In a language with static methods, we can "
                           "even ask this question:")
-               (code "Eagle.isEndagered()")
+               (jcode "Eagle.isEndagered()")
                'next
-               (page-para "But if " (code "Salmon") "is a species, will this work?")
-               (code "Salmon.isEndangered()")
+               (page-para "But if " (jcode "Salmon") "is a species, will this work?")
+               (jcode "Salmon.isEndangered()")
                'next
                (blank)
                (blank)
                (page-para (it "Who knows?") "We have" (bt "no") 
                           "guarantees about the relationship"
-                          "between" (code "Salmon") "and" (code "Eagle") ".")
+                          "between" (jcode "Salmon") "and" (jcode "Eagle") ".")
                'next 
                (page-para "That's because we can't express relationships"
                           "between classes.")
@@ -87,13 +88,13 @@
                (page-para "So let's try to use subtyping to express the relationship we"
                           "want. Then we get the following relationships:")
                (blank)
-               (code "Eagle <: Species")
-               (code "Salmon <: Species")
-               (code "Harry : Eagle")
+               (jcode "Eagle <: Species")
+               (jcode "Salmon <: Species")
+               (jcode "Harry : Eagle")
                (blank)
                (page-para "What's wrong here?")
                'next
-               (code "Harry : Species")
+               (jcode "Harry : Species")
                )
   
   (slide/title "What Do We Want?"
@@ -102,25 +103,46 @@
                'next
                (page-para "That sounds an awful lot like a type.")
                (blank) (blank)
-               (page-para "What if we could make " (code "Species")
-                          "the type of " (code "Eagle") "?")
-               (code "Eagle : Species")
+               (page-para "What if we could make " (jcode "Species")
+                          "the type of " (jcode "Eagle") "?")
+               (jcode "Eagle : Species")
                'next
-               (page-para "Then we have a guarantee about the behavior of Eagle,"
-                          "since it is an element of " (code "Species") ".")
+               (page-para "Then we have a guarantee about the behavior of "(jcode "Eagle")
+                          ","
+                          "since it is an element of " (jcode "Species") ".")
                (page-para "And this guarantee holds for other such elements,"
-                          "such as " (code "Salmon") ".")
+                          "such as " (jcode "Salmon") ".")
                )
-  
-  (slide/title "Where are we now?"
-               (page-item "We have classes as expressions:")
-               (page-subitem (code "Eagle.isEndangered()"))
-               'next
-               (page-item "We have classes that have classes:")
-               (page-subitem (code "Eagle : Species"))
+
+  (slide/title "Modeling Dimensions"
+               (jcode "3 meter : Length")
+               
+               (blank)
+               (jcode "5 hours : Time")
                'next
                (blank)
-               (page-para/c "We have Metaclasses."))
+               (page-para "What are Length and Time?")
+               'next
+               (blank)
+               (jcode "Length : Dimension")
+               (jcode "Time : Dimension")
+               (blank)
+               (page-para "To appropriately model dimensions, we need"
+                          "to express relationships between classes that are not subtypes.")
+               (page-para "See " (it "Object-Oriented Units of Measurement") "in OOPSLA 2004."))
+
+    
+  (slide/title "Where are we now?"
+               (page-item "We have classes as expressions:")
+               (page-subitem (jcode "Eagle.isEndangered()"))
+               'next
+               (page-item "We have classes that have classes:")
+               (page-subitem (jcode "Length : Dimension"))
+               'next
+               (blank)
+               (page-para/c "We have Metaclasses.")
+               (blank)
+               (page-para "The need for more flexible hierarchies, and constraints on the behavior of classes led us naturally to metaclasses."))
   
   
   (outline 'mcj)
@@ -128,32 +150,52 @@
   (slide/title "MCJ: A Extension of FGJ with Metaclasses"
                'next
                (page-item "Classes can be used anywhere an expression is expected.")
-               (blank) 
+  ;             (blank) 
 
-               (code "Eagle.population() + 7")
+               (jcode "Eagle.population() + 7")
 
-               (blank2)
-               
-               'next
-               (page-item "Classes have " (code "class") "members, which are the methods of the class when used as an expression.")
                (blank)
                
-               (code "class Eagle { class population() { return pop; } }")
-               (blank2)
+               'next
+               (page-item "Classes have " (jcode "class") "members, which are the methods of the class when used as an expression.")
+ ;              (blank)
+               
+               (jcode "class Eagle { "
+                      "    class population() { return pop; }"
+                      "}")
+               (blank)
                'next
                
                (page-item "Every class has a metaclass (also referred to as " 
                           (it "kind" )")")
-               (blank)
-               (code "class Eagle kind Species")
+;               (blank)
+               (jcode "class Eagle kind Species")
 
                'next
-               (blank2)
+               (blank)
                (page-item "Classes inherit some of their class methods from their kinds.")
                
                )
   
-  (outline 'benifit)
+  (slide/title "Object Creation with Constructors"
+               (page-para "To create an instance of class C, we call the constructor as follows:")
+               (jcode "new(e1,e2)")
+               (page-para "which initializes all the fields of class C in order"
+                          "and produces an instance of C.")
+               'next
+               (blank)
+               (page-para "For parametric classes, " (jcode "new") "can take type parameters.")
+               (jcode "new<T>(e1,e2)")
+               'next 
+               (blank)
+               (page-para "In these examples, we didn't specify which class.  We'll see soon why that isn't neccessary.")
+               )
+  
+  (slide/title "Object Creation with Classes")
+  
+  (slide/title "Method Dispatch")
+  
+  (outline 'benefit)
   
   (slide/title "Rethinking Constructors"
                (page-para "As we have seen, every constructor, as in FGJ,"
@@ -162,9 +204,9 @@
                'next
                (page-para "But unlike FGJ, we aren't stuck with this.")
                'next
-               (blank2)
+               (blank)
                (page-para "Class methods give us the ability to define factory methods.")
-               (code "Point make_origin() { return new (0,0); }")
+               (jcode "Point make_origin() { return new (0,0); }")
                )
   
   (slide/title "Mandating Rethinking"
@@ -185,10 +227,11 @@
   (outline 'details)
   
   (slide/title "typeOf"
-               (page-para "What is the type of " (code "C") "?"))
+               (page-para "What is the type of the expression" (jcode "C") "?"))
   
   (slide/title "Generics and Metaclasses"
-               (page-para "Do metaclasses have implications for the use of parametric polymorphism."))
+               (page-para "Do metaclasses have implications for the use of "
+                          "parametric polymorphism?"))
   
   (slide/center
    (bt "Thank You")))
