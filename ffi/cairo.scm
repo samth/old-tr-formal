@@ -16,6 +16,7 @@
     [(_ nm : in ...)
      (defcairo-full nm : _cairo in ... -> _void)]))
 
+(define-cpointer-type _FILE)
 
 (define-cpointer-type _cairo)
 (define-cpointer-type _cairo_surface)
@@ -54,11 +55,11 @@
 
 (defcairo set-target-surface : _cairo )
 
-(defcairo set-target-image :_bytes _format _int _int _int)
+(defcairo set-target-image : _bytes _format _int _int _int)
 
 (defcairo set-target-ps : _FILE _double _double _double _double)
 
-(defcairo set-target-png : _FILE _format _int _int)
+;(defcairo set-target-png : _FILE _format _int _int)
 
 (defcairo set-operator : _operator)
 
@@ -76,7 +77,7 @@
 
 (defcairo set-line-width : _double)
 
-(define _line-cap (_enum '(line-cap-butt line-cap-round line-cap-square)))
+(define _line_cap (_enum '(line-cap-butt line-cap-round line-cap-square)))
 
 (defcairo set-line-cap : _line_cap)
 
@@ -84,7 +85,7 @@
 
 (defcairo set-line-join : _line_join)
 
-(defcairo set-dash (_ptr i _double) _int _double)
+(defcairo set-dash : (_ptr i _double) _int _double)
 
 (defcairo set-miter-limit : _double)
 
