@@ -141,6 +141,8 @@
 (require (lib "list.ss") (lib "etc.ss"))
 (define took-exam (filter (lambda (x) (= 2 (length x) )) exam-grades))
 
+(define in-trouble (filter (lambda (x) (< (cadr x) 25)) took-exam ))
+
 (define exam-scores (map cadr took-exam))
 
 (define (bounded n m) (lambda (x) (and (< x m) (>= x n))))
