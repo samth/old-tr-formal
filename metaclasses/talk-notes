@@ -7,22 +7,40 @@ PL Seminar Talk
 
 ** Eagle example
 
-** Design Patterns
+*** Show Java implementiation
 
-* Review of FJ
-
-** Very Quick
+**** Problems : lack of checking, generics
 
 * Introduction to MCJ
 
 ** Metaclasses
 
+** Constructors
+
+** Initialization of class fields
+
 ** Method Dispatch
 
-** Constructors
+** typeOf
+
+** Non-transitivity of kind relationships
+
+** Cyclic class hierarchies
+
+*** class C kind C extends Object { ... }
+
+* Examples revisited
+
+** Meter as a singleton class
+
+** Harry
 
 * MCJ Formal Semantics
 
 ** Static Semantics
 
+*** Present all non-congruence rules
+
 ** Dynamics Semantics
+
+*** Most of the type rules, if time
