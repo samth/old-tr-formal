@@ -87,6 +87,7 @@
                'next
                (page-para "We can easily model other species as well.")
                (page-para/c fish (jcode " : Salmon")))
+  
   (slide/title "The Complex World (Part 2)"
                (page-para "In a language with static methods, we can "
                           "even ask this question:")
@@ -341,7 +342,8 @@
                'next
                (page-para "Therefore, we decided to make it mandatory.")
                'next
-               (page-para "So, every constructor is private to the class that it constructs.  Any other creation of objects must go through a factory method."))
+               (page-para "So, every constructor is private to the class that it constructs."
+                          "Any other creation of objects must go through a factory method."))
   
   (slide/title "Design Patterns in the Language"
                (page-para "Factory Pattern")
