@@ -61,7 +61,7 @@
 
 (defcairo set-target-ps : _FILE _double _double _double _double)
 
-(defcairo set-target-png : _FILE _format _int _int)
+;(defcairo set-target-png : _FILE _format _int _int)
 
 (defcairo set-operator : _operator)
 
