@@ -1,0 +1,46 @@
+Problem 1:
+
+Problem 2:
+
+Imagine that there was such an algorithm.  Then we could sort a list
+in faster than n lg n time.  First, select the median element of the
+list, via the linear time algorithm.  Then divide the list into two
+halves, those smaller than the median and those larger.  Then, via the
+assumed algorithm, we can sort the entire sequence in o(n lg (n/2)).
+This is a contradiction, since comparison sorting is Omega(n lg n). 
+
+Problem 3:  
+
+Part 1
+
+The algorithm should allocate an array A of size k.  Then it processes
+each element in the list (say, i), and increments the counter in the
+array indicies <= i.  Then, to answer a querey about [a..b], merely
+subtract A[a] from A[b].
+
+Part 2
+
+Part 3
+
+Consider a sequence in reverse order.  Then all the items must be
+swapped.  Every element in the bottom quarter must move a distance of
+at least n/2.  There are obviously n/4 elements in the bottom
+quarter.  Therefore, the total data movement is at least n^2/8, which
+is Omega(n^2).  If k-width data exchanges are performed, then at
+Omega(n^2/k) such exchanges must occur.  If k is a constant, then this
+value is also Omega(n^2).  Thus any constant width data exchange
+algorithm must use Omega(n^2) in the case of a reverse-sorted list.  
+
+
+Problem 4:
+
+
+Problem 6:
+
+Part 1
+
+Part 2
+
+Simply take the median of all the y-coordinates.  If there are two
+medians, average them.  This is optimal.
+
