@@ -18,7 +18,7 @@
 #  larceny -np -args -load  ; -np is a larc.opt., -args -load a prog.opt.
 
 # EDIT THIS PATH TO SUIT YOUR SYSTEM.
-LARCENY_PATH=/home/samth/work/larceny-pnk
+LARCENY_PATH=/scratch/samth/larceny
 unset LARGS
 unset PARGS
 SMALL=0
