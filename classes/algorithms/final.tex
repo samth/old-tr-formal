@@ -1,0 +1,115 @@
+
+\documentclass[twoside]{amsart}
+\usepackage{geometry}
+\usepackage{stmaryrd}
+\usepackage{cancel}
+\usepackage{clrscode}
+\usepackage{textcomp}
+\geometry{tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+\usepackage[curve]{xypic}
+
+\newsavebox{\fmbox}
+\newenvironment{fmpage}[1]
+{\begin{lrbox}{\fmbox}
+   \begin{minipage}{#1}}
+{\end{minipage}
+\end{lrbox}\fbox{\usebox{\fmbox}}}
+
+\newenvironment{directive}{\begin{fmpage}{5.5in}}{\end{fmpage}}
+\newenvironment{problem}[1]{\newpage\section{#1}\begin{fmpage}{5.5in}}{\end{fmpage}}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{claim}[prop]{Claim}
+\newtheorem{lemma}[prop]{Lemma}
+
+\begin{document}
+
+{\raggedleft
+Sam Tobin-Hochstadt \\
+CSG 713 Final Exam \\
+\today \\
+{\tt samth@ccs.neu.edu} \\
+}
+
+%\newcommand{\min}[#1]{\textrm{min}(
+
+\section*{Problem 1}
+
+First, initialize min($v_1$) to $v_1$.  Then, for each successive
+vertex $v_k$, perform BFS from that vertex.  If a previously finished
+vertex $v_j$ is reached, then terminate the BFS and min($v_k$) =
+min($v_j$). This algorithm visits every vertex and every edge at most
+once, and thus takes $O(V + E)$ time.
+
+\section*{Problem 2}
+
+\subsection*{Part i}
+This conjecture is false.
+
+\xymatrix{
+  v_1 \ar@{-}[d] \ar@{-}[r] \ar@{-}[dr] & v_2 \ar@{-}[d] \\
+  v_3 \ar@{-}[r] & v_4
+}
+
+\subsection*{Part ii}
+This conjecture is false.
+
+\xymatrix{
+  v_1 \ar@{-}[rr] \ar@{-}[ddr] \ar@{-}[dr]  & \txt{} & v_2 \ar@{-}[ddl]
+  \ar@{-}[dl]    \\
+  \txt{} & v_3 \ar@{-}[d]   & \txt{} \\
+  \txt{} & v_4    & \txt{} 
+}
+
+\section*{Problem 3}
+
+\subsection*{Part i}
+
+This conjecture is true.
+
+\subsection*{Part ii}
+
+This conjecture is false.
+
+\xymatrix{
+  v1 \ar@{-}[r] \ar@{-}[d] & v2 \\
+  v3 \ar@{-}[r] & v4 \ar@{-}[u]
+}
+
+
+\section*{Problem 4}
+
+The Laksurk method successfully finds a minimum spanning tree for any
+graph.  
+
+
+\section*{Problem 5}
+
+
+\section*{Problem 6}
+
+\subsection*{Part i}
+
+\subsection*{Part ii}
+
+Create a vertex for every number in the sequence.  Then create an edge
+from every vertex to 
+
+\section*{Problem 7}
+
+
+\section*{Problem 8}
+
+To see that an approximation ratio of 2 is tight, consider the
+following graph:
+
+\xymatrix{
+  v_1 \ar@{-}[r] & v_3 \ar@{-}[r] & v_2
+}
+
+Then $A$ and $B$ will be initialized, and there will only be one
+remaining vertex.  Since $d(v_3,\{v_1\}) = d(v_3,\{v_2\}) = 1$, $v_3$
+will be allocated to $B$.  This produces a cut of size 1.  However,
+the maximal cut is $(\{v_1,v_2\},\{v_3\})$, which has size 2.
+
+\end{document}
