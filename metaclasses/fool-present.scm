@@ -57,30 +57,11 @@
 
    )
   
-  #;(define outline
-    (make-outline 
-     
-     'motivation
-     "Why Metaclasses?"
-     #f
-     
-     'mcj
-     "A Simple Language with Metaclasses"
-     #f
-     
-     'benefit
-     "An Unexpected Benefit"
-     #f
-     
-     'details
-     "Interesting Design Questions"
-     #f))
-  
   ;(outline 'motivation)
   
-  (slide/center (titlet "Why Should We Want Metaclasses?"))
+  (slide/center (titlet "Why Metaclasses?"))
   
-  (slide/title "Why Metaclasses?"
+  #;(slide/title "Why Metaclasses?"
                (page-item "Modeling the World")
                (page-item "Flexible Hierarchies")
                (page-item "Generalized Static Methods")
@@ -92,9 +73,9 @@
   
   (slide/title "The Complex World (Part 1)"
                (page-para (ht-append (t "Consider Harry. ") (bitmap "eagle.JPG")))
-               'next
+               ;'next
                (page-para "Harry is an eagle." )
-               'next
+               ;'next
                (page-para "This relationship is easy to model in an object-oriented world.")
                (jcode "Harry : Eagle")
                'next
@@ -105,7 +86,7 @@
                (page-para "In a language with static methods, we can "
                           "even ask this question:")
                (jcode "Eagle.isEndagered()")
-               'next
+               ;'next
                (page-para "But if" (jcode "Salmon") "is a species, will this work?")
                (jcode "Salmon.isEndangered()")
                'next
@@ -114,15 +95,15 @@
                (page-para (it "Who knows?") "We have" (bt "no") 
                           "guarantees about the relationship"
                           "between" (jcode "Salmon") "and" (jcode "Eagle") ".")
-               'next 
-               (page-para "That's because we can't express relationships"
+               ;'next 
+               (page-para "This is because we can't express relationships"
                           "between classes.")
                )
   
   (slide/title "Subtyping is not enough"
                (page-para "But object-oriented languages do provide a mechanism" 
                           "for relating classes: subtyping!")
-               'next
+               ;'next
                (page-para "So let's try to use subtyping to express the relationship we"
                           "want. Then we get the following relationships:")
                (blank)
@@ -138,7 +119,7 @@
   (slide/title "What Do We Want?"
                (page-para "We would like to define a group of entities,"
                           "all of which must respond to certain messages.")
-               'next
+               ;'next
                (page-para "That sounds an awful lot like a type.")
                (blank) (blank)
                (page-para "What if we could make" (jcode "Species")
@@ -157,7 +138,7 @@
                
                (blank)
                (jcode "5 hours : Time")
-               'next
+               ;'next
                (blank)
                (page-para "What are Length and Time?")
                'next
@@ -208,13 +189,12 @@
                (page-item "Classes inherit some of their static methods from their kinds.")
                )
   
-  (define (page-subitem/color first color . rest)
+  (define (page-subitem/color first . rest)
     (apply page-subitem first (map (lambda (x) (if (string? x)
-                                                   (colorize (t x) color)
-                                                   (colorize x color))) rest)))
+                                                   (colorize (t x) "blue")
+                                                   (colorize x "blue"))) rest)))
   
   (slide/title "A Simple Example"
-               'alts
                (let ((class-c (jcode "class C {"
                                  "    int x;"
                                  "}"))
@@ -222,17 +202,22 @@
                                      "    static int x = 5;"
                                      "    int m(int y) { return y+2; }"
                                      "}") )) 
-                 (list 
-                  (list (vl-append class-c (ghost myclass)))
-                  (list (vl-append class-c  myclass))))
-               'next
-               (page-para "All of the following are valid expressions:")
-               (page-subitem (jcode "C"))
-               (page-subitem (jcode "MyClass.x"))
-               (page-subitem/color (jcode "mc.m(5)") "blue" " -- if" (jcode "mc") 
-                            "is an instance of" (jcode "MyClass"))
-               (page-subitem/color  (jcode "c.x") "blue" " -- if" (jcode "c") "is an instance of "
-                            (jcode "C"))
+                  
+                 (vl-append class-c  myclass))
+               'alts
+               (list
+                (list (page-para "All of the following are valid expressions:")
+                      (page-subitem (jcode "C"))
+                      (page-subitem (jcode "MyClass.x"))
+                      (page-subitem/color (jcode "mc.m(5)") " -- if" (jcode "mc") 
+                                          "is an instance of" (jcode "MyClass"))
+                      (page-subitem/color  (jcode "c.x")  " -- if" (jcode "c") "is an instance of "
+                                           (jcode "C")))
+                (list
+                 (page-para "All of the following are" (bt "invalid") ":")
+                 (page-subitem/color (jcode "MyClass.m(5)") " --" (jcode "m") "is an instance method")
+                 (page-subitem/color (jcode "C.x") " --" (jcode "x") "is an instance field of" (jcode "C"))
+                 (page-subitem/color (jcode "mc.x") " --" (jcode "x") "is a static field of" (jcode "MyClass"))))
                )
   
   (slide/title "Inheritance"
@@ -260,16 +245,13 @@
   
   (slide/title "Object Creation with Constructors"
                (page-para "To create an instance of class C, we call the constructor as follows:")
-               (jcode "new(e1)")
+               (jcode "new C(e1)")
                (page-para "which initializes all the fields of class C in order"
                           "and produces an instance of C.")
                'next
                (blank)
                (page-para "For parametric classes," (jcode "new") "can take type parameters.")
-               (jcode "new<T>(e1,e2)")
-               'next 
-               (blank)
-               (page-para "In these examples, we didn't specify which class.  We'll see soon why that isn't neccessary.")
+               (jcode "new D<T>(e1,e2)")
                )
   
   (slide/title "Object Creation with Classes"
@@ -306,7 +288,7 @@
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
                  (page-item/bullet (colorize (t "3") "blue")
-                                   "Repeat step 2."))
+                                   "Continue up the superclass hierarchy."))
                 (list
                  (page-para "For invoking methods on" 
                             (colorize (t "instance classes") "green") ":")
@@ -318,7 +300,7 @@
                  (page-item/bullet (colorize (t "2") "blue")
                                    "Look in the superclass of the class you're looking in.")
                  (page-item/bullet (colorize (t "3") "blue")
-                                   "Repeat step 2.")))
+                                   "Continue up the superclass hierarchy.")))
                'next
                (page-para "Since classes" (it "are") "objects, can these definitions can"
                           "be collapsed?")
@@ -345,8 +327,6 @@
   (slide/title "Mandating Rethinking"
                (page-para "This is such a good idea, it's the first one reccommended in"
                           (it "Effective Java") ".")
-               ; maybe a picture of the book here?
-               'next
                (page-para "Therefore, we decided to make it mandatory.")
                'next
                (page-para "So, every constructor is private to the class that it constructs."
@@ -360,7 +340,6 @@
                (jcode "class MySingleton kind C { ... }")
                'next 
                (page-para "Prototype Pattern") 
-               (jcode "FIXME")
                )
   
 
@@ -393,11 +372,37 @@
                (page-para "If T is a type variable, how do we typecheck")
                (jcode "T.m()")
                'next
-               (page-para "We need to add bounds on the kind of type variables."))
+               (page-para "We need to add bounds on the kind of type variables.")
+               (jcode "class C<T extends S kind K> { ... }")
+               (page-para "This means that it's now possible to use static methods and"
+                          "construct instances of type variables.")
+               (page-subitem "Even without first-class generics"))
 
   (slide/center (titlet "Where Are We Now?"))
 
 
+  
+               
+  
+  
+  (slide/title "Formalism"
+               (page-para "A simple extension of Featherweight GJ")
+               (blank)
+               (page-item "The type soundness theorem is unchanged.")
+               (page-item "The only significant increase in complexity in the formalism results from classes as expressions.")
+               ;'next
+               (page-subitem "Which is even present in Java!")
+               ;'next
+               (page-item "The proof of soundness is not much more complex than for FGJ.")
+               'next
+               (blank)
+               (page-para "Metaclasses are not that complicated!"))
+  
+  (slide/title "Problems and Future Work"
+               (page-item "Adding mutable state would require some work. ")
+               (page-item "Just as in FGJ, superclass fields are a problem")
+               (page-item "Implementation"))
+  
   (slide/title "Related Work"
                'alts
                (many-subitems 
@@ -409,35 +414,16 @@
                       #f)
                 (list "Python"
                       "Similar to ObjVLisp, no published semantics")
-                (list "SOL"
-                      "Very Different Constraints on Inheritance")
-                (list "OOPSLA 2004"
+                (list "IBM SOM"
+                      "Dynamic Class Creation, Meta-Object Protocol")
+                (list "Allen, Chase, Luchangco, Maessen and Steele - OOPLSA 2004"
                       "Insipration for this work, but no semantics")))
-               
-  
-  
-  (slide/title "Formalism"
-               (page-para "A simple extension of Featherweight GJ")
-               (blank)
-               (page-item "The only significant increase in complexity in the formalism results from classes as expressions.")
-               'next
-               (page-subitem "Which is even present in Java!")
-               'next
-               (page-item "The proof of soundness is not much more complex than for FGJ.")
-               'next
-               (blank)
-               (page-para "Metaclasses are not that complicated!"))
-  
-  (slide/title "Problems and Future Work"
-               (page-item "Adding mutable state would require some work. ")
-               (page-item "Our constructor reform does badly for initializing superclass fields.")
-               (page-item "Implementation"))
   
   (slide/title "Conclusions"
                (page-item "We've shown why metaclasses are benefical for an OO language.")
                (page-item "We have presented a way to extend a language with metaclasses.")
-               (page-item "We have discovered that metaclasses can make constructors much simpler.")
-               (page-item "We formalized our calculus, and it wasn't that bad.")
+               (page-item "We have discovered several ways that metaclasses can make object creation simpler.")
+               (page-item "We formalized our calculus, and proved it sound.")
                )
   
   (slide/center

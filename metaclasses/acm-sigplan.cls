@@ -526,8 +526,8 @@
 %%%  \def \@toappear {\raisebox{5pt}{\framebox[20pc]{\parbox[b]{19pc}{#1}}}}}
 
 \toappear{%
-  \noindent \@permission \par
-  \vspace{2pt}
+  %\noindent \@permission \par
+  %\vspace{2pt}
   \noindent \textsl{\@conferencename}\quad \@conferenceinfo \par
   \@copyrightinfo}
 
@@ -545,7 +545,7 @@
 
 \def \@copyrightinfo {%
   \if \notp{\emptydefp{\copyrightinfo}}%
-    Copyright \copyright\ \@copyrightyear\ ACM \@copyrightdata\ \dots\ \$5.00
+    Copyright \copyright\ \@copyrightyear\ Sun Microsystems, Inc. All Rights Reserved
   \fi}
 
 %                       Enunciations

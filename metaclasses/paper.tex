@@ -1,4 +1,4 @@
-\documentclass[nocopyrightspace,10pt]{acm-sigplan}
+\documentclass[10pt]{acm-sigplan}
 
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -17,6 +17,8 @@
 \input{paper-figs.tex}
 
 \begin{document}
+\conferenceinfo{FOOL 2005}{15 January 2005, Long Beach, California}
+\copyrightyear{2005}
 
 \title{A Core Calculus of Metaclasses}
 
@@ -291,7 +293,7 @@ the method is found there, it is invoked. Otherwise, the
 and if it is found there, the method is invoked.  Otherwise, the
 superclass hierarchy of {\txt D} is examined as it is for an ordinary
 instance of {\txt D}.
-
+\newpage
 For example, consider the following class definitions:
 
 \begin{verbatim}
@@ -371,7 +373,7 @@ expressions \cite{NextGen, MixGen}, however additional bounds, called
 similar flexibility, but obviates the need for {\txt{with}} clauses
 because the bound on the kind of a type variable stipulates what
 factory methods can be called on it.
-
+\newpage
 For example, in MixGen \cite{MixGen} the following program is legal:
 
 \begin{verbatim}
@@ -640,11 +642,12 @@ class Derived kind AbsFac {
 }
 \end{verbatim}
 
-
+\newpage
 \paragraph{Prototype}
 As mentioned in \cite{GOF}, languages with metaclasses naturally
 support the prototype pattern.  A class is in many ways a clone of its
 metaclass.  Thus the following example uses a prototype:
+
 \begin{verbatim}
 class Proto {
     Object x;
@@ -751,7 +754,7 @@ hierarchy with no contents, there is no need to include both of them.
 In a more substantial language, where $\Object$ might have methods or
 fields, there might be a use for a distinguished $\Class$ class, but
 it would not need any special treatment by the type system.
-
+\newpage
 A more complicated MCJ class is:
 
 \begin{verbatim}
@@ -1002,7 +1005,6 @@ important. The full proof is available at:
 \fieldsPreservedProof
 
 \methodTypingLemma
-\newpage
 
 \methodTypingProof
 
