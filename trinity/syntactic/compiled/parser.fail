@@ -1,0 +1,1 @@
+write: cannot marshal constant that is embedded in compiled code: #<path:/home/samth/sw/trinity/syntactic/parser.ss>

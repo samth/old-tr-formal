@@ -1,0 +1,56 @@
+(module main mzscheme
+  (require (lib "cmdline.ss"))
+  (require (lib "etc.ss"))
+  (require "semantic/classpath.ss")
+  (require "config.ss")
+
+  #|
+  (define (debug v)
+    ;(fprintf (current-output-port) "DEBUG: ~v~n" v)
+    v)
+
+  ;; class-name : class-file -> string
+  (define (class-name cf)
+    (let ([pool (class-file-pool cf)]
+          [this (class-file-this cf)])
+      (debug (parse-utf8-info
+              (vector-ref pool
+                          (sub1
+                           (class-info-name-index
+                            (vector-ref pool
+                                        (sub1 this)))))))))
+  |#
+
+  (define *target* #f)
+
+  (command-line "trinity" (current-command-line-arguments)
+    (once-each
+     [("-c" "--classpath")
+      classpath
+      "Set the classpath."
+      (current-classpath (path-list-string->path-list classpath null))]
+     [("-s" "--sourcepath")
+      sourcepath
+      "Set the sourcepath."
+      (current-sourcepath (path-list-string->path-list sourcepath null))]
+     [("-t" "--target")
+      target
+      "Sets the target directory."
+      (set! *target* target)])
+    (args rulefiles
+      (current-rules rulefiles)))
+
+  (unless target
+    (error 'trinity "no target directory specified"))
+  (when (null? (current-sourcepath))
+    (error 'trinity "no sourcepath specified"))
+
+  (printf "CLASSPATH: ~v~n" (current-classpath))
+  (printf "SOURCEPATH: ~v~n" (current-sourcepath))
+
+  (define (main)
+    ;(let ([lookup-library-class (read-classpath classpath class-name)])
+    ;  lookup-library-class)))
+    #f)
+
+  (provide main))
