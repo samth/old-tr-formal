@@ -1,5 +1,7 @@
 (require (lib "foreign.ss"))
 
+(unsafe!)
+
 (define libpixman (ffi-lib "libcairo"))
 
 (define-syntax defcairo-full
@@ -59,7 +61,7 @@
 
 (defcairo set-target-ps : _FILE _double _double _double _double)
 
-;(defcairo set-target-png : _FILE _format _int _int)
+(defcairo set-target-png : _FILE _format _int _int)
 
 (defcairo set-operator : _operator)
 
@@ -95,19 +97,19 @@
 
 (defcairo concat-matrix : _cairo_matrix)
 
-(defcairo set-matrix : _cairo_matrix)
+; (defcairo set-matrix : _cairo_matrix)
 
-(defcairo default-matrix)
+; (defcairo default-matrix)
 
-(defcairo identity-matrix)
+; (defcairo identity-matrix)
 
-(defcairo transform-point : (_ptr i _double) (_ptr i _double))
+; (defcairo transform-point : (_ptr i _double) (_ptr i _double))
 
-(defcairo transform-distance : (_ptr i _double) (_ptr i _double))
+; (defcairo transform-distance : (_ptr i _double) (_ptr i _double))
 
-(defcairo inverse-transform-point : (_ptr i _double) (_ptr i _double))
+; (defcairo inverse-transform-point : (_ptr i _double) (_ptr i _double))
 
-(defcairo inverse-transform-distance : (_ptr i _double) (_ptr i _double))
+; (defcairo inverse-transform-distance : (_ptr i _double) (_ptr i _double))
 
 (defcairo new-path)
 
