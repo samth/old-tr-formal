@@ -296,11 +296,11 @@
 
 (define (median l) (list-ref (quicksort l <) (quotient (length l) 2)))
 
-(define 50-up (filter (bounded 50 60) exam-scores))
-(define 45-49 (filter (bounded 45 50) exam-scores))
-(define 40-44 (filter (bounded 40 45) exam-scores))
-(define 30-39 (filter (bounded 30 40) exam-scores))
-(define 0-29 (filter (bounded 0 30) exam-scores))
+; (define 50-up (filter (bounded 50 60) exam-scores))
+; (define 45-49 (filter (bounded 45 50) exam-scores))
+; (define 40-44 (filter (bounded 40 45) exam-scores))
+; (define 30-39 (filter (bounded 30 40) exam-scores))
+; (define 0-29 (filter (bounded 0 30) exam-scores))
 
 
 
