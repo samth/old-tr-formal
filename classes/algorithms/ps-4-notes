@@ -1,0 +1,7 @@
+Problem 1:
+
+Part 1:
+
+Greedy selection of shortest.  Sort first.  Running time n log n + size of solution.
+
+Other probs:  increment chapter, execpt 4 and 8
