@@ -1,0 +1,75 @@
+\documentclass{amsart}
+
+
+\usepackage{graphicx}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{define}{Definition}
+\newcommand{\proofcase}[1]{\item[Case {\textsc {#1}}:]}
+
+
+\begin{document}
+
+\title{Assignment 2}
+\author{Sam Tobin-Hochstadt}
+
+\maketitle
+
+\begin{define}
+We define $E_1 \circ E_2$ inductively on the structure of $E_1$.
+\end{define}
+
+\begin{enumerate}
+\proofcase{$E_1 = []$} Then $E_1 \circ E_2 = E_2$.  \vspace{2mm}
+
+\proofcase{$E_1 = (E'_1\ e)$} Then $E_1 \circ E_2 = (E'_1 \circ E_2\
+e)$. \vspace{2mm}
+
+\proofcase{$E_1 = (op\ E'_1)$} Then $E_1 \circ E_2 = (op\ E'_1 \circ
+E_2)$. \vspace{2mm}
+
+\end{enumerate}
+
+\begin{lemma}
+$(E_1 \circ E_2) \circ E_3 = E_1 \circ (E_2 \circ E_3)$
+\end{lemma}
+
+\begin{proof}
+We proceed by structural induction on $E_1$.
+
+\proofcase{$E_1 = []$} \ \\
+Then we have $([] \circ E_2) \circ E_3 = E_2 \circ E_3 = [] \circ (E_2
+\circ E_3) = E_1 \circ (E_2 \circ E_3)$, since $[]$ is a left and
+right unit for composition of contexts.
+\proofcase{$E_1 = E'_1 \circ ([]\ e)$}\ \\
+Then $ E_1 \circ (E_2 \circ E_3) = (E'_1 \circ ([]\ e)) \circ (E_2
+\circ E_3)$. By applying the induction hypothesis at $E'_1$, this is
+the same as $E'_1 \circ (([]\ e) \circ (E_2 \circ E_3)) = ((E'_1 \circ
+([]\ e)) \circ E_2) \circ E_3$.  Then, by the defintion of $E_1$, this
+is the same as $(E_1 \circ E_2) \circ E_3$.  
+
+
+\proofcase{$E_1 = E'_1 \circ (op\ [])$}\ \\ Identical to the
+above case, with $(op\ [])$ substitued for $([]\ e)$.
+\end{proof}
+
+\begin{theorem}
+  $<E_1[q], E> \rightarrow^* <q,E \circ E_1>$
+\end{theorem}
+
+\begin{proof}
+  We proceed by cases and structural induction on $E_1$.  If $E_1 =
+  []$, then clearly both sides are equivalent to $<q,E>$, and the
+  reduction is complete with 0 steps.  
+
+  If $E_1 = (E'_1 e)$, then by the focus down rule, $<E_1[q], E>
+  \rightarrow <E'_1[q], E \circ ([]\ e)>$. By induction, this reduces
+  to $<q,(E \circ ([]\ e)) \circ E'_1>$ in some number of steps.  By
+  Lemma 1, this is equivalent to $<q,E \circ (([]\ e) \circ E'_1)>$,
+  which is the same as $<q,E \circ E_1>$.
+
+  An identical argument applies if $E_1 = (op E'_1)$.
+\end{proof}
+
+\end{document}
