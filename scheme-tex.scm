@@ -1,4 +1,4 @@
-(module scheme-tex (lib "qstr-lang.ss" "quasistring")
+(module scheme-tex (planet "qstr-lang.ss" ("jacob" "quasistring.plt" 1 0))
   (require (lib "etc.ss") (lib "list.ss") (lib "match.ss"))
   
   (provide (all-defined))

@@ -15,7 +15,7 @@
 
 (
  ("Wesley Werbeck" 1 0)
- ("Christopher Teixeira" 1 0)
+ ("Christopher Teixeira" 1 0 0)
 ("Ryan Lafountain" 1)
 ("Dan Schiffman" 1 0) ;;
 ("Kennethe Eimer" 1)
@@ -24,7 +24,7 @@
 ("Daniel Smedemark-Mar" 1)
 ("Adam Koblentz" 1 0)
 ("Ayellet Damary" 1 0)
-("Suraj Laungani" 1)
+("Suraj Laungani" 1 1 0)
 ("Carmine Silano" 1)
 ("Bassil Silver-Hajo" 1)
 ("Eric Blumenstyk" 1)
@@ -39,10 +39,11 @@
 ("Matthew Schroder" 1)
 ("Andrew Kunkel" 1)
 ("Christopher Boudouvas" 1)
-("Mark Spadea" 1)
-("Chris Masciarelli" 1)
+("Mark Spadea" 1 1 0)
+("Chris Masciarelli" 1 1 0)
 ("Peter Evans" 1)
 ("Matt Horan" 1)
+("Elvin Taullaj" 1 1 0)
 )
 
 ; assignment 3 (out of 35)
