@@ -1,0 +1,11 @@
+Sam TH - Machine Problem 8 - 11/24/03
+
+Date  	Start 	Stop  	Inter	TimeOnTask	Comments
+11/24	2:50	3:00		10		Set up system
+	3:00	3:15		15		some implementing
+	4:00	5:45	30	75		lots of coding (adding state)
+	6:00	8:30	30	120		lots of coding (all coding done)
+	8:30	9:00	10	20		some testing
+	10:00	10:30		30		semantics
+11/25	12:00	12:20		20		implement value restriction
+	3:20	3:45	15	10		printing

@@ -1,0 +1,327 @@
+% Simple Syntactic Constructs
+% ======================
+\newcommand{\Object} {\mbox{\tt Object}}
+\newcommand{\Class} {\mbox{\tt Class}}
+\newcommand {\boolean} {\mbox{\tt boolean}}
+\newcommand {\true} {\mbox{\tt true}}
+\newcommand {\false} {\mbox{\tt false}}
+\newcommand {\class} {\mbox{\tt class}}
+\newcommand {\type} {\mbox{\tt type}}
+%\newcommand {\super} {\mbox{\tt super}}
+\newcommand {\kind} {\mbox{\tt kind}}
+\newcommand {\interface} {\mbox{\tt interface}}
+\newcommand {\extends} {\mbox{\tt extends}}
+\newcommand {\implements}{\mbox{\tt implements}}
+\newcommand {\cimplements}{\mbox{\tt class-implements}}
+\newcommand {\new}[2] {\mbox{\tt new\angles{\ensuremath {\ov #1}}\parens{\ensuremath {\ov #2}}}}
+\newcommand {\newsub}[3] {\mbox{\tt new$_{#1}$\angles{\ensuremath {\ov {#2}}}\parens{\ensuremath {\ov #3}}}}
+\newcommand {\instanceof} {\mbox{\tt instanceof}}
+\newcommand {\this} {\mbox{\tt this}}
+\newcommand {\init} {\mbox{\tt init}}
+\newcommand {\return} {\mbox{\tt return}}
+\newcommand {\with} {\mbox{\tt with}}
+\newcommand{\semicolon}{\mbox{\tt ;}}
+\newcommand{\eq}{\mbox{\tt\ =\ }}
+\newcommand{\invoke}[2]{\mbox{{\ensuremath {#1}}{\tt .}{\ensuremath{#2}}}}
+\newcommand{\comma}{\mbox{\tt ,}}
+\newcommand{\assign}{\mbox{\tt\ = }}
+\newcommand{\parens}[1]{\mbox{\tt (}#1\mbox{\tt )}}
+\newcommand{\angles}[1]{\mbox{\tt <}#1\mbox{\tt >}}
+\newcommand{\braces}[1]{\mbox{\tt \{}#1\mbox{\tt \}}}
+\newcommand{\brackets}[1]{\mbox{\tt [}#1\mbox{\tt ]}}
+\newcommand{\fieldAnnotation}[1]{{\mbox {\tt \$}}#1}
+\newcommand{\typeof}[1]{{\mbox {\tt typeOf\brackets {\ensuremath{#1}}}}}
+
+\def\txt{\tt \small}
+
+\newcommand{\cast}[2]{\mbox{\tt \parens{#1}{\ensuremath {#2}}}}
+
+\newcommand{\implSym} {\ensuremath \sqsubset}
+\newcommand{\superSym} {\ensuremath \triangleleft}
+\newcommand{\kindSym} {\ensuremath :}
+
+\newcommand{\Cpp}{C++}
+
+\newcommand{\FGJ}{Featherweight GJ}
+\newcommand{\FJ}{Featherweight Java}
+
+% Meta-language Constructs
+% =====================
+\newcommand{\newfrac}[2] {
+       \frac
+               {#1}
+               {#2 \rule{0pt}{11pt}}
+}
+\newcommand{\newrule}[2] {
+ \ensuremath {
+   {#1}
+   {\ruleLabel{#2}}
+}}
+
+\newcommand{\newinfrule}[3] {
+ \newrule
+ { \newfrac
+   {\displaystyle #1}
+   {\displaystyle #2}
+ }
+ {#3}
+}
+
+\newcommand{\newinfruleTwo}[4]
+{
+ \newinfrule
+     {
+       \begin{array}{c}
+         {#1}
+         \\
+           {#2}
+       \end{array}
+     }
+     {#3}
+     {#4}
+}
+\newcommand{\newinfruleTwoH}[4]
+{
+ \newinfrule
+     {
+       \begin{array}{cc}
+         {#1}
+         &
+         {#2}
+       \end{array}
+     }
+     {#3}
+     {#4}
+}
+
+\newcommand{\newinfruleThree}[5]
+{
+ \newinfrule
+     {
+       \begin{array}{c}
+         {#1}
+         \\
+           {#2}
+           \\
+             {#3}
+       \end{array}
+     }
+     {#4}
+     {#5}
+}
+
+\newcommand{\newinfruleFour}[6]
+{
+ \newinfrule
+     {
+       \begin{array}{c}
+         {#1} \\
+         {#2} \\
+         {#3} \\
+         {#4}
+       \end{array}
+     }
+     {#5}
+     {#6}
+}
+
+\newcommand{\HarrayTwo}[2]
+{\begin{array}{cc}
+   {#1}\quad & {#2}
+\end{array}}
+
+\newcommand{\HarrayThree}[3]
+{\begin{array}{ccc}
+   {#1}\quad & {#2}\quad& {#3}
+\end{array}}
+
+\newcommand{\A}{\mbox {\tt A}}
+\newcommand{\B}{\mbox {\tt B}}
+\newcommand{\CL}{\mbox {\tt CL}}
+\newcommand{\C}{\mbox {\tt C}}
+\newcommand{\D}{\mbox {\tt D}}
+\newcommand{\F}{\mbox {\tt F}}
+\newcommand{\GG}{\mbox {\tt G}}
+\newcommand{\HH}{\mbox {\tt H}}
+\newcommand{\Gp}{\mbox {\tt G$'$}}
+\newcommand{\Ip}{\mbox {\tt I$'$}}
+\newcommand{\I}{\mbox {\tt I}}
+\newcommand{\Jp}{\mbox {\tt J$'$}}
+\newcommand{\J}{\mbox {\tt J}}
+\newcommand{\K}{\mbox {\tt K}}
+\newcommand{\Lp}{\mbox {\tt L$'$}}
+\newcommand{\Mp}{\mbox {\tt M$'$}}
+\newcommand{\M}{\mbox {\tt M}}
+\newcommand{\N}{\mbox {\tt N}}
+\newcommand{\OO}{\mbox{\tt O}}
+\newcommand{\PP}{\mbox {\tt P}}
+\newcommand{\Q}{\mbox {\tt Q}}
+\newcommand{\R}{\mbox {\tt R}}
+\newcommand{\SSS}{\mbox {\tt S}}
+\newcommand{\Sp}{\mbox {\tt S$'$}}
+\newcommand{\Tp}{\mbox {\tt T$'$}}
+\newcommand{\T}{\mbox {\tt T}}
+\newcommand{\Upp}{\mbox {\tt U$''$}}
+\newcommand{\Up}{\mbox {\tt U$'$}}
+\newcommand{\U}{\mbox {\tt U}}
+\newcommand{\V}{\mbox {\tt V}}
+\newcommand{\Wp}{\mbox {\tt W$'$}}
+\newcommand{\W}{\mbox {\tt W}}
+\newcommand{\X}{\mbox {\tt X}}
+\newcommand{\Y}{\mbox {\tt Y}}
+\newcommand{\Z}{\mbox {\tt Z}}
+\newcommand{\bb}{\mbox {\tt b}}
+\newcommand{\dd}{\mbox {\tt d}}
+\newcommand{\ep}{\mbox {\tt e$'$}}
+\newcommand{\e}{\mbox {\tt e}}
+\newcommand{\fp}{\mbox {\tt f$'$}}
+\newcommand{\f}{\mbox {\tt f}}
+\newcommand{\g}{\mbox {\tt g}}
+\newcommand{\h}{\mbox {\tt h}}
+\newcommand{\m}{\mbox {\tt m}}
+\newcommand{\oF}{\ov \F}
+\newcommand{\oG}{\ov \GG}
+\newcommand{\oH}{\ov \HH}
+\newcommand{\oI}{\ov \I}
+\newcommand{\oJp}{\ov \Jp}
+\newcommand{\oJ}{\ov \J}
+\newcommand{\oM}{\ov \M}
+\newcommand{\oN}{\ov \N}
+\newcommand{\oR}{\ov \R}
+\newcommand{\oS}{\ov \SSS}
+\newcommand{\oSp}{\ov \Sp}
+\newcommand{\oTp}{\ov \Tp}
+\newcommand{\oT}{\ov \T}
+\newcommand{\oU}{\ov \U}
+\newcommand{\oV}{\ov \V}
+\newcommand{\oW}{\ov \W}
+\newcommand{\oX}{\ov \X}
+\newcommand{\oY}{\ov \Y}
+\newcommand{\od}{\ov \dd}
+\newcommand{\of}{\ov \f}
+\newcommand{\ofp}{\ov \fp}
+\newcommand{\og}{\ov \g}
+\newcommand{\oh}{\ov \h}
+\newcommand{\ox}{\ov \x}
+\newcommand{\production}{\mbox ::=}
+\newcommand{\rr}{\mbox {\tt r}}
+\newcommand{\x}{\mbox {\tt x}}
+\renewcommand{\L}{\mbox {\tt L}}
+\renewcommand{\oe}{\ov \e}
+
+\newcommand{\G}[1]{\Gamma({#1})}
+
+% Values
+\newcommand{\vv}{\mbox {\tt v}}
+
+\newcommand{\ov}[1]{{\overline{{#1}}}}
+\newcommand{\asterick}{\mbox{\tt *}}
+\newcommand{\ruleLabel}[1]{\mbox{\bfseries \sc \hspace{0cm} [#1]}} % format for labels on rules
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{define}{Definition}
+\newcommand{\case}[1]{\paragraph{{\it Case }{\bfseries #1:}}}
+% \newcommand{\subcase}[1]{\paragraph{{\it Subcase }{\bfseries #1:}}}
+\newcommand{\includesConstructor}{\mbox{\it{includes-constructor}}}
+\newcommand{\includes}{\mbox{\it{includes}}}
+\newcommand{\myImplies}{\mbox{ implies }}
+\newcommand{\andAlso}{\mbox{ and }}
+\newcommand{\orElse}{\mbox{\bfseries{ or }}}
+
+\newcommand{\mtype}[2]{\mbox{{\it{mtype}}\ensuremath {(#1,#2)}}}
+\newcommand{\methods}[1]{\mbox{{\it{methods}}\ensuremath {(#1)}}}
+\newcommand{\cmtype}[2]{\mbox{{\it{cmtype}}(\ensuremath {#1,#2})}}
+\newcommand{\tmtype}[2]{\mbox{{\it{tmtype}}(\ensuremath {#1,#2})}}
+\newcommand{\mbody}[2]{\mbox{{\it{mbody}}\ensuremath {(#1,#2)}}}
+\newcommand{\tmbody}[2]{\mbox{{\it{tmbody}}(\ensuremath {#1,#2})}}
+\newcommand{\cmbody}[2]{\mbox{{\it{cmbody}}(\ensuremath {#1,#2})}}
+
+\newcommand{\mbodySimple}{\mbox{\it{mbody-simple}}}
+\newcommand{\chain}{\mbox{\bfseries{chain}}}
+\newcommand{\super}[1]{\mbox{{\it{super}}{\ensuremath {(#1)}}}}
+\newcommand{\fields}[1]{\mbox{{\it{fields}}{\ensuremath {(#1)}}}}
+\newcommand{\fieldVals}[1]{\mbox{{\it{field-vals}}{\ensuremath {(#1)}}}}
+\newcommand{\fnames}[1]{\mbox{{\it{fnames}}({\ensuremath {#1}})}}
+\newcommand{\cfields}[1]{\mbox{{\it{cfields}}({\ensuremath {#1}})}}
+\newcommand{\allFields}{\mbox{\it{all-fields}}}
+\newcommand{\implementer}{\mbox{\it{implementer}}}
+\newcommand{\typeParamsFun}{\mbox{\it{type-params}}}
+\newcommand{\override}[3]{\mbox{{\it{override}}\ensuremath{({#1}, {#2}, {#3})}}}
+\newcommand{\ok}{\mbox{\textrm {\ ok}}}
+\newcommand{\okin}{\mbox{\ ok in}}
+\newcommand{\cokin}{\mbox{\ cok in}}
+\newcommand{\dom}[1]{\mbox{\it dom}\parens{#1}}
+\newcommand{\typeparams}[1]{\mbox{\it params}{\ensuremath {(#1)}}}
+%\newcommand{\CT}{\mbox{\it CT}}
+\newcommand{\proves}[2]{\ensuremath {{#1} \vdash {#2}}}
+\newcommand{\egproves}[1]{\ensuremath {\proves {\emptyset;\Gamma} {\ensuremath {#1}}}}
+\newcommand{\eproves}[1]{\ensuremath {\proves {\emptyset} {\ensuremath {#1}}}}
+\newcommand{\eeproves}[1]{\ensuremath {\proves {\emptyset;\emptyset} {\ensuremath {#1}}}}
+\newcommand{\dproves}[1]{\proves \Delta {#1}}
+\newcommand{\subtype}[2]{\ensuremath{{#1} \subtypeSym {#2}}}
+\newcommand{\subtypeSym}{{\ <:\ }}
+\newcommand{\notsubtype}[2]{\ensuremath{{#1} \not< : {#2}}}
+\newcommand{\citeRule}[1]{{\it \bfseries #1}}
+\newcommand{\myProof}{\paragraph{\it Proof}}
+\newcommand{\bound}{\mbox{\it bound}}
+\newcommand{\boundDelta}[1]{\bound_{\Delta}(\ensuremath{#1})}
+\newcommand{\annotate}{\mbox {\it annotate}}
+\newcommand{\transarrow}{\ensuremath{\rightarrow^*}}
+%\newcommand{\transarrow}{\ensuremath{\sideset{}{^*}\rightarrow}} % looks better, gives error
+\newcommand{\trans}[2]{\ensuremath{{#1}} \ensuremath {\rightarrow} \ensuremath{#2}}
+\newcommand{\phiof}[2]{\Phi_{\ensuremath {#1}}({\ensuremath {#2}})}
+
+% Typing Constructs (used in Typing Rules, below)
+% =======================================
+\newcommand{\boundsEnv}[2]{\overline{#1} \triangleleft \overline{#2}}
+\newcommand{\withEnv}[2]{\overline{#1} \bowtie \overline{\braces{\overline{#2}}}}
+\newcommand{\typeEnv}[2]{\overline{#1} : \overline{#2}}
+\newcommand{\mapping}[3]{\{{#1} \mapsto {\ensuremath {#2}}\}_{\ensuremath #3}}
+\newcommand{\substitute}[2]{[{#1} \mapsto {#2}]}
+\newcommand{\substituteTwoArg}[4]{[{#1} \mapsto {#2},{#3} \mapsto {#4}]}
+\newcommand{\substituteThreeArg}[6]{[{#1} \mapsto {#2},{#3} \mapsto {#4},{#5} \mapsto {#6}]}
+\newcommand{\methType}[4]{\langle \overline{#1} \triangleleft \overline{#2} \rangle \overline{#3} \rightarrow #4}
+
+% Helper Expressions
+% ================
+%\newcommand{\typeArg}[1]{\angles{#1}}
+%\newcommand{\typeArgs}[1] {\angles{\overline{#1}}}
+\newcommand{\typeArg}[2] {{#1}\angles {#2}}
+\newcommand{\typeArgs}[2] {{#1}\angles {\overline{#2}}}
+\newcommand{\typeArgsBounds}[4] {{#1}\angles {\overline{#2} \superSym {\parens {{\overline{#3}}, {\overline{#4}}} }}}
+\newcommand {\typeParams}[3]{\angles{{\overline{#1}\ \extends\ {\overline{#2}}\ \with\ \overline{\braces{\overline{#3}}}}}}
+\newcommand{\params}[2]{\parens{\overline{#1}\ \overline{#2}}}
+\newcommand{\args}[1]{\parens{\overline{#1}}}
+\newcommand{\body}[1]{{\tt \{ return\ }{#1}{\tt ; \}}}
+\newcommand{\typ}[2]{\ensuremath{{#1} : {#2}}}
+
+% Complex Syntactic Constructs
+% ========================
+
+\newcommand{\typeFront}[3]{\class\ #1 \kindSym #2 \superSym #3}
+\newcommand{\typeDefShort}[3]{{\typeFront {#1} {#2} {#3}}\ \braces{...}}
+\newcommand{\interfaceFront}[2]{\interface\ #1\ \implSym #2}
+\newcommand{\interfaceShort}[2]{\interfaceFront {#1} {#2}\ \braces{...}}
+\newcommand{\interfaceDef}[3]{\interfaceFront {#1} {#2}\ \braces{#3}}
+\newcommand{\typeDef}[7]{{\typeFront {#1} {#2} {#3}}\ \braces{{#4};\ {#5};\ {#6};\ {#7};}}
+
+\newcommand{\classFront}[5]{\class\ #1 {\typeParams {#2} {#3} {#4}}\ \extends\ {#5}}
+\newcommand{\classDef}[5]{\classFront {#1} {#2} {#3} {#4} {#5}\ \braces{{\overline{\T}}\ {\overline{\f}} \semicolon\ \overline{\K}\ \overline{\M}}}
+\newcommand{\classDefShort}[5]{\classFront {#1} {#2} {#3} {#4} {#5}\ \braces{...}}
+\newcommand{\constructorVarDef}[6]{#1\parens{\overline{#2}\ \overline{#3}} \braces{\super\parens{\overline{#4}}\semicolon \this\invoke\overline{#5} \assign \overline{#6}\semicolon}}
+\newcommand{\constructorDef}{\C \parens{\overline{\T}\ \overline{\x}}\ \braces{\super\parens{\overline{\e}}\semicolon \this.\overline{\f} \assign \overline{\e'} \semicolon}}
+\newcommand{\constructorDefShort}{\C \parens{\overline{\T}\ \overline{\x}}\ \braces{...}}
+\newcommand{\constructorDefVarShort}[1]{\C \parens{\overline{\T}\ \overline{#1}}\ \braces{...}}
+\newcommand{\constructorDecl}{\init \parens{\overline{\T}\ \overline{\x}} \semicolon}
+\newcommand{\methodFront}[4]{{#1} \ {#2} \ {\params {#3} {#4}}}
+\newcommand{\methodDef}[5]{{\methodFront {#1} {#2} {#3} {#4}} \ {\body {#5}}}
+\newcommand{\methodDecl}[4]{\methodFront {#1} {#2} {#3} {#4};}
+%\newcommand{\mtypeDef}[5]{{\typeParams #1 #2 #3}\overline{#4}\rightarrow #5}
+\newcommand{\arrType}[2]{{\ensuremath {#1} {\ensuremath \rightarrow} \ensuremath {#2}}}
+
+\newcommand{\proofcase}[1]{\item[Case {#1}:]}
+\newcommand{\subcase}[1]{\item[Subcase {#1}:]}
+\newcommand{\rulename}[1]{[{\textsc {#1}}]}
+
+\newcommand{\eept}[2]{\eeproves {\typ {#1}{#2}}}
+\newcommand{\esub}[2]{\eproves {\subtype {#1}{#2}}}

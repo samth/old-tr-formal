@@ -1,0 +1,90 @@
+Keep in your mail buffer until Monday. I intend to send out solutions  
+for
+the homework problems tomorrow. -- Matthias
+
+
+CSU211			28 October  		  Quiz 4
+
+
+Copy each question on a separate sheet of paper. Make 15 copies of
+each. Mix. Mix a lot. Hand out a mixed batch to the students in your
+lab. Allow 10 minutes.  Students must write down their answers on the
+hand-outs.
+
+------------------------------------------------------------------------ 
+-----
+
+You must solve the following problem with one of these looping  
+functions:
+
+   ;; map : (X -> Y) (Listof X) -> (Listof Y)
+   ;; (map f (list x ...)) = (list (f x) ...)
+   ;; (define (map f lox) ...)
+
+   ;; fold : (X Y -> Y) Y (listof X) -> Y
+   ;; (fold f base (list x-1 ... x-n)) = (f x-1 ... (f x-n base))
+   (define (fold f base alox) ...)
+
+   ;; filter : (X -> boolean) (listof X) -> (listof X)
+   ;; to construct a list from all those items on _alox_ for which _p_  
+holds
+   (define (filter p alox) ...)
+
+You may use local or lambda to define the auxiliary "action" function  
+for
+your loop.
+
+------------------------------------------------------------------------ 
+-----
+
+Question 1:
+-----------
+
+Develop the function all-x, which consumes a list of Posn-s and produces
+the list of x coordinates.
+
+Please recall:
+
+(define-struct posn (x y))
+;; A Posn is: (make-posn Number Number)
+
+
+Question 2:
+-----------
+
+Develop the function all-grades, which consumes a list of student  
+records
+and produces the list of their gpas.
+
+Note:
+
+(define-struct record (name gpa))
+;; A Record is: (make-record String Number)
+
+Question 3:
+-----------
+
+Develop the function all-widths, which consumes a list of squares
+and produces the list of their widths.
+
+Note:
+
+(define-struct square (height width))
+;; A Square is: (make-square Number Number)
+
+------------------------------------------------------------------------ 
+-----
+
+Grading guidelines: Spend less than 10 seconds per quiz:
+
+  ** If it looks approximately right (some of: a contract, purpose, 2  
+cond
+     lines, one recursive call, one or two examples), give the students  
+the
+     benefit of the doubt (1).
+
+  ** If it looks really wrong (not just parentheses or missing simple
+     things) or if it's blank, give them a 0.
+
+Report 0 as homework grade for the respective students. For
+the others, there is nothing to report.

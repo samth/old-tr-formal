@@ -1,0 +1,24 @@
+Quiz Week 9
+
+Name -
+
+Instructor -
+
+------------------------------------------------------------------------
+                                                                             
+Develop the function averages, which consumes a non-empty list of
+numbers
+and produces the list of averages for all neighboring pairs.
+                                                                             
+Recall that a non-empty list of numbers is defined as follows:
+                                                                             
+NELON is one of:
+ -- (cons Number empty)
+ -- (cons Number NELON)
+                                                                             
+You must use an accumulator-style helper function. Show examples for
+both functions. Don't forget to write down what the accumulator
+represents.
+                                                                             
+------------------------------------------------------------------------
+

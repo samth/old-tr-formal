@@ -1,0 +1,46 @@
+; Assignment 1 (of 20)
+
+(("Chris Mascarelli" 17)
+ ("Christopher Chalifour" 19)
+ ("Dean Nikilopoulos" 17))
+
+; Assignment 2 (of 19)
+
+(("Matt Horan" "Peter Evans" 21)
+("Lee Fogel" "???" 14)
+("Eric Blumenstyk" "Bassil Silver-Hajo" 15)
+)
+
+; Quiz (for assignment 2)
+
+(
+ ("Wesley Werbeck" 1 0)
+ ("Christopher Teixeira" 1 0)
+("Ryan Lafountain" 1)
+("Dan Schiffman" 1 0) ;;
+("Kennethe Eimer" 1)
+("Thomas Cody" 1) ;;
+("Michael Reid" 1 0)
+("Daniel Smedemark-Mar" 1)
+("Adam Koblentz" 1 0)
+("Ayellet Damary" 1 0)
+("Suraj Laungani" 1)
+("Carmine Silano" 1)
+("Bassil Silver-Hajo" 1)
+("Eric Blumenstyk" 1)
+("Lee Fogel" 1)
+("Christina Carter" 1 0)
+("Alexander Typaldos" 1)
+("Aaron Tatko" 1)
+("Gregg Hurson" 1 0)
+("Christos Goumenos" 1)
+("Marc Mestre" 1 0)
+("Jeffrey Begin" 1)
+("Matthew Schroder" 1)
+("Andrew Kunkel" 1)
+("Christopher Boudouvas" 1)
+("Mark Spadea" 1)
+("Chris Masciarelli" 1)
+("Peter Evans" 1)
+("Matt Horan" 1)
+)

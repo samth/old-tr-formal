@@ -1,0 +1,17 @@
+%include "default.mgp"
+
+%page
+
+Local Definitions
+
+%page
+
+Why Do We Need Local Defintions
+
+	Give names to intermediate results
+	Avoid repeated typing
+	Protect our code
+
+%page
+
+Giving Names To Results

@@ -1,0 +1,755 @@
+\newcommand{\syntax}
+{
+ \ensuremath{
+       \begin{array}{rcll}
+               \CL     & \production   & \fullClassSyntax  & \textrm{class declaration}\\ [2mm]
+
+               \N      & \production    & \simpleMethodSyntax & \textrm{method declaration}\\
+	       \M      & \production	& {\txt class}\ \simpleMethodSyntax & \textrm{class method declaration}\\[2mm]
+
+               \e      & \production    & \x                                           & \textrm{variable reference}\\
+                       & |                     & {\invoke \e \f}                               & \textrm{field access}\\
+                       & |                     & {\invoke \e {\mof \e}} & \textrm{method invocation}\\
+                       & |                             & {\newsub \C \R  \e}                   & \textrm{instance creation}\\
+                       & |                             & {\cast \T \e}                         & \textrm{cast}\\
+                       & |                             & {\R} & \textrm{type reference}\\
+			& |				& {\Phi_{\GG}} & \textrm{mapping}\\[2mm]
+
+               \T      & \production   & \R & \textrm{non-{\txt typeOf} type}\\
+                       & |             & {\typeof \R}                                          & \textrm{{\txt typeOf} application}\\ [2mm]
+
+               \R      & \production   & \X                                            & \textrm{type variable}\\
+                       & |             & \A                                            & \\ [2mm]
+
+               \A      & \production   & {\typeArgs \C \R}                     & \textrm{type application}\\
+                       & |             & \Object                                       &       \\
+       \end{array}
+}
+}
+
+% Subtyping
+% ========
+% Delta |- T <: T
+\newcommand{\subtypingIsReflexive}
+{
+\newrule
+       {\dproves {\subtype \T \T }}
+       {S-Reflex}
+
+}
+
+% Delta |- X <: Delta(X)
+\newcommand{\varsAreSubtypesOfTheirBounds}
+{
+\newinfrule
+   {\X \superSym \T \in \Delta}
+   {\dproves {\subtype \X \T}}
+   {S-Bound}
+}
+
+\newcommand{\simpleClass}{\typeDefShort {\typeArgsBounds \C \X \I \J} \B \A}
+\newcommand{\fullClass}{\typeDef {\typeArgsBounds \C \X \I \J} \B \A {{\ov \T}\ {\ov \f}\ {\ov \e}} {\ov \M} {{\ov \W}\ {\ov \g}} {\ov \N}}
+\newcommand{\fullClassSyntax}{\typeDef {\typeArgsBounds \C \X \T \T} \A \A {{\txt class}\ \Tfe} \oM {\oT\ \of} \oN}
+\newcommand{\simpleInter}{\interfaceShort {\typeArgsBounds \I \X \L \Lp} \J}
+\newcommand{\fullInter}{\interfaceDef {\typeArgsBounds \I \X \L \Lp} \J \oM}
+
+\newcommand{\CS}{\typeArgs \C \SSS}
+\newcommand{\CSp}{\typeArgs \C \Sp}
+\newcommand{\CR}{\typeArgs \C \R}
+\newcommand{\CX}{\typeArgs \C \X}
+\newcommand{\IS}{\typeArgs \I \SSS}
+
+\newcommand{\SforX}{\substitute {\overline {\X}} {\overline {\SSS}}}
+\newcommand{\SpforX}{\substitute {\overline {\X}} {\overline {\Sp}}}
+
+% Delta |- S <: T       Delta |- T <: U
+% --------------------------------------------
+%                Delta |- S <: U
+\newcommand{\subtypingIsTransitive}
+{
+\newinfrule
+   {
+     \begin{array}{cc}
+       \dproves {\subtype \V \T} & \dproves {\subtype \T \U}
+     \end{array}
+   }
+   {
+     \dproves {\subtype \V \U}
+   }
+   {S-Trans}
+}
+
+\newcommand{\subtypingTuples}
+{
+\newinfrule
+   {\dproves {\subtype {\overline {\SSS}} {\overline {\T}}}}
+   {\dproves {\subtype {\parens {\overline {\SSS}}} {\parens {\overline {\T}}}}}
+   {S-Tuple}
+}
+
+\newcommand{\subtypeRuleTemplate}[3]
+{
+\newinfrule
+   {
+     CT(\C)= \simpleClass
+   }
+   {
+     \dproves {\subtype {#1} {#2}}
+   }
+   {#3}
+}
+
+\newcommand{\subtypeRuleTemplateI}[3]
+{
+\newinfrule
+   {
+     CT(\I)= \simpleInter
+   }
+   {
+     \dproves {\subtype {#1} {#2}}
+   }
+   {#3}
+}
+
+\newcommand{\interfaceSubtype}
+{\subtypeRuleTemplateI \IS {\SforX \J} {S-Inter}}
+
+% An instantiated class is a subtype of the instantiation of its parent,
+\newcommand{\subtypeOfSuper}
+{\subtypeRuleTemplate \CS {\SforX \A} {S-Super}}
+
+% An class is a subtype of the instantiation of its kind,
+\newcommand{\subtypeOfKind}
+{\subtypeRuleTemplate {\typeof \CS} {\SforX \B} {S-Kind}}
+
+% An instantiation of a class is a subtype of the interfaces it implements
+\newcommand{\subtypeOfImplements}
+{\subtypeRuleTemplate \CS {\SforX \I} {S-Impl}}
+
+% A class is a subtype of the interfaces it implements
+\newcommand{\subtypeOfCImplements}
+{\subtypeRuleTemplate {\typeof \CS} {\SforX \Ip} {S-CImpl}}
+
+% Type bounds
+
+\newcommand{\boundVar}{\ensuremath {\bound_{\Delta}(\X) = \Delta(\X)}}
+\newcommand{\boundTypeof}{\ensuremath {\bound_{\Delta}({\typeof \X}) = \Delta({\typeof \X})}}
+\newcommand{\boundClass}{\ensuremath {\bound_{\Delta}(\SSS) = \SSS}}
+
+% Well formed constructs
+
+\newcommand{\dprovesok}[1]{\dproves {#1} \ok}
+\newcommand{\dprovesokin}[2]{\dproves {#1} \okin\ {#2}}
+
+% Object is ok
+
+\newcommand{\objectOK} {\newrule {\dprovesok \Object} {WF-Object}}
+
+\newcommand{\typeofOK}
+{
+ \newinfrule
+ {\dprovesok \T}
+ {\dprovesok {\typeof \T}}
+ {WF-Typeof}
+}
+
+% Variable references are ok
+
+\newcommand{\varOK}
+{
+\newinfrule
+   {\dproves {\subtype \X \T}}
+   {\dprovesok \X}
+   {WF-Var}
+}
+
+% Classes applied to arguments are ok
+
+\newcommand{\classrefOK}
+{
+ \newinfruleTwo
+     {CT(\C) = \simpleClass}
+     {\begin{array}{ccc}
+         {\dproves {\subtype {\overline {\SSS}} {{\SforX} {\overline {\I}}}}}
+         &
+         {\dproves {\subtype {\typeof {\overline {\SSS}}} {{\SforX} {\overline {\J}}}}}
+         &
+         {\dprovesok {\overline {\SSS}}}
+       \end{array}
+     }
+     {\dprovesok \CS}
+     {WF-Class}
+}
+
+\newcommand{\simpleMethod}{\methodDef \U \m \T \x {\e}}
+\newcommand{\simpleMethodSyntax}{\methodDef \T \m \T \x \e}
+\newcommand{\deltaDef}{\Delta = \{{\oX \superSym \oI},{{\typeof \oX} \superSym \oJ}\}}
+
+\newcommand{\cmethodOK}
+{
+ \newinfruleFour
+     { CT(\C) = \simpleClass }
+     {
+       \begin{array}{cc}
+         {\deltaDef} &
+         {\Gamma = \{{\typ {\ov \x} {\ov \T}}, {\typ \this {\typeof {\typeArgs \C \X}}}\}}
+       \end{array}
+     }
+     {
+       \begin{array}{ccc}
+         {\dprovesok {\ov \T}} & {\dprovesok {\ov \U}} & {\override \m \B {\arrType {\ov \T} {\ov \U}}}
+       \end{array}
+     }
+     {
+       \begin{array}{cc}
+         {\proves {\Delta;\Gamma} {\typ {\oe} {\ov \W}}} &
+         {\dproves {\subtype {\ov \W} {\ov \U}}}
+       \end{array}
+     }
+     {\simpleMethod \cokin \ \C}
+     {WF-CMethod}
+}
+\newcommand{\methodOK}
+{
+ \newinfruleFour
+     { {\typeparams \GG}  = {\oX \implSym {\parens {\oI, \oJ}}}}
+     {
+       \begin{array}{cc}
+         {\deltaDef} &
+         {\Gamma = \{{\typ {\ov \x} {\ov \T}}, {\typ \this \GG}\}}
+       \end{array}
+     }
+     {
+       \begin{array}{ccc}
+         {\dprovesok {\ov \T}} & {\dprovesok \U} & {\override \m {\super \GG} {\arrType {\ov \T} \U}}
+       \end{array}
+     }
+     {
+       \begin{array}{ccc}
+         {\proves {\Delta;\Gamma} {\typ \e \W}} &
+         {\dproves {\subtype \W \U}}&
+       \end{array}
+     }
+     {\simpleMethod \okin \ \GG}
+     {WF-Method}
+}
+
+\newcommand{\classOK}
+{
+ \newinfrule
+ {
+   \begin{array}{c}
+     {\HarrayThree {\oM \okin \ {\typeof \CX}} {\oN \okin \ \CX} {\deltaDef}} \\
+     {
+       \begin{array}{cccccc}
+          {\dprovesok \B}& {\dprovesok \A} & {\dprovesok \I} &   {\dprovesok \oJ} &{\dprovesok \oT} & {\dprovesok {\ov \W}}
+       \end{array}
+     } \\
+     {\HarrayThree {{\fields \B} \subseteq {\oT\ {\ov \f}}} {\proves {\Delta;\emptyset} {\typ {\oe} {\oTp}}} {\esub \oTp \oT}} \\
+     {\forall\ {\newsub \D \SSS \dd} \in \oe, \oM, \oN.\ \ \D = \C}
+   \end{array}
+ }
+ {\fullClass \ok}
+ {WF-ClassDef}
+}
+
+%% Congruence rules
+
+\newcommand{\ee}{\trans {\e} {\ep}}
+\newcommand{\oep} {\ov \ep}
+\newcommand{\oee}{\trans {\oe} \oep}
+
+% field access
+
+\newcommand{\congTempl}[3]
+{
+ \newinfrule
+     {\ee}
+     {\trans {#1} {#2}}
+     {#3}
+}
+
+\newcommand{\congTemplTwo}[3]
+{
+ \newinfrule
+     {\oee}
+     {\trans {#1} {#2}}
+     {#3}
+}
+
+\newcommand{\mof}[1]{\m\parens{\ov {#1}}}
+
+\newcommand{\fieldCong}
+{\congTempl {\invoke \e \f} {\invoke {\ep} \f} {C-Field}}
+
+\newcommand{\rcvrCong}
+{\congTempl {\invoke \e {\mof \dd} } {\invoke {\ep} {\mof \dd} } {C-Rcvr}}
+
+\newcommand{\argCong}
+{\congTemplTwo {\invoke \dd {\mof \e} } {\invoke \dd {\mof \ep} } {C-Arg}}
+
+\newcommand{\newCong}
+{\congTemplTwo {\newsub \C \SSS \e} {\newsub \C \SSS \ep} {C-New}}
+
+\newcommand{\castCong}
+{\congTempl {\cast \T \e} {\cast \T \ep} {C-Cast}}
+
+\newcommand{\mapCong}
+{\congTemplTwo {\mapping \of \oe \GG} {\mapping \of \oep \GG}  {C-Mapping}}
+
+\newcommand{\seqCong}
+{\newinfrule
+ {\trans \e_i \e_i'}
+ {\trans {\e_1,...,\e_i,...}  {\e_1,...,{\e_i'},...}}
+ {C-Seq}
+}
+
+\newcommand{\tupleCong}
+{\congTempl {\parens {..., \e,...}} {\parens {..., \ep,...}} {C-Tuple}}
+
+%% Computation rules
+
+\newcommand{\newComp}
+{\newinfrule
+ {{\fields \CS} = \oT\ \of}
+ {\trans {\newsub \C \SSS \vv} {\mapping \of {\ov \vv} \CS}}
+ {R-New}
+}
+
+\newcommand{\objectComp}
+{\newrule {\trans \Object {\{\}_{\Object}}} {R-Object}}
+
+\newcommand{\classComp}
+{\newinfrule
+ {\fieldVals {\typeof \CS} = \Tfe}
+ {\trans \CS {\mapping \of \oe {\typeof \CS}}}
+ {R-Class}
+}
+
+\newcommand{\fieldComp}
+{
+ \newrule
+     {\trans {\invoke {\ensuremath {\Phi_{\GG}}} \f} {\phiof \GG \f}}
+     {R-Field}
+}
+
+\newcommand{\phig}{\ensuremath {\Phi_{\GG}}}
+
+\newcommand{\castComp}
+{
+ \newinfrule
+     {\proves \emptyset {\subtype \GG \T}}
+     {\trans {\cast \T \phig}  \phig}
+     {R-Cast}
+}
+
+\newcommand{\methComp}
+{
+ \newinfrule
+     {{\mbody \m \GG} = ( {\overline {\x} }, {\ov \e_0} ) }
+     {\trans {\invoke {\Phi_{\GG}} {\mof \dd}} {{\substituteTwoArg {\overline {\x}} {\ov \dd}  \this {\Phi_{\GG}}} {\ov \e_0}}}
+     {R-Invk}
+}
+
+%% Expression typing
+
+%\newcommand{\adgprove}[1]{\proves {\A;\Delta;\Gamma} {#1}}
+\newcommand{\dgprove}[1]{\proves {\Delta;\Gamma} {#1}}
+
+\newcommand{\varType}
+{\newrule{\dgprove {\typ \x {\G \x}}}{T-Var}}
+
+\newcommand{\tupleType}
+{\newinfrule
+ {\dgprove {\typ {\overline {\e}} {\overline {\SSS}}}}
+ {\dgprove {\typ {\parens {\overline {\e}}} {\parens {\overline {\SSS}}}}}
+ {T-Tuple}
+}
+
+\newcommand{\castType}
+{\newinfruleTwoH
+ {\dprovesok \T}
+ {\dgprove {\typ \e \U}}
+ {\dgprove {\typ {\cast \T \e} \T}}
+ {T-Cast}
+}
+
+\newcommand{\fieldType}
+{\newinfruleTwo
+ {\dgprove {\typ \e \U}}
+ {{\fields{\boundDelta \U}} = \oT\ \of}
+ {\dgprove {\typ {\invoke \e \f_i} \T_i}}
+ {T-Field}
+}
+
+\newcommand{\mapType}
+{
+ \newinfruleTwo
+     {{\fields \GG} = \Tf}
+     {\HarrayTwo
+       {\dgprove {\typ \oe \oS}}
+       {\dproves {\subtype \oS \oT}}
+     }
+     {\dgprove {\typ {\mapping \of \oe \GG} \GG} }
+     {T-Mapping}
+}
+
+\newcommand{\methodTempl}[3]
+{\newinfruleTwo
+ {{#1}  = {\arrType \oU \T}}
+ {
+   \begin{array}{ccc}
+     {\dgprove {\typ \rr {#2}}} &
+     {\dgprove {\typ \oe \oV}} &
+     {\dproves {\subtype \oV \oU}}
+   \end{array}
+ }
+ {\dgprove {\typ {\invoke \rr {\mof \e} } \T}}
+ {#3}
+}
+
+\newcommand{\methodType}
+{\methodTempl {\mtype {\m} {\boundDelta {\W}}} {\W} {T-Invk}}
+
+\newcommand{\classType}
+{\newinfrule
+ {\dprovesok \SSS}
+ {\dgprove {\typ \SSS {\typeof \SSS}}}
+ {T-Class}
+}
+
+\newcommand{\newType}
+{\newinfrule
+ {
+   \begin{array}{c}
+     {\HarrayTwo
+       {\dprovesok {\typeArgs \C \SSS}}
+       {\fields \CS  = {\ov \T}\ {\ov \f}}} \\
+     {\HarrayTwo
+       {\dproves {\subtype \oU \oT}}
+       {\dgprove {\typ \oe \oU}}}\\
+   \end{array}
+ }
+ {\proves {\Delta;\Gamma} {\typ {\newsub \C \SSS \e}  {\typeArgs \C \SSS}}}
+ {T-New}
+}
+
+%% Ancillary Functions
+
+% fields()
+
+\newcommand{\emptyFields}[2]
+{
+ \newrule {\fields {#1} = \emptyset}
+          {#2}
+}
+
+\newcommand{\fieldsObject}{\emptyFields {\Object} {F-Object}}
+
+\newcommand{\emptyFieldVals}[2]
+{
+ \newrule {\fieldVals {#1} = \emptyset}
+          {#2}
+}
+
+\newcommand{\fvObject}{\emptyFieldVals {\Object} {FV-Object}}
+\newcommand{\fvClass}{\emptyFieldVals {\CS} {FV-Class}}
+
+\newcommand{\fvTypeof}
+{
+ \newinfrule
+ {CT(\C) = \fullClass}
+ {{\fieldVals {\typeof {\typeArgs \C \R}}} = {\ensuremath {\RforX}\Tfe}}
+ {FV-Typeof}
+}
+
+\newcommand{\VforX}{\substitute \oX \oV}
+\newcommand{\RforX}{\substitute \oX \oR}
+
+\newcommand{\Tfe}{\oT\ \of\ \oe}
+\newcommand{\Tf}{\oT\ \of}
+
+\newcommand{\fieldsClass}
+{
+ \newinfruleTwo
+ {CT(\C) = \fullClass}
+ {{\fields {\RforX \A}} = \oU\ \oh}
+ {{\fields {\typeArgs \C \R}} = \oU\ \oh\ \cup \ {\RforX}\oW\ \og}
+ {F-Class}
+}
+
+\newcommand{\fieldsTypeof}
+{
+ \newinfrule
+ {CT(\C) = \fullClass}
+ {{\fields {\typeof {\typeArgs \C \R}}} ={\RforX}\Tf}
+ {F-Typeof}
+}
+
+% mtype
+
+\newcommand{\mDef}[3]
+{
+ \newinfrule
+     {\simpleMethod \in {\methods \GG}}
+     {{#1} = {#2}}
+     {#3}
+}
+
+\newcommand{\mtypeDef}
+{\mDef {\mtype \m \GG} {\arrType \oT \oU} {MType}}
+
+\newcommand{\mbodyDef}
+{\mDef {\mbody \m \GG} {(\ox, \oe)} {MBody}}
+
+\newcommand{\methodsObject}{\newrule {{\methods \Object} = \emptyset} {MethodsObject}}
+
+\newcommand{\methodsClass}
+{
+ \newinfrule
+ {CT(\C) = \fullClass}
+ {{\methods {\typeArgs \C \R}} = {\RforX} \oN\ \cup\ {\methods {\RforX \A}}}
+ {MethodsClass}
+}
+
+\newcommand{\methodsTypeof}
+{
+ \newinfrule
+ {CT(\C) = \fullClass}
+ {{\methods {\typeof {\typeArgs \C \R}}} = {\RforX} \oM\ \cup\ {\methods {\RforX \B}}}
+ {MethodsTypeof}
+}
+
+\newcommand{\mtypeClass}
+{
+ \newinfrule
+%      {CT(\C) = \fullClass}
+     {\simpleMethod \in {\methods \T}}
+     {{\mtype {\m} {\typeArgs \C \V}} = {\VforX}({\arrType \oV \oU})}
+     {MT-Class}
+}
+
+\newcommand{\mtypeSuper}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\m\ is\ not\ defined\ in\ \N}
+     {{\mtype {\m} {\typeArgs \C \V}} = {\VforX}{\mtype {\m} \A}}
+     {MT-Super}
+}
+
+\newcommand{\mtypeImpl}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\HarrayTwo
+       {{\mtype {\m} {{\VforX}\A}}\ is\ not\ defined}
+       {\m is not defined in \oN}
+     }
+     {{\mtype {\m} {\typeArgs \C \V}} = {\tmtype {\m} {{\VforX}\I}}}
+     {MT-Impl}
+}
+
+% cmtype
+
+\newcommand{\cmtypeClass}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\simpleMethod \in \oM}
+     {{\cmtype {\m} {\typeArgs \C \V}} = {\VforX}({\arrType \oV \oU})}
+     {CMT-Class}
+}
+
+\newcommand{\cmtypeSuper}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\m\ is\ not\ defined\ in\ \M}
+     {{\cmtype {\m} {\typeArgs \C \V}} = {\VforX}{\mtype {\m} \B}}
+     {CMT-Super}
+}
+
+\newcommand{\cmtypeImpl}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\HarrayTwo
+       {{\mtype {\m} {{\VforX}\B}}\ is\ not\ defined}
+       {\m is not defined in \oM}
+     }
+     {{\cmtype {\m} {\typeArgs \C \V}} = {\tmtype {\m} {{\VforX}\Ip}}}
+     {CMT-Impl}
+}
+
+\newcommand{\tmtypeInter}
+{
+ \newinfruleTwo
+     {CT(\I) = \fullInter}
+     {\m \ is\ not\ defined\ in\ \M}
+     {{\tmtype {\m} {\typeArgs \I \V}} = {\tmtype {\m} {{\VforX}\J}}}
+     {TMT-Inter}
+}
+
+\newcommand{\tmtypeSuper}
+{
+ \newinfruleTwo
+     {CT(\I) = \fullInter}
+     {\simpleMethod \in \oM}
+     {{\tmtype {\m} {\typeArgs \I \V}} = {\VforX}({\arrType \oV \oU})}
+     {TMT-Super}
+}
+\newcommand{\tmtypeClass}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\simpleMethod \in \oN}
+     {{\tmtype {\m} {\typeArgs \C \V}} = {\VforX}({\arrType \oV \oU})}
+     {TMT-Class}
+}
+
+\newcommand{\tmtypeTypeofClass}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\simpleMethod \in \oM}
+     {{\tmtype {\m} {\typeof {\typeArgs \C \V}}} = {\VforX}({\arrType \oV \oU})}
+     {TMT-TypeofClass}
+}
+\newcommand{\tmtypeAbstract}
+{
+ \newinfruleTwo
+    {CT(\I) = \fullInter}
+    {{\methodFront \oU \m \V \x} \in \oM}
+    {{\tmtype {\m} {\typeArgs \I \V}} = {\VforX}({\arrType \oV \oU})}
+    {TMT-Abstract}
+}
+
+%%%%%%%%%%%
+
+% mbody
+
+\newcommand{\mbodyClass}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\simpleMethod \in \oN}
+     {{\mbody {\m} {\typeArgs \C \V}} = (\ox, {\VforX}\e_0)}
+     {MB-Class}
+}
+
+\newcommand{\mbodySuper}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\m\ is\ not\ defined\ in\ \N}
+     {{\mbody {\m} {\typeArgs \C \V}} = {\mbody {\m} {\VforX}\A}}
+     {MB-Super}
+}
+
+\newcommand{\mbodyImpl}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\HarrayTwo
+       {{\mbody {\m} {{\VforX}\A}}\ is\ not\ defined}
+       {\m is not defined in \oN}
+     }
+     {{\mbody {\m} {\typeArgs \C \V}} = {\tmbody {\m} {{\VforX}\I}}}
+     {MB-Impl}
+}
+
+% cmbody
+
+\newcommand{\cmbodyClass}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\simpleMethod \in \oM}
+     {{\cmbody {\m} {\typeArgs \C \V}} = (\ox, {\VforX}\e_0)}
+     {CMB-Class}
+}
+
+\newcommand{\cmbodySuper}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\m\ is\ not\ defined\ in\ \oM}
+     {{\cmbody {\m} {\typeArgs \C \V}} = {\mbody {\m} {\VforX}\B}}
+     {CMB-Super}
+}
+
+\newcommand{\cmbodyImpl}
+{
+ \newinfruleTwo
+     {CT(\C) = \fullClass}
+     {\HarrayTwo
+       {{\mbody {\m} {{\VforX}\B}}\ is\ not\ defined}
+       {\m is not defined in \oM}
+     }
+     {{\cmbody {\m} {\typeArgs \C \V}} = {\tmbody {\m} {{\VforX}\Ip}}}
+     {CMB-Impl}
+}
+
+\newcommand{\tmbodySuper}
+{
+ \newinfruleTwo
+     {CT(\I) = \fullInter}
+     {\m \ is\ not\ defined\ in\ \M}
+     {{\tmbody {\m} {\typeArgs \I \V}} = {\tmbody {\m} {{\VforX}\J}}}
+     {TMB-Super}
+}
+
+\newcommand{\tmbodyInter}
+{
+ \newinfruleTwo
+     {CT(\I) = \fullInter}
+     {\simpleMethod \in \oM}
+     {{\tmbody {\m} {\typeArgs \I \V}} = (\ox, {\VforX}\e_0)}
+     {TMB-Inter}
+}
+
+% override
+
+\newcommand{\validOverride}
+{
+ \newinfrule
+ {{\mtype \m \GG} = {\arrType \oU \oV}\ {\textrm {implies}}\ \oW = \oU\ \textrm{and}\ \oT = \oV}
+ {\override \m \GG {\arrType \oW \oT}}
+ {Override}
+}
+
+\newcommand{\XIJ}{\oX \implSym {\parens {\oI, \oJ}}}
+
+% params
+
+\newcommand{\CT}{\typeArgs \C \T}
+
+\newcommand{\paramDef}
+{\newinfrule
+ {CT(\C) = \simpleClass}
+ {{\typeparams \CT} = {\oX \implSym {\parens {\oI, \oJ}}}}
+ {Params}
+}
+
+\newcommand{\paramTypeof}
+{\newinfrule
+ {CT(\C) = \simpleClass}
+ {{\typeparams {\typeof \CT}} = \XIJ}
+ {ParamsTypeof}
+}
+
+\newcommand{\superType}
+{\newinfrule
+ {CT(\C) = \simpleClass}
+ {{\super \CT} = \A}
+ {Super}
+}
+
+\newcommand{\superTypeof}
+{\newinfrule
+ {CT(\C) = \simpleClass}
+ {{\super {\typeof \CT}} = \B}
+ {SuperTypeof}
+}
+

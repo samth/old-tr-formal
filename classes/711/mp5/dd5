@@ -1,0 +1,16 @@
+Sam TH - Machine Problem 5 - 10/13/03
+
+Date  	Start 	Stop  	Inter	TimeOnTask	Comments
+10/13	5:15	5:45		30		semantics for cond and let*
+	6:45	7:25		40		implemented cond
+	10:15	10:45		30		implemented let* w/ new semantics
+10/14	2:15	4:00	15+15	75		implemented try
+	4:00	4:10	5	5		testing	for try
+	4:20	4:30		10		semantics for try
+	4:40	4:45		5		fixed a few missing errors
+
+Lines of code : 44 + 22 = 66
+Lines of tests : 29
+
+Minutes spend: 30 + 40 +30 + 75 + 10 + 5 + 5 = 195
+

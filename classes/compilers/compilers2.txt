@@ -1,0 +1,117 @@
+Compiler HW 2
+Sam Tobin-Hochstadt
+9/16/04
+
+In general, the portions of the specification that are not obvious
+from the typing rules and grammar fall into two categories.  First are
+questions about the dynamic semantics of the language.  These are
+divided into general questions caused by the lack of any such
+semantics (eg, what is the behavior of if) and second are those
+portions that are still ambigusous when traditional assumptions are
+made.  The second category is ambiguities in the static semantics and
+syntax of the language.  
+
+In the three sections below, I will treat each of these kinds of
+ambiguities.
+
+Section 1:  Basic Dynamic Semantics
+
+Here there are far too many questions to list.  Do dynamic bindings
+follow the binding of variables in type environments?  Does if simply
+return its first branch?  These questions are impossible to answer
+without some sort of specification of the intended behavior.  However,
+some assumptions can be made, based on the syntax and reserved words,
+and their relationships to similar syntax in other programming
+languages.  With these assumptions in mind, we can ask other
+questions.  
+
+Section 2:  Complex Dynamic Semantics questions
+
+1. There is no specification of the strictness of the language.
+It could be either call-by-name or call-by-value.  Most languages are
+call-by-value, but this language could be call-by-name.  If the
+language was call-by-name, implemenation, especially efficent
+implementation, would be significantly more complex.
+
+2. The order of evaluation of expressions is important.  For
+example, there is no specification of the order in which arguments to
+functions are evaluated.  My assumption, based on experience with
+other languages, is that the order will be left to right.  But there
+are no clues to the answer in the type rules.  
+
+3. The grammar appears to allow assignment of anything which is a
+<lhs>, which ranges over a wide variety of things.  However, the type
+rules specify types only for assignment to vector references.  It
+would therefore appear that those are the only assignments allowed.
+But this makes the grammar appear overly baroque.  I would hypothesize
+that some assignment typing rules were left out of the specification.
+
+4. It is stated in the AST specification that several operations are
+transformed away in the creation of the AST.  However, the
+transformations are not given in the specification.  I hypothesize
+that 'or' and 'and' are transformed using 'if', and that statements
+are converted into expressions.  
+
+5. It is unclear whether the bound on 'for' is inclusive.  I
+hypothesize that it is.  
+
+6. The semantics of tail calls are not defined.  The correct solution
+is to require that tail calls do not grow the stack.  I hypothesize
+that this solution will be taken.  
+
+7. The extent of objects created by new is not clear.   I hypothesize
+that the extent corresponds to the scope of the variable they are
+bound to.
+
+8. The semantics of vectors are not clear in several ways.  First,
+they could be indexed from 0 or from 1 (or any other number, ala
+Fortran). Second, the consequences of dereferencing an unitialized
+portion of the array is not defined.  Third, the behavior of new is
+unclear, but can be inferred to create a vector of the elements formed
+by applying the supplied function to a sequence of integers.  Fourth,
+assignment to previously uninitialized portions of an array could
+either initialize them or be an error.
+
+9. The semantics of errors are not mentioned at all.  I have no
+hypothesis here.  
+
+10. Case expressions may or may not be required to be exhaustive.  I
+hypothesize that they are required to be so.  However, this obviates
+the need for an else clause.  
+
+11.  The built-in types could have automatic conversions, especially
+since numbers are provided, some of which have obvious conversions
+(these conversions may be less obvious in the presence of machine
+arithmetic).  I hypothesie that no such conversions exist.  
+
+12.  The behavior of numbers is not specificed.  I hypothesize that
+integers are 32 bits, with silent wraparound, and that floating point
+semantics are as specified by IEEE 754.  
+
+13.  The order of evaluation is also important for letrec.  I
+hypothesise that this is left to right.  
+
+14.  What is the semantics of the following expression:
+
+letrec x = x in x end
+
+I hypothesize that it is undefined.  
+
+Section 3:  Static Semantics
+
+1. There are no requirements in the typing rules that either the types
+are well-scoped or that the type environments are well-formed.  I
+hypothesize that all of these are requirements for all the rules, and
+there were not intentionally left off.  
+
+2. In one place, inequality of types is used in the typing rules.  It
+is not specified if this is nominal or structural equality.  I
+hypothesize that it is nominal equality.  
+
+3. Case sensitivity of the language is not specified, and is important
+both for distincness of names and of keywords, among others.  I
+hypothesize that that language is case sensitive. 
+
+
+
+

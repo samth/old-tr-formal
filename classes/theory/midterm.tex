@@ -1,0 +1,226 @@
+\documentclass[12pt]
+{article}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{enumerate}
+
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{problem}[theorem]{Problem}
+
+
+% General
+\def\credittype{}
+\def\RC{\credittype{RC}}
+\def\EC{\credittype{EC}}
+\def\NA{\credittype{NA}}
+
+% Machines
+\def\machine{\sf}
+\def\mdfa{{\machine DFA}}
+\def\mnfa{{\machine NFA}}
+\def\mgnfa{{\machine GNFA}}
+\def\mcfg{{\machine CFG}}
+\def\mcfl{{\machine CFL}}
+\def\mpda{{\machine PDA}}
+
+% Grammar things
+\newcommand\mygrammar[1]{
+$$
+\begin{array}{rcll}
+#1
+\end{array}
+$$
+}
+\newcommand\gr[3]{\ensuremath{{\mit #1} &\rightarrow& #2 & ~~~~;~#3} \\}
+\newcommand\gb[3]{\ensuremath{&|& #2 & ~~~~;~#3} \\}
+\newcommand\dr[2]{\ensuremath{{\mit #1} &\Rightarrow& #2 &} \\}
+\newcommand\db[1]{\ensuremath{&\Rightarrow& #1 &} \\}
+\def\por{~|~}
+\def\mt{\mathtt}
+
+% Jay's 5 rules
+\newcommand\jaarule[1]{\ensuremath{\mbox{{\sc JaysRule{#1}}}}}
+
+% # in tt
+\def\h{\ensuremath{\mt{\#}}}
+
+% Graph stuff
+\newcommand\pedge[3]{\ensuremath{#1,#2 \rightarrow #3}}
+\def\pedgexxx{\pedge}
+\newcommand\pedgeexx[2]{\pedge{\epsilon}{#1}{#2}}
+\newcommand\pedgexex[2]{\pedge{#1}{\epsilon}{#2}}
+\newcommand\pedgexxe[2]{\pedge{#1}{#2}{\epsilon}}
+\newcommand\pedgexee[1]{\pedge{#1}{\epsilon}{\epsilon}}
+\newcommand\pedgeexe[1]{\pedge{\epsilon}{#1}{\epsilon}}
+\newcommand\pedgeeex[1]{\pedge{\epsilon}{\epsilon}{#1}}
+\newcommand\pedgeeee[0]{\pedge{\epsilon}{\epsilon}{\epsilon}}
+
+% Non-terminals
+\newcommand\nterm[1]{\ensuremath{\langle\mbox{{\sc #1}}\rangle}}
+
+
+
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+      \ifdim\lastskip<1.5em \hskip-\lastskip
+      \hskip1.5em plus0em minus0.5em \fi \nobreak
+      \vrule height0.75em width0.5em depth0.25em\fi}
+
+\title{CSG 713: Midterm}
+\author{Sam Tobin-Hochstadt}
+\date{\today}
+
+
+
+\begin{document}
+
+\maketitle
+
+\begin{proof}[Problem 1] 45 points
+\begin{enumerate}[i.]
+\item $C - R$ is always context free, since $C-R = C \cap
+  \overline{R}$, which is context free since complement preserves
+  regularity, and intersection with a regular language preserves
+  context freeness.
+\item $R - C$ is not always regular, for example, $\Sigma^* -
+  \overline{0^n1^n} = 0^n1^n$, which is not regular.
+\item $N - R$ is not always non-regular, since $0^n1^n - \Sigma^*  =
+  \{\}$, which is regular. 
+\item $R - N$ is not always regular, since $\Sigma^* - 0^n1^n =
+  \overline{0^n1^n}$, which is not regular.
+\item $G - D$ is always recognizeable.  Given $M_G$ and $M_D$ which
+  recognize the two languages, simply run $M_G$ on the input, and
+  after it terminates, run $M_D$ on the input.  If both accept,
+  accept.  Otherwise, reject.  This procedure will always terminate
+  for all inputs in $G$, since $M_G$ terminates on those inputs, and
+  $M_D$ terminates on all inputs.  
+\item $D - G$ is not always decideable.  For example, $\Sigma^* -
+  A_{TM} = \overline{A_{TM}}$ which is not even recognizeable.
+\item Infinite unions of regular languages are not always regular.
+  For example, $\displaystyle \bigcup_i a^ib^i = a^nb^n$ which is not
+  regular, but all the individual sets are singleton strings, which
+  are obviously regular.
+\item The non-regular languages are not closed under concatention.
+  For example, the language $A = a^p$ where $p$ is prime, is not
+  regular.  However, $A$ concatenated with itself six times is $a^n$, where
+  $n>11$, which is regular.
+\end{enumerate}
+\end{proof}
+
+\begin{proof}[Problem 2] 30 points
+
+\begin{enumerate}[i.]
+
+\item Given a regular language $L$, we want to compute the language
+  $Prefix(P)$.  To do this, consider $M_L$, an NFA which accepts
+  $L$. First, add a state to $M_L$, an make it accepting.  Make all
+  other states not accepting.  Then add $\epsilon$-transitions from
+  all original states in $M_L$ from which a path existed to an
+  accepting state to the new final state.
+
+Claim:  This new NFA $M_L'$ accepts $Prefix(L)$.  Consider a string
+$x$ in $Prefix(L)$.  By the definition of prefix, there exists a state
+$p$ in $M_L$, which is the state the $M_L$ is in when it finishes
+processing $x$.  By construction, $M_L'$ contains an
+$\epsilon$-transition from $p$ to the accepting state.  Therefore,
+$M_L'$ accepts $x$.  Thus, $L(M_L') \supseteq Prefix(L)$.  
+
+To prove that $L(M_L') \subseteq Prefix(L)$, consider a string
+accepted by $M_L'$.  At the end of processing this string, the machine
+must have taken an $\epsilon$-transition to the accepting state.
+Consider the state the machine was in immediately preceeding this
+transition.  By construction, there exists a path from this state to
+an accepting state in $M_L$.  This path must be labeled by some string
+$y$.  Then $xy \in L(M_L)$.  Therefore, $x \in Prefix(L)$.  
+
+\addtocounter{enumi}{1}
+\item
+
+\end{enumerate}
+
+\end{proof}
+
+\begin{proof}[Problem 3] 30 points
+
+
+\end{proof}
+
+\begin{proof}[Problem 4] 50 points
+
+\begin{enumerate}[i.]
+\item $L = 0^n1^m0^{n+m}$ is context-free but not regular.  It is
+  generated by the following grammar:
+
+\mygrammar{
+\gr{S}{0S0 \por S'}{0^n1^m0^m0^n = 0^n1^m0^{n+m}}
+\gr{S'}{1S'0 \por \epsilon}{1^n0^n}
+}
+
+Further, this language is clearly not regular.  Consider $L \cap
+1^*0^* = 1^n0^n$. This is not regular, but $1^*0^*$ is.  So $L$ is not
+regular.  
+
+\item $L = \{ww^Rx \por w \in \{0,1\}^+, x \in \{0,1\}^*\}$.  This
+  language is context free, but not regular.  It is generated by the
+  following grammar:
+
+\mygrammar{
+\gr{S}{1S'1X \por 0S'0X}{L}
+\gr{S'}{1S'1 \por 0S'0 \por \epsilon}{ww^R}
+\gr{X}{1X \por 0X \por \epsilon}{\Sigma^*}
+}
+
+$L$ is clearly not regular.  Consider $L \cap \{xy \por |x| = |y|\}$.
+Let this language be $L'$.  If $L$ was regular, $L'$ would be as
+well.  However, $FirstHalf(L') = ww^R$, which is not regular.
+Therefore, $L$ is not regular.
+
+\item   This language is decideable but not context-free.
+
+\item This language is regular.
+
+\end{enumerate}
+
+\end{proof}
+
+\begin{proof}[Problem 5] 30 points
+
+The following grammar solves part (2).
+
+\mygrammar{
+\gr{S}{S^* \por T}{}
+\gr{T}{TR \por R}{}
+\gr{R}{R \cup P \por P}{}
+\gr{P}{a \por b \por (S) \por \epsilon \por \emptyset}{}
+}
+
+\end{proof}
+
+\begin{proof}[Problem 6] 30 points
+
+If $L_1$ and $L_2$ are recognizeable, and both $L_1 \cup L_2$ and $L_1 \cap
+L_2$ are decideable, then $L_1$ and $L_2$ are decideable.
+
+Proof: Consider the following four machines: $A,B,C,D$, where $L(A) =
+L_1, L(B) = L_2, L(C) = L_1 \cup L_2, L(D) = L_1 \cap L_2$.  Then $A$
+and $B$ are recognizers, and $C$ and $D$ are deciders.  Then we can
+construct the following machine which decides $L_1$.  The construction
+for $L_2$ is analagous.  
+
+Given an input string $x$, run $C$ on $x$.  If $C$ rejects, halt and
+reject.  If $C$ accepts, then run $D$ on $x$. If $D$ accepts, halt and
+accept.  If $D$ rejects, then run $A$ and $B$ in parallel
+\footnote{Meaning, take each machine one step each time, alternating
+machines.}  on $x$ until one of them accepts.  If $A$ halts and
+accepts, accept.  If $B$ halts and accepts, reject.  Since $C$
+accepted, $x \in L_1$ or $x \in L_2$.  Since both
+machines are recognizers, therefore, one of them must accept $x$.
+Therefore, this procedure always finishes.  
+
+\end{proof}
+
+\end{document}

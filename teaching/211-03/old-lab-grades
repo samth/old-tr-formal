@@ -1,0 +1,338 @@
+(module lab-grades mzscheme
+  (require (lib "list.ss")
+           (lib "etc.ss"))
+  
+  ;; format is (name lab-num (quiz1 hw1) (quiz2 hw2) ...)
+  ;; #f means did not turn in/attend
+  ;; -1 means no quiz that week
+  
+<<<<<<< lab-grades
+  (define max-scores `((1 21) (1 27) (15 39) (-1 38) (1 16))) 
+=======
+  (define max-scores `((1 21) (1 27) (15 39) (-1 38) (1 36))) 
+>>>>>>> 1.7
+  
+  (define (max-hw n)
+    (get-hw (list-ref max-scores (- n 1))))
+  (define (max-quiz n)
+    (get-quiz (list-ref max-scores (- n 1))))
+  
+  (define this-week (length max-scores))
+  
+  (define students 
+    `(           
+<<<<<<< lab-grades
+      ("BURKE, CHRISTOPHER" 1 VKP (1 19) (0 26) (9 39) (1 37) (0 #f))
+      ("CAVALLA, VANESSA" 1 MF (1 19) (1 26) (11 35) (1 35) (0 9))
+      ("CHAN, TERENCE" 1 MF (1 #F) (0 #F) (12 33) (1 37) (0 11))
+      ("CURRAN, JAMES" 1 RJW (1 19) (1 21) (#F 29) (1 35) (1 11))
+      ("DEMPSEY, WILLIAM" 1 MF (1 21) (1 26) (12 39) (1 37) (1 #f))
+      ("DILLMAN, BRANDON" 1 VKP (1 19) (1 10) (11 39) (1 34) (#f 13))
+      ("DOOLEY, JOSEPH" 2 RJW (1 21) (1 26) (15 39) (1 38) (1 13))
+      ("DORNER, ANDREW" 1 RJW (1 19) (0 10) (12 39) (1 34) (0 13))
+      ("DRECKSAGE, JACOB" 1 VKP (1 21) (1 26) (15 39) (1 37) (0 #f))
+      ("DWECK, NOAH" 1 RJW (1 #F) (1 26) (12 35) (1 35) (0 9))
+      ("FLANDERS, STEVE" 1 MF (1 17) (0 #F) (12 33) (1 37) (0 11))
+      ("GAUTHIER, JORDAN" 1 MF (1 #F) (1 21) (15 29) (1 35) (1 11))
+      ("HAGLER, LACRECIA" 2 MF (0 #F) (#F #F) (#F #F) (1 9) (#f #f))
+      ("JONES, CARLTON" 2 RJW (0 #F) (0 22) (6 35) (1 37) (#f 13))
+      ("LUSAS, DIANE" 2 RJW (1 21) (1 20) (9 30) (1 30) (0 13))
+      ("MCDEVITT, BRIAN" 2 MF (1 19) (1 25) (14 32) (1 36) (0 13))
+      ("MCDONNELL, SEAN" 2 MF (1 21) (1 22) (15 39) (1 28) (0 #f)) 
+      ("MUNCK, IAN" 2 RJW (1 21) (1 26) (15 38) (1 35) (1 9))
+      ("O'ROURKE, SHAWN" 2 VKP (1 19) (1 27) (12 25) (1 36) (1 16))
+      ("OUELLETTE, DANIEL" 2 MF (1 17) (0 10) (5 37) (1 34) (0 13))
+      ("PALMER, NATHAN" 2 VKP (1 21) (1 27) (15 #F) (1 34) (1 14))
+      ("PEDLAR, BRIAN" 2 VKP (1 21) (1 24) (10 39) (1 35) (1 12))
+      ("RAYMOULIK, RAHUL" 2 MF (1 21) (1 22) (15 35) (1 37) (1 13))
+      ("ROCHE, KEVIN" 2 VKP (1 21) (1 26) (15 39) (1 38) (1 13))
+      ("SULLIVAN, CHRISTIAN" 2 MF (1 #F) (0 24) (0 39) (1 35) (0 12))
+      ("SPROUSE, ANDREW" 2 MF (1 #F) (1 25) (15 32) (1 36) (1 13))
+      ("TIRELLA, CHRISTIAN" 2 VKP (1 19) (1 27) (9 25) (1 36) (0 16))
+      ("TRAN, SON" 2 VKP (1 21) (1 20) (15 30) (1 30) (1 13))
+      ("TRIPP, CHRISTOPHER" 2 VKP (1 19) (1 24) (10 36) (1 33) (1 12))
+      ("TUPPER, KEVIN" 2 VKP (1 21) (1 27) (15 #F) (1 34) (1 14))
+      ("VARGAS, JONATHAN" 2 VKP (1 #F) (#F #F) (3 #F) (1 9) (0 #f))
+      ("VARNUM, JEFFERY" 2 VKP (1 17) (1 10) (6 37) (1 34) (0 13))
+      ("WOODBURY, GREGORY" 2 MF (1 21) (1 24) (12 36) (1 33) (0 12))
+      ("YUEN, JERRY" 2 VKP (1 21) (1 26) (#F 38) (1 35) (1 9))
+=======
+      ;    ("Born, Jeffery" 1 (#f #f))
+      ("Burke, Christopher" 1 vkp (1 19) (0 26) (9 39) (1 37) (1 29))
+      ("Cavalla, Vanessa" 1 mf (1 19) (1 26) (11 35) (1 35) (1 10))
+      ("Chan, Terence" 1 mf (1 #f) (0 #f) (12 33) (1 37) (0 17))
+      ("Curran, James" 1 rjw (1 19) (1 21) (#f 29) (1 35) (1 5))
+      ("Dempsey, William" 1 mf (1 21) (1 26) (12 39) (1 37) (0 29))
+      ("Dillman, Brandon" 1 vkp (1 19) (1 10) (11 39) (1 34) (0 11))
+      ("Dooley, Joseph" 2 rjw (1 21) (1 26) (15 39) (1 38) (1 25))
+      ("Dorner, Andrew" 1 rjw (1 19) (0 10) (12 39) (1 34) (1 11))
+      ("Drecksage, Jacob" 1 vkp (1 21) (1 26) (15 39) (1 37) (1 29))
+      ("Dweck, Noah" 1 rjw (1 #f) (1 26) (12 35) (1 35) (1 10))
+      ("Flanders, Steve" 1 mf (1 17) (0 #f) (12 33) (1 37) (0 17))
+      ("Gauthier, Jordan" 1 mf (1 #f) (1 21) (15 29) (1 35) (1 5))
+      ("Hagler, Lacrecia" 2 mf (0 #f) (#f #f) (#f #f) (1 9) (#f #f))
+      ("Jones, Carlton" 2 rjw (0 #f) (0 22) (6 35) (1 37) (0 32))
+      ("Lusas, Diane" 2 rjw (1 21) (1 20) (9 30) (1 30) (1 29))
+      ("McDevitt, Brian" 2 mf (1 19) (1 25) (14 32) (1 36) (0 27))
+      ("McDonnell, Sean" 2 mf (1 21) (1 22) (15 39) (1 #f) (1 31)) 
+      ("Munck, Ian" 2 rjw (1 21) (1 26) (15 38) (1 35) (#f #f))
+      ("O'Rourke, Shawn" 2 vkp (1 19) (1 27) (12 25) (1 36) (1 31))
+      ("Ouellette, Daniel" 2 mf (1 17) (0 10) (5 37) (1 34) (#f 24))
+      ("Palmer, Nathan" 2 vkp (1 21) (1 27) (15 #f) (1 34) (1 28))
+      ("Pedlar, Brian" 2 vkp (1 21) (1 24) (10 39) (1 35) (1 31))
+      ("Raymoulik, Rahul" 2 mf (1 21) (1 22) (15 35) (1 37) (1 32))
+      ("Roche, Kevin" 2 vkp (1 21) (1 26) (15 39) (1 38) (1 25))
+      ("Sullivan, Christian" 2 mf (1 #f) (0 24) (0 39) (1 35) (1 31))
+      ("Sprouse, Andrew" 2 mf (1 #f) (1 25) (15 32) (1 36) (1 27))
+      ("Tirella, Christian" 2 vkp (1 19) (1 27) (9 25) (1 36) (0 31))
+      ("Tran, Son" 2 vkp (1 21) (1 20) (15 30) (1 30) (1 29))
+      ("Tripp, Christopher" 2 vkp (1 19) (1 24) (10 36) (1 33) (1 #f))
+      ("Tupper, Kevin" 2 vkp (1 21) (1 27) (15 #f) (1 34) (1 28))
+      ("Vargas, Jonathan" 2 vkp (1 #f) (#f #f) (3 #f) (1 9) (#f #f))
+      ("Varnum, Jeffery" 2 vkp (1 17) (1 10) (6 37) (1 34) (0 24))
+      ("Woodbury, Gregory" 2 mf (1 21) (1 24) (12 36) (1 33) (1 #f))
+      ("Yuen, Jerry" 2 vkp (1 21) (1 26) (#f 38) (1 35) (#f #f))
+>>>>>>> 1.7
+      ))
+  
+  (define (get-info student)
+    (list (list-ref student 0) (list-ref student 1) (list-ref student 2)))
+  
+  (define lab1
+    (map get-info (filter (lambda (x) (= (cadr x) 1)) students)))
+  
+  (define lab2
+    (map get-info (filter (lambda (x) (= (cadr x) 2)) students)))
+  
+  (define (get-professor s)
+    (list-ref s 2))
+  
+  (define (prof p)
+    (filter (lambda (x) (equal? (get-professor x) p)) students))
+  
+  (define (get-grades student)
+    (cdddr student))
+  
+  (define (get-quiz-grades student)
+    (map car student))
+  
+  (define (get-hw-grades grades)
+    (map cadr grades))
+  
+  (define (calculate-grade quiz-grade hw-grade max-grades)
+    (cond
+      [(not quiz-grade) #f]
+      [(not hw-grade) #f]
+      [(> (get-quiz max-grades) 1) hw-grade]
+      [else (* hw-grade quiz-grade)]))
+  
+  (define (calculate-all-grades st)
+    (map calculate-grade (get-quiz-grades (get-grades st)) (get-hw-grades (get-grades st)) max-scores))
+  
+  (define (calculate-all-grades-norm st)
+    (normalize (calculate-all-grades st) (get-hw-grades max-scores)))
+  
+  (define (get-name st)
+    (car st))
+  
+  (define (get-student name l)
+    (cond 
+      ((null? l) #f)
+      ((string=? name (caar l)) (car l))
+      (else (get-student name (cdr l)))))
+  
+  ;  (define (quiz-week-n student n)
+  ;    (let* ((week-n (list-ref (get-grades student) (- n 1))))
+  ;      (car week-n)))
+  
+  (define (get-week-n st n)
+    (list-ref (get-grades st) (- n 1)))
+  
+  (define get-quiz car)
+  (define get-hw cadr)
+  
+  (define (hw-week-n student n)
+    (get-hw (get-week-n student n)))
+  
+  (define (quiz-week-n student n)
+    (get-quiz (get-week-n student n)))
+  
+  
+  (define  select-students-week-n 
+    (opt-lambda (pred n [l  students])
+      (let ((s (filter (lambda (x) (pred x n)) l)))
+        (map get-info s))))
+  
+  (define (no-hw-week-n n)
+    (select-students-week-n 
+     (lambda (s week) (not (hw-week-n s week)))
+     n))
+  
+  (define (no-quiz-week-n n)
+    (select-students-week-n 
+     (lambda (s week) (not (quiz-week-n s week)))
+     n))
+  
+  (define (failed-quiz-week-n n)
+    (select-students-week-n 
+     (lambda (s week) (if (quiz-week-n s week) (zero? (quiz-week-n s week)) #f))
+     n))
+  
+  
+  (define (no-quiz-this-week) (no-quiz-week-n this-week))
+  (define (no-hw-this-week) (no-hw-week-n this-week))
+  
+  (define (max-hw-week-n n)
+    (cadr (list-ref max-scores (- n 1))))
+  
+  (define (got-max-hw-week-n n)
+    (define (f s week)
+      (eqv? (hw-week-n s week) (max-hw-week-n week)))
+    (select-students-week-n f n))
+  
+  (define (bad-hw-week-n n)
+    (select-students-week-n
+     (lambda (s week)
+       (< (if (hw-week-n s week) (hw-week-n s week) (max-hw-week-n week)) (* .6 (max-hw-week-n week))))
+     n))
+  (define (sum-grades l)
+    (foldl
+     (lambda (x y) 
+       (if x (+ x y) y))
+     0
+     l))
+  
+  
+  (define (trunc n)
+    (/ (floor (* 1000 n)) 1000))
+  
+  (define avg (lambda (l)
+                (trunc (+ 0.0 (/ (sum-grades l) (length l))))))
+  
+  (define (avgt l)
+    (avg (filter (lambda (x) x) l)))
+  
+  (define (bad-hw-this-week)
+    (bad-hw-week-n this-week))
+  
+  (define (got-max-hw-this-week)
+    (got-max-hw-week-n this-week))
+  
+  ;  (define (median-week-n n)
+  ;    (let ((l (map (lambda (x) (hw-week-n x n)) students))
+  ;          )
+  ;      (median l)))
+  
+  (define (mean-week-n n)
+    (let ((l (map (lambda (x) (hw-week-n x n)) students))
+          )
+      (avg l)))
+  
+  (define (fail? g)
+    (if (number? g) (zero? g) (eq? g #f)))
+  
+  (define (failed-two-weeks-quiz)
+    (select-students-week-n 
+     (lambda (s week) 
+       (let 
+           ((t-w-q (quiz-week-n s week)) 
+            (l-w-q (quiz-week-n s (- week 1))))
+         (and (fail? t-w-q)
+              (fail? l-w-q))))
+     this-week))
+  
+  "failed the last two weeks"
+  (failed-two-weeks-quiz)
+  
+  (define (failed-quiz-this-week)
+    (failed-quiz-week-n this-week))
+  
+  (define (get-grades-mod s)
+    (let ((g (get-grades s)))
+      (map (lambda (x y) 
+             (if (not (= 1 (get-quiz y)))
+                 (list (cadr x))
+                 x))
+           g 
+           max-scores)))
+  
+  (define (gen-hw-result s)
+    (cons (get-name s) (get-grades-mod s)))
+  
+  (define (gen-all-hw-results)
+    (map gen-hw-result students))
+  
+  (define (avg-f f l)
+    (avg (map f l)))
+  
+  (define (quizzes-week-n n)
+    (map (lambda (x) (quiz-week-n x n)) students))
+  
+  
+ (define (hws-week-n n)
+    (map (lambda (x) (hw-week-n x n)) students))
+  
+  (avgt (map (lambda (x) (if x x 0)) (map (lambda (x y) (and y x)) (hws-week-n this-week) (quizzes-week-n this-week))))
+  
+  (define (run-all)
+<<<<<<< lab-grades
+    (begin
+      (list "no homework this week"
+=======
+    (for-each (lambda (x) (printf "~v~n" x)) (list
+      "no homework this week"
+>>>>>>> 1.7
+      (no-hw-this-week)
+      "no quiz this week"
+      (no-quiz-this-week)
+      "failed this week's quiz"
+      (failed-quiz-this-week)
+      "bad homework this week"
+      (bad-hw-this-week)
+      "full points this week"
+      (got-max-hw-this-week)
+      "results for andrea"
+      (gen-all-hw-results)
+      )))
+  
+  (define (avg-by-prof-week-n-quiz w p)
+    (trunc (/ (avgt (map (lambda (x) (quiz-week-n x w)) (prof p))) (max-quiz w))))
+  
+  (define (avg-by-prof-week-n-hw w p)
+    (trunc (/ (avgt (map (lambda (x) (hw-week-n x w)) (prof p))) (max-hw w))))
+  
+  (define (prof-avgs n)
+    (map (lambda (x) (list x (avg-by-prof-week-n-hw n x) (avg-by-prof-week-n-quiz n x))) '(mf vkp rjw)))
+  
+  (define (all-prof-avgs)
+    (map prof-avgs (build-list this-week (lambda (x) (add1 x) ))))
+  
+  (define (normalize l1 l2)
+    (map / (map (lambda (x) (if (boolean? x) 1 (or x 0))) l1) l2))
+  
+  (define (student-avg s)
+    (avgt (calculate-all-grades-norm s)))
+  
+  (define (all-student-avgs)
+    (quicksort
+     (map (lambda (s)
+            (list (get-name s) (get-professor s)
+                  (student-avg s)))
+          students)
+     (lambda (x y)
+       (> (caddr x) (caddr y)))))
+  
+  (define (failing-students)
+    (quicksort
+     (filter 
+      (lambda (x)
+        (< (caddr x) .5))
+      (map (lambda (s)
+             (list (get-name s) (get-professor s)
+                   (student-avg s)))
+           students)
+      )
+     (lambda (x y)
+       (> (caddr x) (caddr y)))))
+  
+  )

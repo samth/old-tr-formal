@@ -1,0 +1,99 @@
+Type Schemes:
+-------------------
+
+pair: (all s,t)(s * t -> (pair s t))
+left: (all s,t)((pair s t) -> s)
+right: (all s,t)((pair s t) -> t)
+setleft: (all s,t)(((pair s t) * s) -> int)
+setright: (all s,t)(((pair s t) * t) -> int)
+
+Why the problems?
+---------------------
+
+The fundamental problem with the combination of HM
+polymorphism/inference and  mutable state is that the type inferencer
+is not aware of what it has instantiated a particular type schema as
+at later points in the program.  Without state, this would not be a
+problem, since the same value could not be used after it had been
+instantiated.  However, with state, a value can be used again after
+its type has been instantiated.  
+
+This becomes more clear with examples:
+
+Fig. 1:
+
+let p = pair(1,proc(?y) y) in
+let f = proc(?x) (right(p) x) in
+begin
+f 3;
+f true
+end
+
+This program type checks properly, and runs properly.  Since we have
+no mutable, state, the fact that the type variable in the polymorphic
+type schema for the function f is instantiated to both int and bool is
+not a problem, since the two types do not interact.  
+
+Fig. 2:
+
+let p = pair(1,proc(?y) 3) in
+let f = proc(?x,?y) begin (right(p) x); setright(p,y) end 
+in
+begin
+(f 3 proc(?a) add1(a));
+(f true proc(?b) b)
+end
+
+This program typechecks for the same reason the previous one did.
+However, it fails at runtime.  We end up applying add1 to true, which
+causes an error.  This problem arose because we instantiated the
+polymorphic second component of p separately for each invocation of f,
+but there was actually only one pair being used.
+
+This mismatch between our types (schemas are instantiated anew each
+time) and our semantics (the store depends on previous operations) is
+what causes the problem.  
+
+How To Fix the Problem
+---------------------------
+
+The solution to this problem is known as the value restriction
+[Wright95].  Fundamentally, the restriction is that only syntactic
+values may have polymorphic type schemas on the right hand side of let
+bindings.  Thus the following are legal
+
+let x = 3
+let x = proc(?x) x
+
+but the following are not legal
+
+let x = +(3 2)
+let x = pair(1,2)
+let x = (proc (?x) x 3)
+
+This ensures that no mutable reference is ever generalized, since no
+reference can appear on the right hand side of a binding.  
+
+How To Implement the Value Restriction
+--------------------------------------
+
+First, we would make a separate case for proc-exps appearing alone on
+the right hand side of a let binding.  We do this with a flag for such
+proc types. (and some horrible copy and paste hacks)
+
+In this case, we generalize to the fully polymorphic type schema.
+
+Otherwise, we simply leave the values as type variables, instead of
+being polymorphic type variable.  They are then set permanently at the
+first point of instantiation, and can no longer be used
+polymorphically.  
+
+Soundness of the Value Restriction
+----------------------------------
+
+The fundamental problem requiring the value restriction is polymorphic
+references.  Since the only variables that can be made polymorphic are
+those that appear on the right hand side of let bindings, and since
+nothing involving a reference is allowed to appear on the right hand
+side of a let binding under the value restriction, the restriction
+restores soundness.

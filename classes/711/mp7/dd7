@@ -1,0 +1,10 @@
+Sam TH - Machine Problem 7 - 11/4/03
+
+Date  	Start 	Stop  	Inter	TimeOnTask	Comments
+3/11	3:55	5:55		120		Implemented locks
+4/11	2:30	3:00		30		Passes run-all
+	3:30	3:40		10		More testing
+	3:45	4:24		40		Semantics
+
+Total time: 200
+Total lines of code churn: 464

@@ -1,0 +1,44 @@
+Semantics for locks:
+
+New (v, E, s) Rules:
+-------------------
+
+(Ref(l), E o acquire([]), s) -> (s(l), E o acquire([]), s)
+
+(<#f, q>, E o acquire([]), s) -> (0, E, s')
+	where s' = s[l = <s(curtid),q>]
+
+If t = s(curtid)
+(<(t,v,e), q>, E o acquire([]), s) -> (error, E, s)
+Else
+(<(t,v,e), q>, E o acquire([]), s) -> yield(s')
+	where s' = s[l = <(t,v,e), q ^ (s(curtid), 0, E)>]
+
+(Ref(l), E o release([]), s) -> (s(l), E o release([]), s)
+
+(<(t,v,e),q> , E o release([]), s) -> 
+	(0, E, s')
+	where s' = s[rq = s(rq)^fst(q)
+		      l = <fst(q),rst(q)>]
+
+New (v,p,E,s) Rules
+--------------------
+
+(acquire(e), p, E, s) -> (e, p, E o acquire([]), s)
+(release(e), p, E, s) -> (e, p, E o release([]), s)
+(lock(), p, E, s) -> (Ref(l), E, s')
+	where s' = s[l=<(s(curtid),0,E),()>]
+
+New values
+-------------
+v ::= ..
+    | Ref(l) (l a location)
+
+
+Rules for queues:
+-----------------
+q ::= () 
+  |   q ^ v
+
+fst(q) is the head of the queue
+rst(q) is everything but the head of the queue

@@ -1,0 +1,484 @@
+\newcommand{\metavars}
+{
+\begin{itemize}
+ \item Expressions or mappings: \e, \dd, \rr
+ \item Field names: \f, \g
+ \item Variables: \x
+ \item Method names: \m
+ \item Values: \vv
+ \item Method declarations: \M, \N
+ \item Type names: \C, \D
+ \item Types: \I, \J, \K, \T, \U, \V, \W
+ \item Non-{\txt typeOf} Types: \OO, \PP, \Q, \R, \SSS
+ \item Types that are either {\txt Object} or a type application: \A, \B
+ \item Ground types (contain no type variables): \GG
+ \item Type variables: \X, \Y, \Z
+ \item Mappings (field name $\mapsto$ value): $\Phi$
+\end{itemize}
+}
+
+\newcommand{\unproved}
+{
+\myProof
+Unproved.
+}
+
+\newcommand{\preservation}{
+\begin{theorem}[Subject Reduction]
+If \eeproves{\typ{\e}{\SSS}} and \trans{\e}{\ep}
+then \eeproves{\typ{\ep}{\T}} where {\proves \emptyset {\subtype{\T}{\SSS}}}.
+\end{theorem}
+}
+\newcommand{\progress}
+{
+\begin{theorem}[Progress]
+If \eeproves{\typ{\e}{\SSS}} then one of the following holds:
+\begin{itemize}
+\item $\e = \mapping{\of}{\ov \vv}{\GG}$
+\item \trans \e \ep
+\item $\e = \cast{\SSS}{\ep}$ and $\eeproves{\typ{\ep}{\T}}$ and $\eproves{\notsubtype \T \SSS}$.
+\end{itemize}
+\end{theorem}
+}
+\newcommand{\soundness}
+{
+\begin{theorem}[Soundness]
+If \typ{\e}{\SSS} then either
+\begin{itemize}
+\item $\e \transarrow  \mapping{\of}{\ov \vv}{\GG}$
+\item $\e \transarrow \ep$ where $\ep$ is an invalid cast
+\item $\e$ reduces infinitely.
+\end{itemize}
+\end{theorem}
+}
+
+\newcommand{\preservationProof}
+{
+\myProof
+We prove this by structural induction on the derivation of \trans{\e}{\ep}.
+
+\begin{description}
+
+\proofcase{\rulename {R-Object}}
+
+Immediate.
+
+\proofcase{\rulename {R-New}}
+
+Immediate from the premises of \rulename{T-New} and \rulename{R-New}.
+
+\proofcase{\rulename {R-Class}}
+
+Immediate from the premises of \rulename{WF-ClassDef} and \rulename{R-Class}.
+
+\proofcase{\rulename {R-Cast}}
+
+By \rulename{T-Cast}, $\e = {\cast{\T}{\Phi_{\GG}}}$ must have type
+$\T$.  By \rulename{T-Mapping}, $\ep = {\Phi_{\GG}}$ must have type
+$\GG$.  By hypothesis of the reduction rule, $\eproves {\subtype \GG
+\T}$.
+
+\proofcase{\rulename{R-Field}}
+
+We know that $\e = \invoke {\mapping \of \od \GG} \f_i$ and that $\ep
+= \dd_i$.  Since $\e$ must have been typed by \rulename{T-Field}, we
+know that ${\fields \GG} = \oT\ \of$ and $\eeproves {\typ \e \T_i}$.
+Further, since ${\mapping \of \od \GG}$ must have been typed by
+\rulename{T-Mapping}, we know that ${\eeproves {\typ {\dd_i} \SSS}}$
+where $\eproves {\subtype \SSS \T}$.
+
+\proofcase{\rulename {R-Invk}}
+
+We know that $\e = \invoke {\Phi_{\GG}} {\mof \dd}$ and that $\ep =
+{\substituteTwoArg \ox \od \this {\Phi_{\GG}}} \e_0$. Further, $\e$
+was typed by \rulename{T-Invk} to have type $\U$ where $\mtype \m \GG
+= \arrType \oT \U$ and $\eeproves {\typ \od \oTp}$ and $\eproves {\subtype \oTp
+\oT}$.  As a premise of \rulename{R-Invk}, we know that $\mbody \m \GG
+= (\ox, \e_0')$.
+
+By the lemma $mtype$ and $mbody$ agree, $\proves
+{\emptyset;{\typ{\ox}{\oT}},{\typ{\this}{\GG}}} {\typ{\e_0'}{\Up}}$
+where $\eproves {\subtype \Up \U}$.  Then by the lemma Substitution
+Preserves Typing, $\eeproves {\typ {\ep = {\substituteTwoArg \ox \od
+\this {\Phi_{\GG}}} \e_0} \Upp}$ where $\eproves {\subtype \Upp \Up}$.
+
+\proofcase{\rulename {C-Cast}}
+
+Trivial, since $\eproves{\typ{\cast{\T}{\e}}{\T}}$ for any $\e$.
+
+\proofcase{\rulename {C-Map}}
+
+Immediate from the induction hypothesis and the transitivity of subtyping.
+
+\proofcase{\rulename {C-New}}
+
+Immediate from the induction hypothesis and the transitivity of subtyping.
+
+\proofcase{\rulename {C-Arg}}
+
+Immediate from the induction hypothesis and the transitivity of subtyping.
+
+\proofcase{\rulename {C-Rcvr}}
+
+We know that ${\e = {\invoke {\e_0} {\mof \dd}}}$ and $\ep = \invoke {\e_0'}
+{\mof \dd}$. Further, $\e$ must have been typed by \rulename{T-Invk},
+which means that $\eept {\e_0} \W$ for some ground type $\W$, and that
+$\eept \od \oV$ and $\esub \oV \oU$, and also $\mtype \m \W = \arrType
+\oU \T$.  By the induction hypothesis, $\eept {\e_0'} \Wp$ where $\esub
+\Wp \W$.  Therefore, by lemma Subtyping Preserves Method Typing,
+$\mtype \m \Wp = \arrType \oU \T$ and thus $\eept {\invoke {\e_0'}
+ {\mof \dd}} \T$ by \rulename{T-Invk}.
+
+\proofcase{\rulename {C-Field}}
+
+If $\trans {\invoke \e \f_i} {\invoke \ep \f_i}$, then $\trans \e
+\ep$.  Further, ${\invoke \e \f_i}$ must have been typed by
+\rulename{T-Field} to have type $\T_i$.  Therefore, by the induction
+hypothesis, $\eept \e \SSS$ and $\eept \ep \Sp$ where $\esub \SSS
+\Sp$.  Then, by the lemma Fields are Preserved by Subtypes, $\fields
+\Sp = \fields {\SSS}\ @\ \oF$ for some $\oF$, and by
+\rulename{T-Field}, $\eept {\invoke \ep \f_i} \T_i$.
+
+\end{description}
+}
+
+\newcommand{\progressProof}
+{
+\myProof  By induction over the derivation of $\eept \e \SSS$.
+
+\begin{description}
+
+\proofcase{\rulename{T-Var}} This is a contradiction, since $\e$ is ground.
+
+\proofcase{\rulename{T-Class}} In this case $\e = \CSp$ where $\CSp$ is ground.  Then by the lemma  Agreement of {\it field-vals} and {\it fields}, $\typeparams{\CSp} = \oX \implSym \parens {\oI, \oJ}$ for some     Further, $\fieldVals{\typeof \CSp}  = \Tfe$ for some $\oT$, $\of$, and $\oe$.  Therefore, \rulename{R-Class} applies and $\trans \SSS {\mapping \of {\SpforX \CSp} {\typeof \CSp}}$.
+
+\proofcase{\rulename{T-Mapping}} Either $\e$ is already a value, or $\e = \mapping \of \oe \GG$ where not all of the $\oe$ are values.  Then by the induction hypothesis, there is some $i$ such that either $\trans {\e_i} {\ep_i}$, in which case \rulename{C-Mapping} applies, or $\e_i$ contains a bad cast, and the case is complete.
+
+\proofcase{\rulename{T-Cast}}  Here there are three cases:
+\begin{itemize}
+\item $\e = \cast \SSS \ep$ where $\ep$ is not a mapping.  Then \rulename{C-Cast} applies.
+\item $\e = \cast \SSS {\Phi_{\T}}$ where ${\esub \T \SSS}$.  Then \rulename{R-Cast} applies.
+\item $\e = \cast \SSS {\Phi_{\T}}$  where ${\proves \empty {\notsubtype \T \SSS}}$.  Then $\e$ is a bad cast.
+\end{itemize}
+
+\proofcase{\rulename{T-New}} From the antecedent of \rulename{T-New} the premise of \rulename{R-New} applies.
+
+\proofcase{\rulename{T-Invk}}  Here there are two cases.
+\begin{itemize}
+\item $\e = \invoke \rr {\mof \dd}$ where $\rr$ is not a mapping.  Then by the induction hypothesis, either $\rr$ contains a bad cast or $\trans \rr \rr'$ and \rulename{C-Rcvr} applies.
+\item $\e = \invoke {\Phi_{\T}} {\mof \dd}$  We know from the antecedent that $\mtype \m {\bound \T} = \arrType \oU \V$ and therefore $\mtype \m \T = \arrType \oU \V$ since $\T$ is ground.  Therefore, since {\it mbody} is defined everywhere {\it mtype} is defined, $\mbody \m \T = (\ox, \e_0)$ for some $\ox$ and $\e_0$.  Thus \rulename{R-Invk} applies.
+\end{itemize}
+
+\proofcase{\rulename{T-Field}} Here there are two cases, either the reciever is a mapping or not.  In the first, by the antecedent of the typing rule, we can lookup the field successfully and apply \rulename{R-Field}.  Otherwise, we can apply \rulename{C-Field}.
+
+\end{description}
+
+}
+
+\newcommand{\substitutionPreservesTyping}{
+\begin{lemma}[Substitution Preserves Typing]
+If $\dgprove {\typ \e \T}$ and $\Gamma = \typ{\ox}{\oS}$ and
+${\proves {\Delta;\emptyset} {\typ {\od} {\oU}}}$ and ${\dproves {\subtype \oU \oS}}$
+then ${\proves {\Delta;\emptyset} {\typ {{\substitute \ox \od} \e} \Tp}}$ where ${\dproves {\subtype{\Tp}{\T}}}$.
+\end{lemma}
+}
+
+\newcommand{\substitutionPreservesTypingProof}{\unproved}
+
+\newcommand{\methodTypingLemma}
+{
+\begin{lemma}[Subtyping Preserves Method Typing]
+If $\mtype \m \U = \arrType \oT \SSS$ and $\proves \emptyset {\subtype \V \U}$ then
+$\mtype \m \V = \arrType \oT \SSS$.
+\end{lemma}
+}
+
+\newcommand{\methodTypingProof}
+{
+\myProof By induction over the derivation of $\esub \V \U$.
+
+\begin{description}
+\proofcase{\rulename{S-Reflex}}
+
+Trivial.
+
+\proofcase{\rulename{S-Bound}}
+
+Not applicable.
+
+\proofcase{\rulename{S-Super}}
+
+In this case, $\V = \CR$, where $CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
+\braces{... \oM}$ and $\U = \RforX \A$.  We need to show that $\mtype
+\m \CR = \arrType \oT \SSS$.   By lemma $methods$ is well-defined, it
+suffices to show that $\simpleMethod \in \methods \CR$.
+
+We know that $\simpleMethod \in \methods \U$.  So, we proceed by
+induction on the derivation of $\methods \U$.
+
+\subcase{$\U = \Object$}
+Impossible, since $\Object$ has no methods.
+
+\subcase{$\U = \typeArgs \D \W$}
+Then, $\U = \RforX \A$.  By \rulename{MethodsClass}, $\methods \V =
+\methods \CR = (\RforX \oM)\ \cup\ \methods {\RforX \A} = (\RforX
+\oM)\ \cup\ \methods \U$.  Therefore, any method in  $\methods \U$
+must be in $\methods \V$.
+
+\proofcase{\rulename{S-Typeof}}
+
+Analagous to \rulename{S-Super}.
+
+\proofcase{\rulename{S-Trans}}  Let the intermediate type be
+$\T$. Then $\esub \V \T$ and $\esub \T \U$.  Thus, by the induction
+hypothesis, $\mtype \m \V = \mtype \m \T = \mtype \m \U$.
+
+\end{description}
+}
+
+\newcommand{\fieldsPreservedLemma}
+{
+\begin{lemma}[Fields are Preserved by Subtypes]
+If $\fields \U = \oF$ and ${\proves {\emptyset} {\subtype \V \U}}$ then $\exists\ \oG$ where $\fields \V = \oF\ @\ \oG$.
+\end{lemma}
+}
+
+\newcommand{\fieldsPreservedProof}
+{
+
+\myProof
+We prove this by induction over the derivation for $\fields \V$.
+
+\begin{description}
+\proofcase{$\V = \Object$}
+
+Then $\U = \Object$ and $\emptyset = \emptyset\ @\ \emptyset$.
+
+\proofcase{$\V = \CR$}
+
+Then $CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
+\braces{... {\oH} ...}$
+
+Continue by induction on the derivation of $\esub \V \U$.  The only
+interesting cases are \rulename{S-Super} and \rulename{S-Trans}.
+
+
+\subcase{\rulename {S-Super}}
+
+$\RforX \A = \U$. Thus $\oG = \oH$.
+
+\subcase{\rulename {S-Trans}}
+
+Let $\T$ be the intermediate type. Then $\fields \V = {\fields \T}\ @\
+{\ov {\HH'}}$ and $\fields \V = {\fields \T}\ @\ {\ov {\HH''}}$ by the
+induction hypothesis.  Thus $\oG = {\ov {\HH'}}\ @\ {\ov {\HH''}}$.
+
+\proofcase{$\V = \typeof{\CS}$}
+
+Then $CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
+\braces{{\oW\ \oh\ \oe} ...}$.  We continue by induction over the
+derivation of $\esub \V \U$.  The only complex cases are
+\rulename{S-Kind} and \rulename{S-Trans}.
+
+\subcase{\rulename{S-Trans}}
+As above.
+
+\subcase{\rulename {S-Kind}}
+
+$\SforX \A = \U$ Then $\fields \V = \SforX \oW\ \oh$.  By
+well-formedness of $\C$, we know that $\fields \B \subseteq \oW\ \oh$.
+Then $\SforX \fields \B \subseteq \SforX \oW\ \oh$, and $\fields {\SforX \B} \subseteq
+\SforX \oW\ \oh$ by lemma Substitution Distributes over $fields$.
+\end{description}
+
+}
+
+\newcommand{\soundnessProofShort}
+{
+\myProof
+
+Immediate from Subject Reduction and Progress.
+}
+
+\newcommand{\fieldsAgreeLemma}{
+\begin{lemma}[Agreement of $fields$ and {\it field-vals}]
+If $\fields \GG = \Tf$ and $\fieldVals \GG = \oTp\ \ofp\ \oe$ then
+$\oT = \oTp$, $\of = \ofp$ and $\eept \oe \oS$ where $\esub \oS \oT$.
+\end{lemma}
+}
+\newcommand{\fieldsAgreeProof}{
+\myProof The proof is exactly analagous to the proof of lemma {\it mtype} and {\it mbody} Agree.
+}
+
+\newcommand{\noBadCastLemma}
+{
+\begin{lemma}[Reduction Preserves Safety]
+If $\eept \e \T$ and $\trans \e \ep$ then $\e$ contains a bad cast iff $\ep$ does.
+\end{lemma}
+}
+
+\newcommand{\typeSubstSubtypeLemma}
+{
+\begin{lemma}[Type Substitution Preserves Subtyping]
+If $\Delta = \oX \superSym \oS$ and $\dproves {\subtype \U \T}$
+and $\esub \oSp {\SpforX \oS}$
+then ${\esub{\SpforX \U} {\SpforX \T}}$.
+\end{lemma}
+}
+
+\newcommand{\typeSubstSubtypeProof}
+{
+\myProof By induction over the derivation of $\dproves {\subtype \U \T}$.
+\begin{description}
+
+\proofcase{\rulename{S-Reflex}} Immediate.
+
+\proofcase{\rulename{S-Trans}} Let $\V$ be the intermediate type.  By
+the induction hypothesis, ${\esub{\SpforX \U} {\SpforX \V}}$ and
+${\esub{\SpforX \V} {\SpforX \T}}$ and application of
+\rulename{S-Trans} completes the case
+
+\newcommand{\RforY}{\substitute {\overline {\Y}} {\overline {\R}}}
+
+\proofcase{\rulename{S-Super}} In this case $\U = \CR$ and $CT(\C) =
+{\typeDefShort {\typeArgsBounds \C \Y \I \J} \B \A}$ and $\RforY \A =
+\T$.  We must show that $\esub {\SpforX \CR} {\SpforX {\RforY \A}}$.
+But note that:
+
+$\SpforX \CR = \typeArg \C {\SpforX {\ov \R}} = \typeArg \C {\SpforX {\RforY {\ov \Y}}} =
+\typeArg \C {{\substitute {\ov \Y} {\SpforX {\ov \R}}} {\ov \Y}}$.
+
+Also, ${\SpforX {\RforY \A}} = {\substitute {\ov \Y} {\SpforX {\ov \R}}} \A$.  So,
+$\esub {\typeArg \C {\SpforX {\ov \R}}} {\substitute {\ov \Y} {\SpforX {\ov \R}}} \A$
+by \rulename{S-Super}, completing the case.
+
+\proofcase{\rulename{S-Kind}} Analagous to \rulename{S-Super}.
+
+\proofcase{\rulename{S-Bound}} In this case, $\U = \X_i$ and $\T =
+\SSS_i$.  Then ${\SpforX \U} = \Sp_i$ and $\SpforX \T = \SpforX
+\SSS_i$.  We are given $\esub {\Sp_i} {\SpforX \SSS_i}$, completing the case.
+
+\end{description}
+}
+
+\newcommand{\typeSubstTypeLemma}
+{
+\begin{lemma}[Type Substitution Preserves Typing]
+If $\Delta = \oX \superSym \oS$ and $\dgprove {\typ \e \T}$ and $\esub
+\oSp {\SpforX \oS}$ then ${\eept {\SpforX \e} {\SpforX \T}}$.
+
+\end{lemma}
+}
+
+\newcommand{\typeSubstTypeProof}
+{
+\unproved
+}
+
+\newcommand{\substmbodyLemma}
+{
+\begin{lemma}[Substitution Preserves $mbody$ Soundness]
+If $~\simpleMethod \okin\ \GG$ and $\mbody{\m}{\GG} = (\ox,\e_0)$ then
+${\proves {\emptyset;{\typ {\this} {\GG}},{\typ{\ox}{\oT}}} {\typ{\e_0}{\Up}}}$ where ${\proves {\emptyset} {\subtype \Up {\SforX \U}}}$.
+\end{lemma}
+}
+\newcommand{\substmbodyProof}{\unproved}
+
+\newcommand{\extensionMethodOKLemma}{
+\begin{lemma}[Extension Preserves Method OKness]
+If $\M \okin\ \GG$ and $\super \Gp = \GG$ then $\M \okin\ \Gp$.
+\end{lemma}
+}
+
+\newcommand{\methodsDefinedLemma}{
+\begin{lemma}[$methods$ is well-defined]
+If ${\methodDef \U \m \T \x {\e}} \in \methods \GG$ and ${\methodDef \Up \m \Tp \x {\e}} \in \methods \GG$
+then $\T = \Tp$ and $\U = \Up$.
+\end{lemma}
+}
+
+\newcommand{\methodsDefinedProof}
+{
+\myProof Immediate from the side constraint on class tables that no two methods share the same name.
+}
+
+\newcommand{\extensionMethodOKProof}{\unproved}
+
+\newcommand{\mtypembodyLemma}
+{
+\label{lem:agree}
+\begin{lemma}[$mtype$ and $mbody$ agree]
+If ${\mbody \m \GG} = (\ox, \e)$ and ${\mtype \m \GG} = \arrType \oT \U$ then
+$\proves {\emptyset;{\typ \this \GG}, {\typ{\oX}{\oT}}} {\typ \e \Up}$ where $\proves \emptyset {\subtype \Up \U}$.
+\end{lemma}
+}
+
+\newcommand{\substOKLemma}
+{
+\begin{lemma}[Type Substitution Preserves Type OKness]
+If $\proves {\oX \superSym \oG} \T \ok$ and $\esub \oH \oG$ and $\proves \emptyset {\oH \ok}$
+then $\proves \emptyset {{{\substitute \oX \oH} \T} \ok}$.
+\end{lemma}
+}
+
+\newcommand{\substOKProof}
+{
+\myProof By induction over the derivation of $\proves {\oX \superSym \oG} \T \ok$.
+
+\begin{description}
+
+\proofcase{\rulename{WF-Object}} Immediate.
+
+\proofcase{\rulename{WF-TypeOf}} Immediate from the induction
+hypothesis.
+
+\proofcase{\rulename{WF-Var}} In this case, $\T = \X_i$ and
+${\substitute \oX \oH} \X_i = \HH_i$.  And we are given that $\proves
+\emptyset {\oH \ok}$.
+
+\proofcase{\rulename{WF-Class}} Immediate from lemma Type
+Substitution Preserves Subtyping and the induction hypothesis.
+
+\end{description}
+}
+
+\newcommand{\substDistFieldsLemma}
+{
+\begin{lemma}[Substitution Distributes over $fields$]
+$\RforX {\fields \GG} = \fields {\RforX \GG}$
+\end{lemma}
+}
+
+\newcommand{\substDistFieldsProof}
+{
+\myProof By induction over the derivation of $\fields \GG$.
+
+\begin{description}
+\proofcase{\rulename{F-Object}}
+
+Trivial.
+
+\proofcase{\rulename{F-Class}}
+
+\newcommand{\SforY}{\substitute {\overline {\Y}} {\overline {\SSS}}}
+
+Let $\GG = \CS$  Then $CT(\C) = {\typeFront {\typeArgsBounds \C \Y \I \J} \B \A}
+\braces{... \oW\ \og}$, $\fields {\SforY A} = \oU\ \oh$ and $\fields \CS
+= \oU\ \oh\ @\ {\SforY {\oW\ \og}}$.
+
+Thus $\RforX \fields \CS = \RforX (\oU\ \oh\ @\ \SforY \oW\ \og) =
+(\RforX \oU\ \oh)\ @\ (\RforX \SforY \oW\ \og) =
+\fields {\RforX \CS}$.
+
+\proofcase{\rulename{F-Typeof}}
+
+In this case, $\GG = \typeof \CS$.  Then $CT(\C) = {\typeFront
+{\typeArgsBounds \C \Y \I \J} \B \A} \braces{{\Tfe} ...}$ and $\fields
+{\typeof \CS} = {\SforY}\Tf$. Therefore, $\RforX \fields {\typeof \CS}
+= \RforX {\SforY}\Tf$.  But note that $\fields {\RforX {\typeof \CS}}
+= \fields {\typeof {\typeArgs \C {\RforX \oS}}} = {\substitute \oY
+{\RforX \oS}}\Tf = \RforX {\SforY}\Tf$.
+
+\end{description}
+
+}

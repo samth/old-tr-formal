@@ -1,0 +1,30 @@
+Generative Recursion:
+
+Go over the basic concept
+- Algorithms recurse in ways that don't appear in the data def
+- numbers are a good example
+	- gcd
+- also graphs
+	- course prereqs as we saw in class
+- also fractals
+
+- First problem to demonstrate
+	- exponentiation
+	A^B = A*A^(B-1)
+
+- Next problem to demonstrate (work through together)
+	- factorial
+	n! = n*n-1!
+
+- work out themselves
+	- fibonncci
+	f(n) = f(n-1) + f(n-2)
+
+- then fractals
+	- seirpinski excersize from the book
+	- 27.1
+
+- then a sierpinski square
+	
+- then we are done
+

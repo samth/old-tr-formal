@@ -1,0 +1,39 @@
+
+bigstep.scm,123
+(define run10,244
+(define value-of-program16,366
+(define value-of-expression22,537
+(define value-of-expressions57,1793
+
+lang.scm,395
+(define the-lexical-spec9,237
+(define the-grammar19,540
+(define groups-for-test 73,1894
+(define show-the-datatypes86,2211
+(define scan&parse89,2314
+(define just-scan92,2394
+(define subst-closed100,2619
+(define run-all170,4708
+(define run-one175,4840
+(define equal-external-reps?179,4910
+(define suite-val-to-exp185,5095
+(define list-find-position198,5543
+(define list-index202,5646
+
+reductions.scm,231
+(define reduce-delta-redex11,247
+(define value->num24,761
+(define reduce-beta-redex32,977
+(define reduce-if-redex38,1155
+(define reduce-let-redex45,1345
+(define reduce-letrec-redex50,1453
+(define reduce-letrec2-redex62,1794
+
+smallstep.scm,200
+(define run10,236
+(define reduce-to-value-program14,320
+(define reduce-to-value20,496
+(define *trace* 31,876
+(define (toggle-trace)32,938
+(define step-once39,1155
+(define step-once-list81,2477

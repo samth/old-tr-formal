@@ -1,0 +1,134 @@
+\newcommand{\figExprty}{
+\begin{figure*}[t!]
+\centering
+\fbox{
+\begin{tabular}{c c c c}
+\vspace{1mm}
+\subtypingIsReflexive &
+\varsAreSubtypesOfTheirBounds &
+\multicolumn{2}{c}{\vspace{1mm}\subtypingIsTransitive}\\
+
+\multicolumn{2}{c}{\vspace{1mm}\subtypeOfKind}  &
+\multicolumn{2}{c}{\vspace{1mm}\subtypeOfSuper\vspace{1mm}}\\
+\hline \vspace{1mm}
+\objectOK & \varOK &
+\multicolumn{2}{c}{\vspace{1mm}\typeofOK}\\
+\multicolumn{4}{c}{\vspace{1mm}\classrefOK}
+
+\end{tabular}
+}
+\caption{Subtyping and Well-Formed Types}
+\label{fig:subtype}
+\end{figure*}
+
+\begin{figure*}[t!]
+\centering
+\fbox{
+\begin{tabular}{c c c}
+\multicolumn{3}{c}{\vspace{1mm}\varType \quad \castType \quad \classType} \\
+\multicolumn{1}{c}{\vspace{1mm}\fieldType} &
+\multicolumn{2}{c}{\vspace{1mm}\newType} \\
+
+\multicolumn{1}{c}{\vspace{1mm}\mapType} &
+\multicolumn{2}{c}{\vspace{1mm}\methodType}\\
+
+\end{tabular}
+}
+\caption{Expression Typing}
+\label{fig:exprty}
+\end{figure*}
+}
+
+\newcommand{\figWF}
+{
+\begin{figure*}[t!]
+\centering
+\fbox{
+\begin{tabular}{c}
+\methodOK \\
+\vspace{2mm}\classOK
+\end{tabular}
+}
+\caption{Well-Formed Constructs}
+\label{fig:wf}
+\end{figure*}
+
+}
+
+\newcommand{\figSyntax}
+{
+\begin{figure*}[tb!]
+\centering
+\fbox {\syntax}
+\caption{MCJ Syntax}
+\label{fig:syntax}
+\end{figure*}
+}
+
+\newcommand{\figComp}
+{
+\begin{figure*}[t!]
+\centering
+\fbox{
+\begin{tabular}{c c c}
+\objectComp & \multicolumn{2}{c}{\newComp} \\[3pt]
+
+\castComp & \multicolumn{2}{c}{\classComp}\\[3pt]
+
+\fieldComp & \multicolumn{2}{c}{\methComp}\\*[5pt]
+
+\hline
+\fieldCong &
+\rcvrCong &
+\newCong \\ [3mm]
+\argCong &
+\castCong &
+\mapCong
+\end{tabular}
+}
+\caption{Computation Rules}
+\label{fig:comp}
+\end{figure*}
+
+\begin{figure*}[t!]
+\centering
+\fbox{
+\begin{tabular}{c c}
+\multicolumn{2}{c}
+{\ensuremath{\begin{array}{c c c}
+\ensuremath{\fieldsObject} & \ensuremath{\fvObject } & \ensuremath{\fvClass}
+\end{array}}}\\[3mm]
+
+\multicolumn{2}{c}{\fieldsClass} \\[3mm]
+\multicolumn{2}{c}{\fieldsTypeof}\\
+
+\multicolumn{2}{c}{\fvTypeof} \\
+
+\hline
+\mtypeDef & \mbodyDef \\[3mm]
+
+\multicolumn{2}{c}{\methodsObject }\\[2mm]
+
+\multicolumn{2}{c}{\methodsClass }\\[3mm]
+
+\multicolumn{2}{c}{\methodsTypeof}\\[3mm]
+
+\hline
+
+\multicolumn{2}{c}{\validOverride} \\
+
+\paramDef
+&
+\paramTypeof\\
+
+\superType
+&
+\superTypeof\\
+
+\end{tabular}
+}
+\caption{Auxiliary Functions}
+\label{fig:aux}
+\end{figure*}
+}
+

@@ -1,0 +1,426 @@
+This is pdfTeX, Version 3.14159-13d (Web2C 7.3.1) (format=pdflatex 2001.7.9)  29 SEP 2004 01:33
+**paper
+(paper.tex[/arch/unix/packages/teTeX-1.0.7/share/texmf/pdftex/config/pdftex.cfg
+]
+LaTeX2e <1999/12/01> patch level 1
+Babel <v3.6Z> and hyphenation patterns for american, french, german, ngerman, n
+ohyphenation, loaded.
+(acmconfbig.cls
+Document Class: acmconfbig 2003/11/22 Alternative LaTeX document class
+Bugs to andru@cs.cornell.edu
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/base/article.cls
+Document Class: article 1999/09/10 v1.4a Standard LaTeX document class
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/base/size10.clo
+File: size10.clo 1999/09/10 v1.4a Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+\@acmtitlebox=\box26
+)
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 1996/11/03 v2.2b
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 1997/09/17 v2.2e
+\@emptytoks=\toks14
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 133.
+))
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2000/01/15 v2.05 AMS math features
+\@mathmargin=\skip43
+
+For additional information on amsmath, use the `?' option.
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsmath/amstext.sty
+Package: amstext 1999/11/15 v2.0
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0
+\@emptytoks=\toks15
+\ex@=\dimen103
+))
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d
+\pmbraise@=\dimen104
+)
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsmath/amsopn.sty
+Package: amsopn 1999/12/14 v2.01 operator names
+)
+\inf@bad=\count87
+LaTeX Info: Redefining \frac on input line 198.
+\uproot@=\count88
+\leftroot@=\count89
+LaTeX Info: Redefining \overline on input line 302.
+\classnum@=\count90
+\DOTSCASE@=\count91
+LaTeX Info: Redefining \ldots on input line 376.
+LaTeX Info: Redefining \dots on input line 379.
+LaTeX Info: Redefining \cdots on input line 464.
+\Mathstrutbox@=\box27
+\strutbox@=\box28
+\big@size=\dimen105
+LaTeX Font Info:    Redeclaring font encoding OML on input line 563.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 564.
+\macc@skew=\dimen106
+\c@MaxMatrixCols=\count92
+\dotsspace@=\muskip10
+\c@parentequation=\count93
+\dspbrk@lvl=\count94
+\tag@help=\toks16
+\row@=\count95
+\column@=\count96
+\maxfields@=\count97
+\andhelp@=\toks17
+\eqnshift@=\dimen107
+\alignsep@=\dimen108
+\tagshift@=\dimen109
+\tagwidth@=\dimen110
+\totwidth@=\dimen111
+\lineht@=\dimen112
+\@envbody=\toks18
+\multlinegap=\skip44
+\multlinetaggap=\skip45
+LaTeX Info: Redefining \[ on input line 2594.
+LaTeX Info: Redefining \] on input line 2595.
+)
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks19
+)
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2001/07/07 v1.0n Standard LaTeX Graphics (DPC,SPQR)
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/config/graphics.cfg)
+Package graphics Info: Driver file: pdftex.def on input line 80.
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/graphics/pdftex.def
+File: pdftex.def 2001/05/25 v0.03g graphics/color for pdftex
+\Gread@gobject=\count98
+))
+\Gin@req@height=\dimen113
+\Gin@req@width=\dimen114
+)
+(semantics-macros.tex
+\c@theorem=\count99
+\c@lemma=\count100
+\c@define=\count101
+) (semantics-rules.tex) (semantics-proofs.tex)
+(paper-figs.tex) (paper.aux)
+\openout1 = `paper.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/context/base/supp-pdf.tex
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/context/base/supp-mis.tex
+loading : Context Support Macros / Missing
+\protectiondepth=\count102
+\scratchcounter=\count103
+\scratchdimen=\dimen115
+\scratchskip=\skip46
+\scratchmuskip=\muskip11
+\scratchbox=\box29
+\scratchread=\read1
+\scratchwrite=\write3
+\nextbox=\box30
+\nextdepth=\dimen116
+\everyline=\toks20
+\!!counta=\count104
+\!!countb=\count105
+\recursecounter=\count106
+)
+loading : Context Support Macros / PDF
+\nofMPsegments=\count107
+\nofMParguments=\count108
+)
+LaTeX Font Info:    Try loading font information for U+msa on input line 33.
+ (/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 1995/01/05 v2.2e AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 33.
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 1995/01/05 v2.2e AMS font definitions
+)
+[1[/arch/unix/packages/teTeX-1.0.7/share/texmf/dvips/config/pdftex.map]
+
+
+]
+[2] [3]
+
+LaTeX Font Warning: Command \small invalid in math mode on input line 433.
+
+LaTeX Font Info:    Try loading font information for OMS+cmtt on input line 458
+.
+LaTeX Font Info:    No file OMScmtt.fd. on input line 458.
+
+LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 458.
+
+
+Overfull \hbox (22.49771pt too wide) in paragraph at lines 485--485
+[]\OT1/cmtt/m/n/10 class Dimension kind Object extends Object { ... }[] 
+ []
+
+
+Overfull \hbox (22.49771pt too wide) in paragraph at lines 485--485
+[]\OT1/cmtt/m/n/10 class Length kind Dimension extends Object { ... }[] 
+ []
+
+
+Overfull \hbox (1.4979pt too wide) in paragraph at lines 485--485
+[]\OT1/cmtt/m/n/10 class Meter kind Length extends Object { ... }[] 
+ []
+
+
+Overfull \hbox (11.9978pt too wide) in paragraph at lines 500--500
+[]\OT1/cmtt/m/n/10 class Species kind Object extends Object { ... }[] 
+ []
+
+[4]
+
+LaTeX Font Warning: Command \small invalid in math mode on input line 607.
+
+
+LaTeX Font Warning: Command \small invalid in math mode on input line 607.
+
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 612.
+
+(/arch/unix/packages/teTeX-1.0.7/share/texmf/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 612.
+ [5]
+Overfull \hbox (27.74767pt too wide) in paragraph at lines 669--669
+[] \OT1/cmtt/m/n/10 class Pair<A,B> make(A a, B b){ new(A,B) (a,b) } ;[] 
+ []
+
+[6] [7]
+Underfull \hbox (badness 1281) in paragraph at lines 826--831
+[]\OT1/cmr/m/n/10 Class well-formedness in-volves all of the above
+ []
+
+
+Overfull \hbox (32.55867pt too wide) in paragraph at lines 833--833
+ [][] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 866--878
+[]\OT1/cmr/m/n/10 The eval-u-a-tion re-la-tion given here is non-
+ []
+
+
+Underfull \hbox (badness 1348) in paragraph at lines 866--878
+\OT1/cmr/m/n/10 for eval-u-at-ing the ar-gu-ments to a \OT1/cmtt/m/n/9 new \OT1
+/cmr/m/n/10 ex-pres-sion
+ []
+
+
+Overfull \hbox (26.62044pt too wide) in paragraph at lines 879--879
+ [][] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 893--893
+[]
+ []
+
+
+Underfull \hbox (badness 1436) in paragraph at lines 893--893
+\OT1/cmr/m/it/10 If $[] \OT1/cmr/m/n/10 = []$ \OT1/cmr/m/it/10 and $[]$ then $\
+OMS/cmsy/m/n/10 9 []$ \OT1/cmr/m/it/10 where
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 895--895
+[]\OT1/cmr/m/n/10 Then $\OML/cmm/m/it/10 CT\OT1/cmr/m/n/10 ([]) =
+ []
+
+
+LaTeX Font Warning: Font shape `OT1/cmr/bx/sc' undefined
+(Font)              using `OT1/cmr/bx/n' instead on input line 895.
+
+[8]
+Underfull \hbox (badness 10000) in paragraph at lines 895--895
+[]\OT1/cmr/m/n/10 Then $\OML/cmm/m/it/10 CT\OT1/cmr/m/n/10 ([]) =
+ []
+
+
+Overfull \hbox (9.8626pt too wide) in paragraph at lines 897--897
+[]
+ []
+
+
+Underfull \hbox (badness 3657) in paragraph at lines 897--897
+\OT1/cmr/m/it/10 If $[] \OT1/cmr/m/n/10 = []$ \OT1/cmr/m/it/10 and $\OMS/cmsy/m
+/n/10 ; ` []$ \OT1/cmr/m/it/10 then
+ []
+
+
+Underfull \hbox (badness 1325) in paragraph at lines 899--899
+[]\OT1/cmr/m/n/10 In this case, $[] = [][][][]$, where
+ []
+
+[9]
+Underfull \hbox (badness 10000) in paragraph at lines 899--899
+[]\OT1/cmr/m/n/10 We know that $[] [] \OMS/cmsy/m/n/10 2
+ []
+
+
+Underfull \hbox (badness 1460) in paragraph at lines 899--899
+[]\OT1/cmr/m/n/10 Then, $[] = [[] \OMS/cmsy/m/n/10 7! []\OT1/cmr/m/n/10 ][]$. B
+y
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 901--901
+[]
+ []
+
+[10]
+Underfull \hbox (badness 2662) in paragraph at lines 915--915
+[]\OT1/cmr/m/n/10 Immediate from the premises of
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 915--915
+[]\OT1/cmr/m/n/10 By the lemma $\OML/cmm/m/it/10 mtype$ \OT1/cmr/m/n/10 and $\O
+ML/cmm/m/it/10 mbody$ \OT1/cmr/m/n/10 agree,
+ []
+
+
+Underfull \hbox (badness 1152) in paragraph at lines 915--915
+[] \OMS/cmsy/m/n/10 ` []$ \OT1/cmr/m/n/10 where $\OMS/cmsy/m/n/10 ; ` []$\OT1/c
+mr/m/n/10 .
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 920--920
+[]\OT1/cmr/m/it/10 If
+ []
+
+LaTeX Font Info:    Font shape `OMS/cmr/m/it' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 922.
+
+Underfull \hbox (badness 1117) in paragraph at lines 924--924
+[]\OT1/cmr/m/n/10 This is a con-tra-dic-tion, since $[]$ is
+ []
+
+[11]
+Underfull \hbox (badness 10000) in paragraph at lines 930--931
+ \OT1/cmr/m/it/10 Proof[] \OT1/cmr/m/n/10 Im-me-di-ate from Sub-ject Re-duc-tio
+n and
+ []
+
+[12] (paper.bbl
+Underfull \hbox (badness 6808) in paragraph at lines 4--9
+[]\OT1/cmr/m/n/10 Eric Allen, Jonathan Ban-net, and Robert
+ []
+
+
+Underfull \hbox (badness 2409) in paragraph at lines 11--17
+\OT1/cmr/m/n/10 Willem Maessen, and Guy Steele.  Object-
+ []
+
+
+Underfull \hbox (badness 1048) in paragraph at lines 11--17
+\OT1/cmr/m/n/10 Oriented Units of Mea-sure-ment.  In \OT1/cmr/m/it/10 Pro-ceed-
+
+ []
+
+
+Underfull \hbox (badness 1430) in paragraph at lines 11--17
+\OT1/cmr/m/it/10 ings of the 2004 ACM SIG-PLAN Con-fer-ence
+ []
+
+
+Underfull \hbox (badness 1603) in paragraph at lines 11--17
+\OT1/cmr/m/it/10 on Object-oriented Pro-gram-ing, Sys-tems, Lan-
+ []
+
+[13]
+Underfull \hbox (badness 10000) in paragraph at lines 94--98
+[]\OT1/cmr/m/n/10 Michael Salib.  Static Type In-fer-ence
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 94--98
+\OT1/cmr/m/n/10 with Starkiller.  In \OT1/cmr/m/it/10 Py-Con DC\OT1/cmr/m/n/10 
+, 2004.
+ []
+
+
+Overfull \hbox (42.63962pt too wide) in paragraph at lines 94--98
+\OT1/cmr/m/n/10 http://www.python.org/pycon/dc2004/papers/1/paper.pdf. 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 105--108
+[]\OT1/cmr/m/n/10 Guido van Rossum.  Uni-fy-ing
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 105--108
+\OT1/cmr/m/n/10 types and classes in Python 2.2.
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 105--108
+\OT1/cmr/m/n/10 http://www.python.org/2.2.2/descrintro.html,
+ []
+
+
+Underfull \hbox (badness 1769) in paragraph at lines 110--114
+\OT1/cmr/m/n/10 What's in an in-stance?  Tech-ni-cal re-port,
+ []
+
+) [14
+
+] (paper.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 2115 strings out of 61166
+ 22940 string characters out of 67683
+ 122449 words of memory out of 263001
+ 5074 multiletter control sequences out of 10000+0
+ 13324 words of font info for 54 fonts, out of 400000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 34i,32n,38p,432b,513s stack positions out of 300i,100n,500p,300000b,4000s
+<msam10.pfb><cmmi7.pfb><cmcsc10.pfb><cmsy7.pfb><cmmi8.pfb><cmsy10.pfb><cmmi10
+.pfb><cmr8.pfb><cmr6.pfb><cmr7.pfb><cmtt10.pfb><cmti10.pfb><cmr9.pfb><cmtt9.pfb
+><cmr5.pfb><cmr10.pfb><cmbx10.pfb><cmtt12.pfb><cmr12.pfb><cmr17.pfb>
+Output written on paper.pdf (14 pages, 235317 bytes).

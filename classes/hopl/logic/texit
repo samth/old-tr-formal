@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for TEXFILE in $*
+do
+  FILE=${TEXFILE%.tex}
+  latex $FILE && bibtex $FILE && latex $FILE && latex $FILE && latex $FILE
+done

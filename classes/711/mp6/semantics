@@ -1,0 +1,37 @@
+Semantics for begin:
+--------------------
+
+(begin e1 e2 ... en end, p, E, s) ->
+	(e1, p, E o begin [], e2 ... en end, s)
+
+(v, E o begin [], e2 .. en end, s) ->
+	(e2, E o begin [] ... en end, s)
+
+(v, E o begin [] end, s) -> (v, E, s)
+
+Semantics for array:
+--------------------
+
+ARRAY_n[v1, ..., vn] is an array of length n with contents v1 ... vn
+A[k] is the kth element of array A
+ASET[a,k,v] is the array A, with the kth element set to v
+
+(phi(e1, ... , en), p, E, s) -> ((e1, .. ,en), p, E o phi([*]), s)
+  [this rule is the same from the earlier semantics]
+
+((n), E o array([*]), s) -> (l, E, [l = ARRAY_n[0,...,0]]s)
+
+((a,l), E o arrayref([*]), s) -> (s(a)[l], E, s)
+
+((a,l,v), E o arrayset([*]), s) -> (0, E, [a = ASET[s(a),l,v]]s)
+
+Semantics for checkpoint .. catch (or recover-from-errors-with)
+----------------------------------
+
+(checkpoint e catch e', p, E, s) ->
+	(e, p, E o checkpoint [] catch e'ps, s)
+(v, E o checkpoint [] catch eps', s) -> (v, E, s)
+(error, E o checkpoint [] catch eps', s) -> (e, p, E, s')
+(error, E o F) -> (error, E)
+(error, []) -> 99
+

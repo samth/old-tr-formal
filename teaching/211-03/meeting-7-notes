@@ -1,0 +1,13 @@
+Meeting 6 - 10/24
+
+Lab Instructions
+
+1/4 lab time - 1 or 2 examples of creating abstractions - a tree structure
+
+3/4 time - using loops
+	2 examples w/ plain lists (of posns)
+	1 example using html/xml boxes
+		map html-creating-fcn over nums
+		creating internals of webpage with map
+			(ul (li ...) (li ...))
+			splice boxes

@@ -1,0 +1,153 @@
+Sam Tobin-Hochstadt
+Prof Attie
+Time-stamp: <2003-10-27 16:19:29 sam>
+
+Problem 1:
+(B => X) & (~B => Y) = 
+(~B | X) & (B | Y) = 
+/* change logic to arithmetic */
+(-b+x)(b+y) = 
+-bb bx xy -by =
+bx (-by xy)
+bx (-b+x)(-b+y)(y+x)(y+y) =
+bx (-b+x)(-b+y)(y+x)y = 
+bx + (-b-b + -by + -bx + xy)(y+x)y = 
+bx + (-b-b + -by + -bx + xy)y = 
+bx + (-by + -by + -bx + xy) =
+-bx + -by  + bx + xy = 
+bx + (-bx + -by + xy) =
+bx + (-bx + -by + xy + -bb) =
+bx + (bx + -by) =
+(bx + bx) + -by =
+bx + -by =
+/* and back again */
+(B & X) | (~B & Y)
+
+------------------------------------------
+
+Problem 2:
+wp(IF;WHILE, Q) = wp(if B then S; while B do S, Q) =
+wp(if B then S, wp(while B do S, Q)) =
+wp(if B then S, E(k:k=0:P_k)) =
+(B => wp(S, E(k:k>=0:P_k))) & (~B => Q) =
+(B => E(k:k>0:P_k-1)) & (~B => Q) (by the defintion of P_k)
+
+
+wp(WHILE, Q) =
+wp(while B do S, Q) =
+E(k:k>=0:P_k) =
+E(k:k>0:B & P_k-1) | ~B & Q =
+B & E(k:k>0:P_k-1) | ~B & Q
+
+Let E(k:k>0:P_k-1) = X and Q = Y
+Then we have ((B => X) & (~B => Y)) = ((B & X) | (~B ^ Y))
+Which we proved in problem 1.  
+
+----------------------------------------
+
+Problem 3:
+Proof of Correctness
+
+{X>=0 & Y>=0}
+{1*(X^Y) = X^Y}
+x := X
+{1*(x^Y) = X^Y}
+y := Y
+{1*(x^y) = X^Y}
+z := 1
+{z*(x^y) = X^Y}
+while y != 0 do
+	{z*(x^y) = X^Y & y != 0}
+	if even(y) then
+		{z*(x^y) = X^Y & y != 0 & even(y)}
+		{z*((x*x)^(y/2)) = X^Y}		
+		y := y/2;
+		{z*((x*x)^y) = X^Y}		
+		x := x*x;
+		{z*(x^y) = X^Y}
+	else
+		{z*(x^y) = X^Y & y != 0 & ~even(y)}
+		{z*x*(x^(y-1)) = X^Y}
+		y := y - 1
+		{z*x*(x^y) = X^Y}
+		z := z*x
+		{z*(x^y) = X^Y}
+	endif
+	{z*(x^y) = X^Y}
+endwhile
+{z*(x^y) = X^Y & y = 0}
+{z = X^Y}
+
+Proofs:
+{X>=0 & Y>=0} => 
+{T} =>
+{X^Y = X^Y} =>
+{1*(X^Y) = X^Y} 
+
+{z*(x^y) = X^Y & y = 0} => 
+{z*(x^0) = X^Y} => 
+{z*1 = X^Y} =>
+{z = X^Y} 
+
+{z*(x^y) = X^Y & y != 0 & ~even(y)} =>
+{z*(x*(x^(y-1))) = X^Y} =>
+{z*x*x^(y-1) = X^Y}
+
+{z*(x^y) = X^Y & y != 0 & even(y)} =>
+{z*((x^2)^(y/2)) = X^Y} =>
+{z*((x*x)^(y/2)) = X^Y}		
+
+Proof of Termination:
+
+<X>=0 & Y>=0>
+<I(Y)>
+x := X
+<I(Y)>
+y := Y
+<I(y)>
+z := 1
+{I(y) = 0 <= y <= Y}
+/* Variant: phi(y) = y */
+while y != 0 do
+	<I(y) & phi(y) = C & y != 0>
+	if even(y) then	
+		<I(y) & phi(y) = C & y != 0>
+		<I(y/2) & phi(y/2) < C>
+		y := y/2;
+		<I(y) & phi(y) < C>
+		x := x*x;
+		<I(y) & phi(y) < C>
+	else
+		<I(y) & phi(y) = C & y != 0>	
+		<I(y-1) & phi(y-1) < C>
+		y := y - 1
+		<I(y) & phi(y) < C>
+		z := z*x
+		<I(y) & phi(y) < C>
+	endif
+	<I(y) & phi(y) < C>
+endwhile
+<T>
+
+Proofs:
+Y>=0 =>
+Y = Y >= 0 =>
+Y >= Y >= 0 =>
+I(Y)
+
+I(y) & phi(y) = C & y != 0 =>
+0 <= y <= Y & y = C & y != 0 =>
+0 < y <= Y & y = C =>
+0 <= y-1 <= Y & y-1 < C =>
+I(y-1) & phi(y-1) < C
+
+I(y) & phi(y) = C & y != 0 =>
+0 <= y <= Y & y = C & y != 0 =>
+0 < y <= Y & y = C =>
+0 < y/2 <= Y & y/2 < C =>
+I(y/2) & phi(y/2) < C
+
+
+
+
+

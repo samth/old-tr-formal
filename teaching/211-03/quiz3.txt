@@ -1,0 +1,11 @@
+CSU211			30 September		Quiz 2
+
+Question 3:
+-----------
+
+Develop a structure and data definition for keeping track of light
+switches. The interesting properties of a light switch are: the location
+(building name), its age (year), and whether it is on or off.  Write  
+down
+the names of all the functions that the structure definition generates.
+

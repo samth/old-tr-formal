@@ -1,0 +1,19 @@
+Imperative Queue Implementation
+
+* part 1 (http://www.ccs.neu.edu/home/samth/queue1.scm)
+
+** Discussion of the problem
+** Demo of fully working implementation
+** Skeleton functions with correct contracts (together)
+** Individual (working w/ partners) implementation of functions
+   (30 min)
+
+* quiz - 20 min
+
+* part 2 (http://www.ccs.neu.edu/home/samth/queue2.scm)
+
+** discussion of problem
+** what should we do?
+** why is the copy/paste solution bad?
+** what is a dispatcher?
+** implementation - rest of class

@@ -1,0 +1,206 @@
+\documentclass[12pt]{article}
+
+\usepackage{amssymb}
+\usepackage[all]{xy}
+\usepackage{amsmath}
+\usepackage{fullpage}
+\usepackage{enumerate}
+
+\title{Modern Control Operators}
+\author{Sam Tobin-Hochstadt}
+\date{\today}
+
+\input xy
+\xyoption{all}
+
+
+\begin{document}
+\bibliographystyle{plain}
+
+
+
+\maketitle
+
+
+\makebox{\hspace{21mm}
+\xymatrix{{}& *++[F--]{~~~~~\cite{monads}~~~~~}& *++[F--]{~~~~~\cite{sitaram94thesis}~~~~~} & *++[F--]{~~~~~\cite{luc94partial}~~~~~}\\
+& {} & *++[F]{~~~~~\cite{sitaram93handling}~~~~~}\ar[u] & *++[F--]{~~~~~\cite{queinnec93library}~~~~~} \ar[u]
+\\ &{} & {} &*++[F]{~~~~~\cite{queinnec91dynamic}~~~~~} \ar[u] 
+\\ &{} & {}& *++[F]{~~~~~\cite{hieb90continuations}~~~~~} \ar@/^/[uul]  \ar[u]   \\
+& *++[F]{~~~~~\cite{danvy90abstracting}~~~~~} \ar@/^/[urr]  \ar[uuuu] \ar@//[uurr] \ar@//[uuurr] &*++[F]{~~~~~\cite{sitaram90control}~~~~~} \ar[ur] \ar[uuu] \ar[l] \ar@/^/[uuur]\\&
+  {}&*++[F]{~~~~~\cite{felleisen87syntactic}~~~~~} \ar[u] \\
+  &{}&*++[F--]{~~~~~\cite{felleisen86secd}~~~~~} \ar[u] \\
+}
+}
+
+
+\subsection*{A Syntactic Theory of Sequential Control} 
+Eugene Kohlbecker, Daniel Friedman, Matthias Felleisen and Bruce Duba 1987
+\cite{felleisen87syntactic}
+
+This paper lays out a semantics for higher order control based on
+syntactic transformation of evaluation contexts.  Semantic analysis
+with syntactic transformation was introduced primarily by Plotkin
+\cite{gdp:cbn-cbv}, and evaluation contexts by Felleisen in
+\cite{felleisen86secd}.  They present the control operators ${\mathcal
+A}$ and ${\mathcal C}$, corresponding to {\tt abort} and {\tt
+control}.  They then provide a context based semantics for these
+operators, and prove a number of important properties, such as
+Church-Rosser, for the new extended language, called $\lambda_C$.
+
+This paper, referenced by many of the following papers in the area, lays
+the groundwork for future work in the study of higher order control
+operators.  It summarizes work published in a number of other settings
+by the authors, places the previous results in a self-contained
+context, and proves a number of key theorems about the system.  
+
+\subsection*{Control Delimiters and their Hierarchies}
+Matthias Felleisen and Dorai Sitaram 1990 \cite{sitaram90control}
+
+In this paper, Felleisen and Sitaram describe a new pair of control
+operators, providing delimited continuations, first described in \cite{mf-prompts}.
+Such continuations do not capture the entire rest of the computation,
+but merely that back to an enclosing prompt.  Further, instead of
+using the standard Scheme control operator {\tt call/cc}, they use the
+operator $\mathcal{F}$, also previously defined by Felleisen.  This
+operator is simpler, but provides all the power of the others.  
+
+The authors then provide a number of potential applications for such a
+control operator, as well as implementation strategies.  Some of the
+potential applications include coroutines, engines and implementations
+of first-order control handlers such as exceptions.  Finally, the
+authors discuss the possibilites of generating hierarchies of control
+delimiters, so that continuations can be captured back to specific
+delimiters, rather than the nearest enclosing delimiter.  They show
+how this is easily expressible in terms of the original operators.  
+
+The sequence of papers culminating in this one introduced the delimited
+continuation concept as a research topic.  Sitaram, Danvy and other
+built on this work to create other, potentially more sophisticated
+control operators.  However, the early papers by Felleisen and
+collaborators represented their introduction.  
+
+\subsection*{Abstracting Control}
+Olivier Danvy and Andre Filinski 1990 \cite{danvy90abstracting}
+
+This paper is at once both very similar to, and very different from,
+the previous paper.  It is similar in that it too introduces a new
+control operator for delimited continutation, here called {\tt shift}
+and {\tt reset}.  Further, shift and reset are very similar to the
+previous control operators introduced by Sitaram and Felleisen.
+Similar enough, in fact, that it takes serious effort to find programs
+that distinguish them.  
+
+However, the paper is also very different.  Where the earlier paper
+focused on implementation in Scheme, Danvy and Filinski focus on
+semantics.  And where Felleisen and his collaborators focused on
+operational semantics, this paper provides a more denotational focus,
+defining the new control operators in terms of the CPS (and ECPS)
+translation for the call-by-value $\lambda$-calculus.  However, this
+paper also provides a number of examples of the control operators in
+action, and provides a hierarchy of such operators.  
+
+{\tt shift} and {\tt reset} have seen significantly more use in actual
+programming than the other delimited continutation operators.  For
+example, Filinski uses them to implement a representation of monads
+\cite{monads}, and Sperber and Gasbicher provide a direct
+implementation in \cite{581504}.  However, they still have not
+achieved even the popularity of {\tt call/cc}.
+
+\subsection*{Continuations and Concurrency}
+Robert Hieb and R. Kent Dybvig 1990 \cite{hieb90continuations}
+
+This paper introduced a new delimited continuation operator, {\tt
+spawn}, with significant differences from those seen previously.
+First, this operator was introduced with the specific purpose of
+handling concurrent process control.  However, the concurrency aspects
+have been neglected in the further literature.  Also, instead of being
+a pair of operators, there is only one.  The operator creates a new
+control operator each time it is invoked, and passes this new operator
+to its argument.  Further, the newly created control operator is
+delimited by the particular {\tt spawn} where it was created.  This
+new operator behaves identically to {\tt control} from
+\cite{sitaram90control}, with the appropriate delimiter.
+
+In addition to defining the new operator, the authors provide a
+semantics for it.  To accomplish this, they add a labeling construct
+to the standard context based reduction semantics seen earlier.  This
+labeling construct allows jumps back to previously labeled points in
+the program execution, saving and restoring the context.  While this
+operator could have been useful for defining the semantics of control
+operators, it has not seen further use.  
+
+\subsection*{A Dynamic Extent Control Operator for Partial
+  Continuations}
+Christian Queinnec and Bernard Serpette 1991 \cite{queinnec91dynamic}
+
+In this paper, Queinnec and Serpette propose a control operator, {\tt
+splitter}, very much like {\tt spawn}.  Again, it takes the form of a
+delimiter which binds a new control operator each time it is invoked.
+However, in this case, two new control operators are created.  One
+reifies the current continuation back to the delimiter, but does not
+involve aborting the current context.  The other merely aborts the
+context back to the delimiter.  These are of course the two operations
+performed together in all the other control operators.  Again, lexical
+scoping plays a significant role, as it did for {\tt spawn}.
+Unfortunately, no semantics are provided in the paper (although an
+ACPS semantics is provided in a later survey paper \cite{queinnec93library}).
+
+This paper represents a different direction from the main stream of
+control operator research.  {\tt splitter} divides the two main
+effects of continuation invocation in a way not seen elsewhere.  This
+makes {\tt splitter}-created continutations even more ``composable''
+than those created by {\tt shift}, which are often described as
+``composable''.  Further, none of the other systems involve a
+specialized delimited abort construct.  (Queinnec and Moreau devised a
+similar control operator in \cite{luc94partial}).  
+
+The lexically scoped control operators are fundamentally different
+from dynamically scoped operators.  It is not obvious which is the
+correct choice.  \footnote{Note that this distinction is irrelevant
+  for {\tt call/cc}, which is not scoped.}  Lexical scope has won out
+for variable binding in all modern programming languages.  However,
+exceptions in languages from C++ to SML are dynamically scoped.  This
+suggests that higher order control operators be scoped similarly to
+their first order cousins.  Finally, it is possible to provide a
+purely functional implementation of lexically scoped control
+operators in terms of dynamically scoped operators.  However, the
+reverse is not the case.  These reasons together suggest that dynamic
+scope is the correct choice.  However, in the abscence of extensive
+programming experience with such operators, such a judgement can only
+be provisional.  
+
+\subsection*{Handling Control}
+Dorai Sitaram 1993 \cite{sitaram93handling}
+
+This paper introduces yet another very different control operator,
+{\tt fcontrol}, athough with a confusingly similar name to some
+operators that we have seen before. Here, instead of the control
+operator reifying the current continuation and passing that to its
+argument, as all the previous operators did, the delimiter contains a
+handler procedure.  When the control operator is invoked, control
+passes to the handler, which recieves both the value supplied to the
+control operator and the continuation at the point the operator was
+invoked (back to the delimiter).  The handler is then free to do as it
+wishes with these two arguments.
+
+This is a radical departure from control operators previously
+discussed here, but it is very like an exception handler.  When an
+exception is raised, control passes to the dynamically nearest
+enclosing handler, which is given the value of the exception.  Here,
+the addition is to provide the current continuation of the exception
+invocation as well.  This allows, for example, for resumption of the
+computation with a different value.  
+
+This paper further provides a number of examples (including the
+classic same-fringe) using the new operator.  In these examples, we
+see that much of the computation acutally takes place in the handler,
+rather than in the ``body'' of the code.  This is unlike normal
+programming style with either exception handlers or standard control
+operators.  This paper does not provide semantics for the new
+operators, however such semantics are available in
+\cite{sitaram94thesis}.  
+
+\bibliography{control}
+
+\end{document}

@@ -1,0 +1,23 @@
+Meeting 5 Notes
+
+Lab Info
+
+	Lecture!
+	Subject: local
+	(local
+	  ([define x (posn-x p)]
+	   [define y (posn-y p)]
+	   ...
+	   [define result (sqrt s)])
+	   result)
+	Lecture from Intermezzo 3
+	  (a) syntax (by example)
+	  (b) informal semantics (appeal to intuition)
+	  (c) pragmatics
+	       mouse click example (drawing lines)
+	   - giving names to intermediate results
+	   - local functions (but de-emphasize) - find example 
+	  (d) formal semantics
+	  	stepper - cvs version
+
+Office Hours

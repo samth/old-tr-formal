@@ -1,0 +1,30 @@
+Lab 3 Notes - Sam TH - Mon 29 Sep 2003 08:50:46 PM EDT 
+
+1. Define a store item as a group
+	a. Data definition (10 min)
+		A store-item is a
+		- book
+		- cd
+		- dvd
+	
+	b. Structure definition (5 min)
+	c. write template for operations on this structure (5 min) (INDEX CARD)
+	d. define two functions that operate on this structure (20 min)
+		- get-price : store-item -> number
+		- discount : store-item -> store-item
+	
+2. quiz (10 min)
+	a. go over grading guidelines
+	b. distribute quiz
+
+3. testing discipline (20 min)
+	a. why is testing important?
+	b. what are the correct format for tests?
+	c. what does test coverage mean?
+	d. practice
+		- modify tests for previous functions to use correct syntax
+		- ensure 100% test coverage
+		
+4. stepper (remainder)
+	a. develop the function find (list->num)
+	b. run stepper on function

@@ -1,0 +1,188 @@
+\documentclass[12pt]
+{article}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{problem}[theorem]{Problem}
+
+
+
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+      \ifdim\lastskip<1.5em \hskip-\lastskip
+      \hskip1.5em plus0em minus0.5em \fi \nobreak
+      \vrule height0.75em width0.5em depth0.25em\fi}
+
+\title{CSG 713: Problem Set 1}
+\author{Sam Tobin-Hochstadt}
+\date{\today}
+
+
+
+\begin{document}
+
+\maketitle
+
+\subsection*{Problem 1}
+
+Consider the regular language $M$, accepted by a DFA $D_M =
+(Q,\Sigma,\delta,q_0,F)$. Then let NFA $N_{M^R} =
+(Q \cup \{q_0'\},\Sigma,\delta',q_0',\{q_0\})$, where $q_0'$ is a new
+state and
+$\delta' = \{ (m,n,a) ~|~ (n,m,a) \in \delta \} \cup \{
+(q_0',f,\epsilon) ~|~ f \in F\}$.
+
+To see that these two automata accept the same language, consider what
+happens to each when processing a string.  For each string $w$, if there
+is a path from the start state to a final state labeled with that
+string in the DFA, then there must be a path from one of the states in
+$F$ to $q_0$ labeled with $w^R$ in the NFA.  By construction,
+therefore, there is path labeled with $\epsilon w^R$ from the start
+state to a final state in the NFA.  Therefore, all strings in $W^R$
+are accepted by $N_{M^R}$.  
+
+To see that all strings accepted by $N_{M^R}$ are in $W^R$, consider
+what would happen if we applied the construction to a DFA with only
+one start state, and added no epsilon transitions.  Then, if we
+applied the construction again, we would get the original DFA.
+Therefore, since the final automata accepts every string in the
+reverse of the reverse of the first automata, as proved above, since
+it clearly accepts no more strings than the first automata (since they
+are isomorphic), the construction must not add any strings to the
+language.  
+
+Finally, since NFAs can be made to have single start states without
+loss of generality, and the construction also works for NFAs, the two
+automata accept the same language. \qed
+
+\subsection*{Problem 2}
+
+\subsubsection*{Part A}
+
+We solve this problem by proving that $C^R$ is regular.  
+
+For this problem, we need merely to keep track of whether there is a
+carry bit or not, which means we need two states.  If the top is equal
+to the bottom, plus a carry, then we move the the carry state.  If the
+top plus the carry is equal to the bottom, we move the even state.  If
+the top plus the carry is equal to the bottom plus a carry, we stay in
+the carry state.  If the top is equal to the bottom, and there is no
+carry, we stay in the same state.  Otherwise the machine fails.  
+
+This is implemented in an attached machine.  
+
+\subsubsection*{Part B}
+Since $0 * 3^n$ and $2 * 3^n$ are even for all values of $n$, and $1 *
+3^n$ is odd for all positive values of $n$, we merely need to
+determine if the number of 1's in the string is even.  See the
+attached figure for the automaton.  
+
+\subsection*{Problem 3}
+
+\subsubsection*{Part A \small{I discussed this problem with Richard Cobbe}}
+
+First, we show that multiplication by two yields a regular language.
+This is trivial, since to multiply by two in binary we need merely to
+shift left by one position, and compare for equality.  To do this with
+an automata, we need merely to require an initial zero in the top row
+when examining the string in reverse.  
+
+Since we also already are able to check for equality between the sum
+of two rows and a third (Problem 2.A), we need merely to show that this combination
+preserves regularity. To do this, consider a DFA that checks for
+equality, and one that checks for being twice the size, when a zero is
+added (this is multiplication by two).  If both accept, then accept.
+This is possible because regular languages are closed under
+intersection. 
+
+\subsubsection*{Part B}
+
+For this problem, we need merely to see which row has a one where the
+other has a zero first.  That row is the larger.  The automaton
+implementing this is attached.  
+
+\subsection*{Problem 4}
+
+First, note that if $(Q,\Sigma,\delta,q_0,F)$ is an NFA which accepts
+language $M$, then it can also be considered as an all-paths-NFA,
+accepting language $M'$.  To construct a DFA that accepts the same
+language, we follow the construction for simulating an NFA with a
+DFA.  However, we add one additional state, a dead state, with edges
+from itself to itself on all inputs.  We add an edge to this state for
+each time when the NFA would be unable to make a transition.  Further,
+we restrict the accepting states to those subsets of $Q$ which are
+also subsets of $F$.  
+
+This construction correctly simulates an all-paths-NFA for the same
+reason that the construction works for NFAs.  If the NFA never
+encounters a state where it is unable to make a transitions, then it
+ends up in the state representing all possible ending states (this is
+identical to the NFA case).  If all of those states are accepting, the
+DFA will accept, which is the correct behavior for the
+all-paths-NFA. If the all-paths-NFA ever reached a point where it was
+unable to make a transition, the DFA would go to the dead state, and
+reject, which is also the correct behavior.  
+
+Second, note that every DFA is an all-paths-NFA, with no
+nondeterminism.  Therefore, any language that can be accepted by a DFA
+can also be accepted by an all-paths-NFA.  Therefore, all-paths-NFAs
+can accepts all regular languages.  
+
+From these two facts, all-paths-NFAs accepts precisely the regular
+languages.  \qed
+
+\subsection*{Problem 5 \small{I worked on this problem with Greg Pettyjohn}}
+Consider a DFA $M$ which accepts language $A$.  Construct a new DFA
+$M'$ by changing $F$ to $\overline{F}$.  This DFA accepts all proper
+prefixes of $A$.  Call this operation $PP(A)$.  
+
+\subsubsection*{Part A}
+$NOPREFIX(A) = A - PP(A)$, therefore it is regular, since the regular
+languages are closed under set difference.  
+
+\subsubsection*{Part B}
+$NOPREFIX(A) = \overline{PP(A)}$, therefore it is regular, since the regular
+languages are closed under set complement.
+
+\subsection*{Problem 6}
+
+To prove that $Multiple_5$ is regular, we prove the $Multiple_5^R$ is
+regular.  To do this, we construct an automaton.  
+
+Let $Q = \{0,1,2,3,4\} x \{1,2,4,3\}$.
+
+Let $q_0 = (0,1)$.
+
+Let $F = \{(0,x)~|~ x \in \{1,2,4,3\}\}$.
+
+Let $\Sigma = \{0,1\}.$
+
+Finally, we must construct the transition function.  For all states
+labelled $(x,1)$, add an edge labeled 0 to the state $(x,2)$.
+Similarly from $(x,2)$ to $(x,4)$ and from $(x,4)$ to $(x,3)$ and
+finally from $(x,3)$ back to $(x,1)$.  
+
+Then add an edge for each state labeled $(m,n)$, add an edge labeled 1
+to the state $(m+n\bmod 5, f(n))$, where $f$ takes 1 to 2, 2 to 4, 4
+to 3 and 3 to 1, as in the above paragraph.  
+
+This automaton keeps track both of the number modulo 5, and how many
+to add to the number if the next digit is a one.  Since the powers of
+2 modulo 5 repeat the sequence $1,2,4,3$, we have a total of 20
+states.  If the computation ends with the current modulus at 0, the
+machine accepts.  
+
+\subsection*{Problem 7}
+
+\subsubsection*{Part A}
+The automaton is equivalent to the RE $((0 \cup 1)^*1) \cup ((0 \cup
+1)^*1(00)^*)$.
+
+\subsubsection*{Part B}
+The automaton is equivalent to the RE $(b^*a) (((a \cup b)a) \cup ((a
+\cup b)bb^*a))^*$.
+
+\end{document}

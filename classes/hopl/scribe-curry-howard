@@ -1,0 +1,243 @@
+(require (lib "xml.ss" "xml"))
+(require (lib "pretty.ss"))
+(require (lib "etc.ss"))
+(require (lib "list.ss"))
+(empty-tag-shorthand html-empty-tags)
+
+(define (inf-rule prems conc)
+  `(table ((border "1"))
+	  (tr ((align "center")) (td ,(if (null? prems) "" (foldr (lambda (x y) (string-append x "; " y)) (car prems) (cdr prems)))))
+	  (tr ((align "center")) (td ,conc))))
+
+(define (correspond a b)
+  `(tr ((align "center")) (td ,a) (td ,b)))
+
+(define (make-t h1 h2 l1 l2)
+  `(table 
+    (tr ((align "center")) (th ,h1) (th ,h2))
+    ,@(map correspond l1 l2))
+  )
+
+(define (type term typ)
+  `(span ,term (sup ,typ)))
+
+(define but-last
+  (lambda (l) (reverse (cdr (reverse l)))))
+
+(define (seq . l)
+  (type `(span "(" ,@(but-last l) ")") (car (reverse l))))
+
+
+(define (go file-name content)
+  (if (file-exists? file-name)
+      (delete-file file-name))
+  (call-with-output-file file-name
+    (lambda (output-port)
+      (display-xml/content (xexpr->xml content) output-port))))
+
+(define (build-table/holes width height hole-fun)
+  (build-list 
+   height 
+   (lambda (i) 
+     (cons 'tr
+           (build-list 
+            width (lambda (j) 
+                    (cond [(hole-fun i j) => (lambda (x) `(td ,x))]
+                          [else '(td nbsp)])))))))
+
+
+(define (q/a source question answer)
+  `(table ((bgcolor "LightGray"))
+          (tr (td "Q ( from " ,source "):" ,question))
+          (tr (td "A: ",answer))))
+
+(define (ed-note note)
+  `(table ((bgcolor "LightBlue"))
+          (tr (td "Scribe's Note: ",note))))
+
+(define (code-for . exps)
+  (let ((str (open-output-string)))
+    (display "\n" str)
+    (parameterize [(pretty-print-columns 30)]
+      (for-each (lambda (exp) (pretty-display exp str)) exps)
+      (get-output-string str))))
+
+
+(define (lam v vt b bt)
+  (seq 'lambda (type v vt) "." 
+       (type b bt)  (string-append vt "->" bt)) 
+  )
+
+(define (app fun inp inpt outt)
+  (seq (type fun (string-append inpt "->" outt)) (type inp inpt) outt))
+
+(define (comments . l)
+  `(div ((bgcolor "LightBlue")) ,@(map (lambda (x) `(p ,x)) l)))
+
+(define (andd a b)
+  (string-append a "&" b))
+
+(define (orr a b)
+  (string-append a "|" b))
+
+(define (pair a at b bt)
+  (type `(span "<" ,(type a at) "," ,(type b bt) ">") (string-append at "x" bt)))
+
+(define (inl m a b)
+  (seq (type "inl" b) (type m a) (string-append a "+" b)))
+
+(define (inr m a b)
+  (seq (type "inr" a) (type m b) (string-append a "+" b)))
+
+(go "scribe-report.html" 
+    `(html
+      (head (title "Carl: Curry-Howard Isomorphism"))
+      (body
+       (h1 "Curry-Howard Isomorphism")
+
+       (h3 "Curry-Feys 58")
+
+       (p "Uses combinators instead of explicit lambda terms")
+
+       ,(make-t "Combinators" "Axioms of P(=>)"
+	       (list "K = \\x.\\y.x" "S = \\x.\\y.\\z.(xz)(yz)" "Application")
+	       (list "A=> (B => A)" "(A=>(B=>C))=>(A=>B)=>A=>C" "Modus Ponens")
+	       )
+
+
+
+       ,(comments "Matthias: What's the correspondence here?"
+		 "Dave: propositions and types"
+		 "Matthias: these are the basic axioms of logic"
+		 )
+
+       (h3 "Howard 69, published 80")
+
+       (h4 "Implication")
+
+       ,(make-t "logic" "lambda-calc"
+		(list (inf-rule '() "A |- A")
+		     (inf-rule '("G,A |- B") "G |- A=>B")
+		     (inf-rule '("G |- A=>B" "G |- A") "G |- B")
+		     "Propositions"
+		     "Proofs")
+	       (list (type "x" "A") 
+		     (lam "x" "A" "M" "B")
+		     (app "M" "N" "A" "B")
+		     "Types"
+		     "Terms")
+	       )
+
+       ,(comments "Matthias: Types are propositions about programs")
+
+       (h4 "Strongly normalizing")
+
+       (p ,(seq (lam "x" "A" "M" "B") (type "N" "A") "B")
+	  (br)
+	  "reduces to"
+	  (br)
+	  ,(type "M" "B")
+	  ,(type `(span "[" ,(type "N" "A") "/" ,(type "x" "A") "]") "B")
+	  )
+
+       (p "Cut elimination is equivalent to beta reduction")
+       (p "Why must our language be strongly normalizing?")
+       (p 937 ": A for ANY A, this leads to inconsitency")
+       ,(comments "Matthias: All programs are proofs, but what are they proofs of?")
+
+       (h4 "Negation")
+       ,(make-t "logic" "lambda-calc"
+		(list "false, ~A := A => false"
+		      (inf-rule '("false") "A")
+		      )
+		(list `(span 8709 ", A -> " 8709)
+		      (seq (type "abort" `(span 8709 "->A")) (type "M" 8709) "A")
+		      ))
+
+       ,(comments "Felix: how do we get M?" 
+		 "Carl: in unreachable parts of the program")
+
+       (h4 "Conjunction")
+
+       ,(make-t "logic" "lambda-calc"
+		(list (inf-rule '("A" "B") (andd "A" "B"))
+		      (inf-rule (list (andd "A" "B")) "A")
+		      (inf-rule (list (andd "A" "B")) "B")
+		      )
+		(list (pair "M" "A" "N" "B")
+ 		      `(span 928 (sub "1") " : AxB -> A")
+ 		      `(span 928 (sub "2") " : AxB -> B")
+		      ))
+
+       (comments "Matthias: note the correspondence between introduction and elimination"
+		 "rules.  This was the inspiration for parts of HtDP.")
+
+       (h4 "Disjunction")
+
+       ,(make-t "logic" "lambda-calc"
+		(list (inf-rule (list "A") (orr "A" "B"))
+		      (inf-rule (list "B") (orr "A" "B"))
+		      (inf-rule (list "G |- A|B"
+				      "G,A |- C"
+				      "G,B |- C")
+				"G |- C")
+		      )
+		(list
+		 (inl "M" "A" "B")
+		 (inr "M" "A" "B")
+		 (seq "case" (type "T" "A+B") "of" '(br) "inl" (type "x" "A") "=>" (type "M" "C") '(br) "inr" (type "x" "B") "=>" (type "N" "C")"C")
+		 ))
+
+       (h4 "What don't we have?")
+       
+       (ul
+	(li "effects")
+	(li "A | ~A -- the excluded middle")
+	(li "~~A -- double negation")
+	(li "quantification")
+	)
+
+       (h4 "Constructivism")
+       (p "Truth = Proof = Direct evidence")
+       (p "Neither the excluded middle nor double negation provide a witness")
+
+       (h4 "Quantification")
+
+       ,(make-t "logic" "lambda-calc"
+	       (list 
+		(inf-rule '("G,a in t |- A(a)" "(a not in G)") 
+			  "G |- forall x in t.A(x)")
+		(inf-rule '("G|- forall x in t.A(x)" "a in t") 
+			  "G |- A(a)")
+		(inf-rule '("a in t" "A(a)") "exists x in t.A(x)")
+		(inf-rule '("G |- exists x in t.A(x)" "G, a in t, A(a) |- C")
+			  "G |- C")
+		)
+	       (list (seq 'lambda (type "a" "t") "." (type "M" "A(a)") "forall x in t.A(x)") 
+		     (seq (type "M" "forall x in t.A(x)") (type "a" "t") "A(a)") 
+		     (type `(span "<" ,(type "a" "t") ,(type "M" "A(a)") ">") "exists x in t.A(x)")
+		     (seq "let (" (type "x" "t") "," (type "u" "A") ") =" (type "M" "exists x in t.A(x)") "in" (type "N" "C") "C")
+		     )
+		
+	       )
+
+       (h3 "Griffin 90")
+
+       (h4 "Control operators = Classical logic")
+
+       (p "The following are the rules for the control operators from Friedman, Felleisen"
+	  (br) (span "E[A(M)] " 8594 " M") (br)
+
+	  (span "E[C(M)] " 8594 " M" lambda "z.A(E[z])"))
+
+       (p "This gives us the following types"
+	  (br) (span "C : ((" alpha 8594 "false)" 8594 "false)" 8594 alpha)
+	  (br) (span "which is isomorphic to ~~A => A")
+	  (br) (span "A : " beta 8594 alpha)
+	  (br) (span "which is isomorphic to abort."))
+
+       (p "With this, we can recover all of classical logic.")
+       
+       )))
+
+

@@ -1,0 +1,148 @@
+\documentclass[12pt]
+{article}
+
+\usepackage{amssymb}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{problem}[theorem]{Problem}
+
+
+
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+      \ifdim\lastskip<1.5em \hskip-\lastskip
+      \hskip1.5em plus0em minus0.5em \fi \nobreak
+      \vrule height0.75em width0.5em depth0.25em\fi}
+
+\title{CSG274: Problem Set 3}
+\author{Sam Tobin-Hochstadt}
+\date{\today}
+
+
+
+\begin{document}
+
+\maketitle
+
+\begin{problem}
+\label{Execution Projection Theorem}
+
+Let $A_1,\ldots,A_n$ be I/O automata, and let $A = A_1 \| \ldots \|
+A_n$. If $\alpha \in execs(A)$ then $\forall i : i \leq i \leq n
+\colon \alpha \upharpoonright A_i \in execs(A_i)$.
+\end{problem}
+
+\begin{proof}
+Let $\beta = \alpha \upharpoonright A_i$.  Then $\beta = t_0b_1t_1
+\ldots$  where $t_i \in states(A_i)$ and $b_i \in acts(A_i)$ by the
+definition of projection.
+
+Therefore, if $\beta$ is a valid execution sequence, then it must be
+an execution sequence of $A_i$.    
+
+Further, consider the triple $(s_{j-1},a_j,s_j)$.  There are four
+possible cases to consider.
+
+\begin{enumerate}
+\item 
+  $a_j$ corresponds to an internal action of automata $A_j$, with $j \neq i$.
+
+  Then, by the definition of restriction, $a_j$ and $s_j$ are both
+  deleted from the restricted execution sequence.  Since $s_{j-1}$ is
+  restrictied to $t_k$ for some $k$, where $t_k \in states(A_i)$, and
+  this is the same state that $s_j$ would be restricted to, this case
+  is trivially satisfied.
+
+\item
+  $a_j$ corresponds to an internal action of automata $A_i$.
+
+  Then, restriction gives us the new triple $(t_{k-1},b_k,t_k)$.  By
+  definition, $b_k$ is an internal action of $A_i$, transitioning from
+  $t_{k-1}$ to $t_k$.  Therfore, this triple is a valid part of an
+  execution sequence for $A_i$.  
+
+\item
+  $a_j$ is an external action of automata $A_j$, with $j \neq i$, but
+  not an external action of automata $A_i$. 
+
+  This case is identical to the first, since the latter two states in
+  the triple are dropped.  
+
+\item
+  $a_j$ is an external action of automata $A_i$.
+
+  This case is parallel to the second case.  If $a_j$ is not an
+  external action of any other $A_j, j \neq i$, then this case is
+  identical to the second case.
+
+  If $a_j$ is an external action of some other automata $A_j$, this has no
+  effect, since the states corresponding to the transitions in $A_j$
+  are no longer visible in the new state $t_k$.  Therefore, the new
+  triple $(t_{k-1},b_k,t_k)$ is a valid triple for an execution
+  sequence from $A_i$.  
+  
+\end{enumerate}
+
+Therefore, any triple in the original execution sequence must be
+transformed either to a single state, or a valid triple for the
+automata $A_i$.  Since the triples overlap, with each triple sharing a
+state with the immediatly preceding and succeding triples, and this
+state sharing is preserved, execept in the case of the new single
+states, where both states were the same, the combination of the
+triples is a valid execution sequence of the automata $A_i$.    
+
+\qed
+\end{proof}
+
+\begin{problem}
+  \label{Execution Pasting Theorem}
+  
+  Let $A_1,\ldots,A_n$ be I/O automata, and let $A = A_1 \| \ldots \|
+  A_n$. Let $\alpha$ be a sequence $s_0a_1s_1a_2 \ldots s_{j-1}a_js_j
+  \ldots$ of alternating states and actions of $A$, that is, $(\forall j
+  \geq 0 : s_j \in states(A))$ and $i \in {1 \ldots n}, s_{j,i} \in
+  states(A_i)$. Also, $s_j \upharpoonright A_i = s_{j,i}$.
+
+\noindent Furthermore, suppose that
+
+\begin{enumerate}
+\item $\forall i \in {i \ldots n} : \alpha \upharpoonright A_i \in
+  execs(A_i)$, and 
+\item $\forall i \in {i \ldots n}, \forall j > 0 : $ if $a_j \not\in
+  acts(A_i)$ then $s_{j-1}\upharpoonright A_i = s_j \upharpoonright
+  A_i$. 
+
+\end{enumerate}
+Then $\alpha \in execs(A)$.
+\end{problem}
+
+\begin{proof}
+
+By assumption, all the actions $a_i$ are in $acts(A)$ and all the
+states $s_i$ are in $states(A)$.  Therefore, all that remains to be
+proven is that for every triple $(s_{j-1},a_j,s_j)$ there is a
+transition in $A$ from $s_{j-1}$ to $s_j$ labeled $a_j$.  By the
+defintion of parallel composition, this means there exists an automata
+$A_i$ such that $a_j \in acts(A_i)$, where $a_j$ transitions from
+state $s_{j-1,i}$ to $s_{j,i}$. {j-1,n}>$ to $<s_{j-1,1}, ., s_{j,i}, .,
+s{j-1,n}>$ labeled $a_j$, then the triple is valid for automata $A$.
+However, by the definition of composition, if $a_j$ transitions from
+state $s_{j-1,i}$ to $s_{j,i}$ in $A_i$, then there exists a
+transition from $<s_{j-1,1}, ., s_{j-1,i}, ., s_{j-1,n}>$ to
+$<s_{j,1}, \ldots, s_{j,i}, \ldots, s{j,n}>$.  By supposition (2)
+above, $\forall k \neq i s_{j-1,k} = s_{j,k}$.  Therfore, the
+transition that we know to exist is identical to the required
+transition.  Thus the triple is valid for automata $A$.  
+
+This discussion has neglected the possibility that an action might be
+an external action of more than one of the composed automata.  Howver,
+this possibility introduces no additional complexity into the proof.
+We merely have to consider the possibility that more automata change
+state on action $a_j$.  This extension is straightforward.  
+
+\qed
+\end{proof}
+
+\end{document}
