@@ -20,9 +20,12 @@
          
          (append
           (map page-item past-it)
-          (list* (page-item it)
+          (if si
+              (list* (colorize (page-item it) "blue")
                  (page-subitem si)
-                 (map page-item other-it)))
+                 (map page-item other-it))
+              (list* (colorize (page-item it) "blue")
+                     (map page-item other-it))))
          
          (if (null? other-si) 
              '()
@@ -403,11 +406,11 @@
                 (list "Smalltalk"
                       "Restricted levels")
                 (list "MOP"
-                      "???")
+                      #f)
                 (list "Python"
                       "Similar to ObjVLisp, no published semantics")
-                (list "SOL?"
-                      "IBM Language from 1990's")
+                (list "SOL"
+                      "Very Different Constraints on Inheritance")
                 (list "OOPSLA 2004"
                       "Insipration for this work, but no semantics")))
                
