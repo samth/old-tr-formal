@@ -178,18 +178,27 @@
   
   (define (check-fun-app fun args exp-ty env) 
     (let* ((fun-ty (lookup fun env))
+           (_ (if (not fun-ty) (display fun)))
            (exp-args (fun-ty-args fun-ty))
            (ret (fun-ty-result fun-ty)))
       (parameterize ((current-exp `(,fun . ,args)))
         (for-each (lambda (x y) (check-exp y x env)) exp-args args))
       (verify-ty exp-ty ret `(,fun . ,args))))
   
-  (define (check exp ty env)
+  (define (check exp env)
     (match exp
       [('define (nm . args) (arg-tys ...) ret-ty body)
        (check-def nm args arg-tys ret-ty body env)]
+      [('define-struct nm ((fields tys) ...))
+       (append (type-struct nm fields tys) env)]
       [_ (current-exp exp)
-         (check-exp exp ty env)]))
+         (check-exp exp 'Any env)
+         env]))
+  
+  (define (check-multi forms env)
+    (foldl check env forms))
+  
+  (define (checks f e) (check-multi f e) (void))
   
   (define (check-def nm args arg-tys ret-ty body env)
     (let* ((ft (list nm (make-fun-ty arg-tys ret-ty))) 
@@ -201,6 +210,7 @@
                      (check-exp body ret-ty new-env))))
       (cons ft env)
       ))
+  
   
   (define test-exp '(cond
                       [(equal? 3 4) 5]
@@ -223,11 +233,19 @@
                        (cond
                          [(cons? a) (+ (< (car a) 4) (car a))]
                          [(empty? a) 0])))
+  (define test-def3 `(define (bar l) ((Listof Number)) Number
+                       (car l)))
+  
+  (define posn-def `(define-struct posn ((x Number) (y Number))))
   
   (define new-env (append (list (list 'p 'posn) (list 'a 'Any))
-                          (type-struct 'posn '(x y) '(Number Number)) 
                           base-env))
   
+  (define all-tests (list posn-def test-def1 test-def2 test-def3 test-exp test-exp2 test-exp3
+                          test-exp4))
+  
+  (checks all-tests new-env)
+
   (define new-test `(define (max l) ((nelon)) Number
                       (cond
                         [(cons? (cdr l)) (car (cdr l))]
@@ -236,4 +254,5 @@
   (check test-exp 'Number base-env)
   (check test-exp2 'Number new-env)
   (check test-exp3 'posn new-env)
+
   )
