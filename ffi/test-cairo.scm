@@ -60,7 +60,7 @@
 
             (save/restore
              (set-rgb-color 0 0 1)
-             (fill ))
+             (fill))
             (stroke))
 
 

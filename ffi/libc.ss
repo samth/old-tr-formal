@@ -6,8 +6,8 @@
   
   (define fopen (get-ffi-obj "fopen" "" (_fun _string _string -> _FILE)))
 
-  (define fclose (get-ffi-obj "fclose" "" (_fun _FILE -> _int)))
+  (define fclose (get-ffi-obj "fclose" "" (_fun _FILE -> _int)))bar
 
-  (provide (all-defined))
+  (provide _FILE fopen fclose)
   
   )
