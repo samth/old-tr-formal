@@ -1,0 +1,82 @@
+\documentclass{article}[12pt]
+\usepackage{mmm}
+\usepackage{sample}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{fullpage}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{define}{Definition}
+
+\newcommand\red{\rightarrow^*} 
+
+
+\begin{document}
+
+\title{Assignment 4}
+\author{Sam Tobin-Hochstadt}
+
+\newmeta\e{e}
+\newmeta\vv{v}
+\newmeta\kk{k}
+%\newcommand\v{\vv{}}
+
+\maketitle
+
+\begin{theorem}
+  If $\e{} \Downarrow v$ then $<e,E> \rightarrow^* <v,E>$.
+\end{theorem}
+
+\begin{proof}
+  We proceed by induction the derivation of $\e{} \Downarrow v$ and by
+  cases on the last rule of the derivation.  
+
+
+\item[[$v \Downarrow v$]] Then $<e,E> \rightarrow^* <v,E>$ in zero steps.
+
+\item[[$\beta$-reduction]] In this case $e = (\e1\ \e2)$.  Then by focus-down,
+  $<e,E> \rightarrow^* <\e1,E[([]\ \e2)]>$.  Then by the induction
+  hypothesis, this reduces to $<\lambda x.e',E[([]\ \e2)]>$.  Then we
+  can apply focus-up to get $<(\lambda x.e'\ \e2),E>$, which reduces
+  by the $\beta$-reduction rule to $<e'[\e2/x],E>$, which by the
+  induction hypothesis reduces to $<v,E>$.  
+
+\item[[if true]] In this case $e = (\e1\ \e2)$.  Then by focus-down,
+  $<e,E> \rightarrow^* <\e1,E[([]\ \e2)]>$. By the induction
+  hypothesis, this reduce to $<if true e',E[([]\ \e2)]>$.  By applying
+  focus-up, we get $<if true e' \e2,E>$, which takes a step to
+  $<e',E>$.  By the induction hypothesis, this reduces to $<v,E>$.  
+
+\item[[if false]] This is exactly analagous to the above case.
+
+\item[[zero?]] In this case, $e = (\e1\ \e2)$.  By focus-down, we have
+  $<e,E> \rightarrow^* <\e1,E[([]\ \e2)]>$. By the induction
+  hypothesis, we then have $<\e1,E[([]\ \e2)]> \red <zero?,E[([]\
+  \e2)]>$.  Then by focus-up and focus-down, we have $<zero?,E[([]\
+  \e2)]> \red <\e2,E[(zero?\ [])]>$.  By the induction hypothesis and
+  focus-up, this reduces to $<(zero?\ \kk{m},E>$ which reduces to
+  either true or false.  Since both true and false are values, we now
+  have $<v,E>$ as desired.
+
+\item[[+1, -1]] These cases are exactly analagous to zero?.
+
+\item[[if]] In this case, $e = (\e1\ \e2)$.  By focus-down, we have
+  $<e,E> \rightarrow^* <\e1,E[([]\ \e2)]>$. By the induction
+  hypothesis, we then have $<\e1,E[([]\ \e2)]> \red <if,E[([]\
+  \e2)]>$. Then by focus-up and focus-down, we have $<if,E[([]\
+  \e2)]> \red <\e2,E[(if\ [])]>$.  By the induction hypothesis, this
+  reduces to $<v',E[(if\ [])]>$.  By applying focus-up, we get $<if
+  v,E>$, which is a value.
+
+\item[[Other cases for if]] The other case for if proceeds as above.
+
+\item[[Y]] In this case $e = (\e1\ \e2)$.  Then by focus-down,
+  $<e,E> \rightarrow^* <\e1,E[([]\ \e2)]>$.  Then by the induction
+  hypothesis, this reduces to $<Y,E[([]\ \e2)]>$.  By applying
+  focus-up, we then get $<(Y\ \e2),E>$ which reduces by the reduction
+  rule for $Y$ to $<(\e2\ (Y\ \e2)),E>$.  By the induction hypothesis,
+  this reduces to $<v,E>$.  
+
+\end{proof}
+
+\end{document}
