@@ -1,29 +1,24 @@
 (require (lib "foreign.ss"))
+(require "libc.ss")
 
 (unsafe!)
 
-(define libpixman (ffi-lib "libcairo"))
+(define libcairo (ffi-lib "libcairo"))
 
-(define-syntax defcairo-full
-  (syntax-rules (:)
-    [(_ nm : ty ...)
-     (define nm
-       (get-ffi-obj (regexp-replaces 'nm '((#rx"-" "_") (#rx"^" "cairo_")))  libpixman (_fun ty ...)))]))
-
-(define-syntax defcairo
-  (syntax-rules (: ->)
-    [(_ nm : in ... -> ret)
-     (defcairo-full nm : _cairo in ... -> ret)]
-    [(_ nm) (defcairo-full nm : _cairo -> _void)]
-    [(_ nm : in ...)
-     (defcairo-full nm : _cairo in ... -> _void)]))
-
-(define-cpointer-type _FILE)
 
 (define-cpointer-type _cairo)
 (define-cpointer-type _cairo_surface)
 (define-cpointer-type _cairo_matrix)
 (define-cpointer-type _cairo_pattern)
+
+(define current-cairo-state
+  (make-parameter
+   #f (lambda (x)
+        (if (and x (cpointer? x))
+          x
+          (error 'current-cairo-state
+                 "expecting a non-void C pointer, got ~s" x)))))
+
 
 (define _format
   (_enum '(format-argb32
@@ -47,37 +42,68 @@
            operator-add
            operator-saturate)))
 
+(define-syntax defcairo-full
+  (syntax-rules (:)
+    [(_ nm : ty ...)
+     (define nm
+       (get-ffi-obj (regexp-replaces (quote nm) '((#rx"-" "_") (#rx"^" "cairo_")))  libcairo (_fun ty ...)))]))
+
 (defcairo-full create : -> _cairo)
-(defcairo reference)
+
+(defcairo-full reference : _cairo -> _void)
+
+(define-fun-syntax _cairo*
+  (syntax-id-rules ()
+    [_ (type: _cairo expr: (current-cairo-state))]))
+
+
+
+(define-syntax defcairo
+  (syntax-rules (: ->)
+    [(_ nm : in ... -> ret)
+     (defcairo-full nm : _cairo* in ... -> ret)]
+    [(_ nm) (defcairo nm :)]
+    [(_ nm : in ...)
+     (defcairo nm : in ... -> _void)]))
+
 (defcairo destroy)
 (defcairo save)
 (defcairo restore)
 
-(defcairo-full copy : _cairo _cairo -> _void)
 
-(defcairo set-target-surface : _cairo )
+(define-syntax save/restore
+  (syntax-rules ()
+    [(save/restore body ...)
+     (begin
+       (save)
+       body ...
+       (restore))]))
+
+(defcairo-full copy : _cairo -> _void)
+
+(defcairo set-target-surface : _cairo)
 
 (defcairo set-target-image : _bytes _format _int _int _int)
 
-(defcairo set-target-ps : _FILE _double _double _double _double)
+(defcairo set-target-ps : _FILE _double* _double* _double* _double*)
 
-;(defcairo set-target-png : _FILE _format _int _int)
+(defcairo set-target-png : _FILE _format _int _int)
 
 (defcairo set-operator : _operator)
 
-(defcairo set-rgb-color : _double _double _double)
+(defcairo set-rgb-color : _double* _double* _double*)
 
 (defcairo set-pattern : _cairo_pattern)
 
-(defcairo set-alpha : _double)
+(defcairo set-alpha : _double*)
 
-(defcairo set-tolerance : _double)
+(defcairo set-tolerance : _double*)
 
 (define _fill_rule (_enum '(fill-rule-winding fill-rule-even-odd)))
 
 (defcairo set-fill-rule : _fill_rule)
 
-(defcairo set-line-width : _double)
+(defcairo set-line-width : _double*)
 
 (define _line_cap (_enum '(line-cap-butt line-cap-round line-cap-square)))
 
@@ -87,49 +113,49 @@
 
 (defcairo set-line-join : _line_join)
 
-(defcairo set-dash : (_ptr i _double) _int _double)
+(defcairo set-dash : (_ptr i _double*) _int _double*)
 
-(defcairo set-miter-limit : _double)
+(defcairo set-miter-limit : _double*)
 
-(defcairo translate : _double _double)
+(defcairo translate : _double* _double*)
 
-(defcairo rotate : _double)
+(defcairo rotate : _double*)
 
 (defcairo concat-matrix : _cairo_matrix)
 
-; (defcairo set-matrix : _cairo_matrix)
+(defcairo set-matrix : _cairo_matrix)
 
-; (defcairo default-matrix)
+(defcairo default-matrix)
 
-; (defcairo identity-matrix)
+(defcairo identity-matrix)
 
-; (defcairo transform-point : (_ptr i _double) (_ptr i _double))
+(defcairo transform-point : (_ptr i _double*) (_ptr i _double*))
 
-; (defcairo transform-distance : (_ptr i _double) (_ptr i _double))
+(defcairo transform-distance : (_ptr i _double*) (_ptr i _double*))
 
-; (defcairo inverse-transform-point : (_ptr i _double) (_ptr i _double))
+(defcairo inverse-transform-point : (_ptr i _double*) (_ptr i _double*))
 
-; (defcairo inverse-transform-distance : (_ptr i _double) (_ptr i _double))
+(defcairo inverse-transform-distance : (_ptr i _double*) (_ptr i _double*))
 
 (defcairo new-path)
 
-(defcairo move-to : _double _double)
+(defcairo move-to : _double* _double*)
 
-(defcairo line-to : _double _double)
+(defcairo line-to : _double* _double*)
 
-(defcairo curve-to : _double _double _double _double _double _double)
+(defcairo curve-to : _double* _double* _double* _double* _double* _double*)
 
-(defcairo arc : _double _double _double _double _double)
+(defcairo arc : _double* _double* _double* _double* _double*)
 
-(defcairo arc-negative : _double _double _double _double _double)
+(defcairo arc-negative : _double* _double* _double* _double* _double*)
 
-(defcairo rel-move-to : _double _double)
+(defcairo rel-move-to : _double* _double*)
 
-(defcairo rel-line-to : _double _double)
+(defcairo rel-line-to : _double* _double*)
 
-(defcairo rel-curve-to : _double _double _double _double)
+(defcairo rel-curve-to : _double* _double* _double* _double*)
 
-(defcairo rectangle : _double _double _double _double)
+(defcairo rectangle : _double* _double* _double* _double*)
 
 (defcairo close-path)
 
@@ -141,12 +167,12 @@
 
 (defcairo copy-page)
 
-(defcairo in-stroke : _double _double -> _bool)
+(defcairo in-stroke : _double* _double* -> _bool)
 
-(defcairo in-fill : _double _double -> _bool)
+(defcairo in-fill : _double* _double* -> _bool)
 
 (defcairo init-clip)
 
 (defcairo clip)
 
-(defcairo stroke-extents )
+(defcairo stroke-extents)
