@@ -25,6 +25,7 @@ Unproved.
 
 \newcommand{\preservation}{
 \begin{theorem}[Subject Reduction]
+\mbox{}\\
 If \eeproves{\typ{\e}{\SSS}} and \trans{\e}{\ep}
 then \eeproves{\typ{\ep}{\T}} where {\proves \emptyset {\subtype{\T}{\SSS}}}.
 \end{theorem}
@@ -32,6 +33,7 @@ then \eeproves{\typ{\ep}{\T}} where {\proves \emptyset {\subtype{\T}{\SSS}}}.
 \newcommand{\progress}
 {
 \begin{theorem}[Progress]
+\mbox{}\\
 If \eeproves{\typ{\e}{\SSS}} then one of the following holds:
 \begin{itemize}
 \item $\e = \mapping{\of}{\ov \vv}{\GG}$
@@ -69,7 +71,7 @@ Immediate from the premises of \rulename{T-New} and \rulename{R-New}.
 
 \proofcase{\rulename {R-Class}}
 
-Immediate from the premises of \rulename{WF-ClassDef} and \rulename{R-Class}.
+Immediate from the premises of \\\rulename{WF-ClassDef} and \rulename{R-Class}.
 
 \proofcase{\rulename {R-Cast}}
 
@@ -89,18 +91,18 @@ where $\eproves {\subtype \SSS \T}$.
 
 \proofcase{\rulename {R-Invk}}
 
-We know that $\e = \invoke {\Phi_{\GG}} {\mof \dd}$ and that $\ep =
+We know that $\e = \invoke {\Phi_{\GG}} {\mof \dd}$ and that \\$\ep =
 {\substituteTwoArg \ox \od \this {\Phi_{\GG}}} \e_0$. Further, $\e$
 was typed by \rulename{T-Invk} to have type $\U$ where $\mtype \m \GG
 = \arrType \oT \U$ and $\eeproves {\typ \od \oTp}$ and $\eproves {\subtype \oTp
 \oT}$.  As a premise of \rulename{R-Invk}, we know that $\mbody \m \GG
 = (\ox, \e_0')$.
 
-By the lemma $mtype$ and $mbody$ agree, $\proves
-{\emptyset;{\typ{\ox}{\oT}},{\typ{\this}{\GG}}} {\typ{\e_0'}{\Up}}$
-where $\eproves {\subtype \Up \U}$.  Then by the lemma Substitution
-Preserves Typing, $\eeproves {\typ {\ep = {\substituteTwoArg \ox \od
-\this {\Phi_{\GG}}} \e_0} \Upp}$ where $\eproves {\subtype \Upp \Up}$.
+By the lemma $mtype$ and $mbody$ agree, $\emptyset;{\typ{\ox}{\oT}},$\\
+$\proves {{\typ{\this}{\GG}}} {\typ{\e_0'}{\Up}}$ where $\eproves
+{\subtype \Up \U}$.  Then by the lemma Substitution Preserves Typing,
+$\eeproves {\typ \ep \Upp}$ where $\ep = {\substituteTwoArg \ox \od
+    \this {\Phi_{\GG}}} \e_0$ and $\eproves {\subtype \Upp \Up}$.
 
 \proofcase{\rulename {C-Cast}}
 
@@ -150,9 +152,19 @@ hypothesis, $\eept \e \SSS$ and $\eept \ep \Sp$ where $\esub \SSS
 
 \proofcase{\rulename{T-Var}} This is a contradiction, since $\e$ is ground.
 
-\proofcase{\rulename{T-Class}} In this case $\e = \CSp$ where $\CSp$ is ground.  Then by the lemma  Agreement of {\it field-vals} and {\it fields}, $\typeparams{\CSp} = \oX \implSym \parens {\oI, \oJ}$ for some     Further, $\fieldVals{\typeof \CSp}  = \Tfe$ for some $\oT$, $\of$, and $\oe$.  Therefore, \rulename{R-Class} applies and $\trans \SSS {\mapping \of {\SpforX \CSp} {\typeof \CSp}}$.
+\proofcase{\rulename{T-Class}} In this case $\e = \CSp$ where $\CSp$
+is ground.  Then by the lemma Agreement of {\it field-vals} and {\it
+  fields}, $\fieldVals{\typeof \CSp} = \Tfe$ for some $\oT$, $\of$,
+and $\oe$.  Further, $\typeparams{\CSp} = \oX \superSym \oI \kindSym
+  \oJ$ for some $\oX, \oI, \oJ$. Therefore, \rulename{R-Class}
+applies and \\$\trans \SSS {\mapping \of {\SpforX \CSp} {\typeof
+    \CSp}}$.
 
-\proofcase{\rulename{T-Mapping}} Either $\e$ is already a value, or $\e = \mapping \of \oe \GG$ where not all of the $\oe$ are values.  Then by the induction hypothesis, there is some $i$ such that either $\trans {\e_i} {\ep_i}$, in which case \rulename{C-Mapping} applies, or $\e_i$ contains a bad cast, and the case is complete.
+\proofcase{\rulename{T-Mapping}} Either $\e$ is already a value, or
+$\e = \mapping \of \oe \GG$ where not all of the $\oe$ are values.
+Then by the induction hypothesis, there is some $i$ such that either
+$\trans {\e_i} {\ep_i}$, in which case \rulename{C-Mapping} applies,
+or $\e_i$ contains a bad cast, and the case is complete.
 
 \proofcase{\rulename{T-Cast}}  Here there are three cases:
 \begin{itemize}
@@ -166,10 +178,10 @@ hypothesis, $\eept \e \SSS$ and $\eept \ep \Sp$ where $\esub \SSS
 \proofcase{\rulename{T-Invk}}  Here there are two cases.
 \begin{itemize}
 \item $\e = \invoke \rr {\mof \dd}$ where $\rr$ is not a mapping.  Then by the induction hypothesis, either $\rr$ contains a bad cast or $\trans \rr \rr'$ and \rulename{C-Rcvr} applies.
-\item $\e = \invoke {\Phi_{\T}} {\mof \dd}$  We know from the antecedent that $\mtype \m {\bound \T} = \arrType \oU \V$ and therefore $\mtype \m \T = \arrType \oU \V$ since $\T$ is ground.  Therefore, since {\it mbody} is defined everywhere {\it mtype} is defined, $\mbody \m \T = (\ox, \e_0)$ for some $\ox$ and $\e_0$.  Thus \rulename{R-Invk} applies.
+\item $\e = \invoke {\Phi_{\T}} {\mof \dd}$  We know from the antecedent that \\$\mtype \m {\bound \T} = \arrType \oU \V$ and therefore $\mtype \m \T = \arrType \oU \V$ since $\T$ is ground.  Therefore, since {\it mbody} is defined everywhere {\it mtype} is defined, $\mbody \m \T = (\ox, \e_0)$ for some $\ox$ and $\e_0$.  Thus \rulename{R-Invk} applies.
 \end{itemize}
 
-\proofcase{\rulename{T-Field}} Here there are two cases, either the reciever is a mapping or not.  In the first, by the antecedent of the typing rule, we can lookup the field successfully and apply \rulename{R-Field}.  Otherwise, we can apply \rulename{C-Field}.
+\proofcase{\rulename{T-Field}} Here there are two cases, either the receiver is a mapping or not.  In the first, by the antecedent of the typing rule, we can lookup the field successfully and apply \rulename{R-Field}.  Otherwise, we can apply \rulename{C-Field}.
 
 \end{description}
 
@@ -177,6 +189,7 @@ hypothesis, $\eept \e \SSS$ and $\eept \ep \Sp$ where $\esub \SSS
 
 \newcommand{\substitutionPreservesTyping}{
 \begin{lemma}[Substitution Preserves Typing]
+\mbox{}\\
 If $\dgprove {\typ \e \T}$ and $\Gamma = \typ{\ox}{\oS}$ and
 ${\proves {\Delta;\emptyset} {\typ {\od} {\oU}}}$ and ${\dproves {\subtype \oU \oS}}$
 then ${\proves {\Delta;\emptyset} {\typ {{\substitute \ox \od} \e} \Tp}}$ where ${\dproves {\subtype{\Tp}{\T}}}$.
@@ -188,6 +201,7 @@ then ${\proves {\Delta;\emptyset} {\typ {{\substitute \ox \od} \e} \Tp}}$ where 
 \newcommand{\methodTypingLemma}
 {
 \begin{lemma}[Subtyping Preserves Method Typing]
+\mbox{}\\
 If $\mtype \m \U = \arrType \oT \SSS$ and $\proves \emptyset {\subtype \V \U}$ then
 $\mtype \m \V = \arrType \oT \SSS$.
 \end{lemma}
@@ -208,18 +222,18 @@ Not applicable.
 
 \proofcase{\rulename{S-Super}}
 
-In this case, $\V = \CR$, where $CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
-\braces{... \oM}$ and $\U = \RforX \A$.  We need to show that $\mtype
+In this case, $\V = \CR$, where \\$CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
+\braces{... \oM}$ \\and $\U = \RforX \A$.  We need to show that $\mtype
 \m \CR = \arrType \oT \SSS$.   By lemma $methods$ is well-defined, it
 suffices to show that $\simpleMethod \in \methods \CR$.
 
-We know that $\simpleMethod \in \methods \U$.  So, we proceed by
+Since we know that $\simpleMethod \in$ \\$\methods \U$, we proceed by
 induction on the derivation of $\methods \U$.
 
 \subcase{$\U = \Object$}
 Impossible, since $\Object$ has no methods.
 
-\subcase{$\U = \typeArgs \D \W$}
+\subcasenl{$\U = \typeArgs \D \W$}\\
 Then, $\U = \RforX \A$.  By \rulename{MethodsClass}, $\methods \V =
 \methods \CR = (\RforX \oM)\ \cup\ \methods {\RforX \A} = (\RforX
 \oM)\ \cup\ \methods \U$.  Therefore, any method in  $\methods \U$
@@ -227,7 +241,7 @@ must be in $\methods \V$.
 
 \proofcase{\rulename{S-Typeof}}
 
-Analagous to \rulename{S-Super}.
+Analogous to \rulename{S-Super}.
 
 \proofcase{\rulename{S-Trans}}  Let the intermediate type be
 $\T$. Then $\esub \V \T$ and $\esub \T \U$.  Thus, by the induction
@@ -239,13 +253,13 @@ hypothesis, $\mtype \m \V = \mtype \m \T = \mtype \m \U$.
 \newcommand{\fieldsPreservedLemma}
 {
 \begin{lemma}[Fields are Preserved by Subtypes]
+\mbox{}\\
 If $\fields \U = \oF$ and ${\proves {\emptyset} {\subtype \V \U}}$ then $\exists\ \oG$ where $\fields \V = \oF\ @\ \oG$.
 \end{lemma}
 }
 
 \newcommand{\fieldsPreservedProof}
 {
-
 \myProof
 We prove this by induction over the derivation for $\fields \V$.
 
@@ -254,7 +268,7 @@ We prove this by induction over the derivation for $\fields \V$.
 
 Then $\U = \Object$ and $\emptyset = \emptyset\ @\ \emptyset$.
 
-\proofcase{$\V = \CR$}
+\proofcasenl{$\V = \CR$}
 
 Then $CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
 \braces{... {\oH} ...}$
@@ -269,11 +283,11 @@ $\RforX \A = \U$. Thus $\oG = \oH$.
 
 \subcase{\rulename {S-Trans}}
 
-Let $\T$ be the intermediate type. Then $\fields \V = {\fields \T}\ @\
+Let $\T$ be the intermediate type. Then \\$\fields \V = {\fields \T}\ @\
 {\ov {\HH'}}$ and $\fields \V = {\fields \T}\ @\ {\ov {\HH''}}$ by the
 induction hypothesis.  Thus $\oG = {\ov {\HH'}}\ @\ {\ov {\HH''}}$.
 
-\proofcase{$\V = \typeof{\CS}$}
+\proofcasenl{$\V = \typeof{\CS}$}
 
 Then $CT(\C) = {\typeFront {\typeArgsBounds \C \X \I \J} \B \A}
 \braces{{\oW\ \oh\ \oe} ...}$.  We continue by induction over the
@@ -282,13 +296,14 @@ derivation of $\esub \V \U$.  The only complex cases are
 
 \subcase{\rulename{S-Trans}}
 As above.
-
-\subcase{\rulename {S-Kind}}
+\newpage
+\subcasenl{\rulename {S-Kind}}
 
 $\SforX \A = \U$ Then $\fields \V = \SforX \oW\ \oh$.  By
 well-formedness of $\C$, we know that $\fields \B \subseteq \oW\ \oh$.
-Then $\SforX \fields \B \subseteq \SforX \oW\ \oh$, and $\fields {\SforX \B} \subseteq
-\SforX \oW\ \oh$ by lemma Substitution Distributes over $fields$.
+Then $\SforX \fields \B \subseteq \SforX \oW\ \oh$, and $\fields
+{\SforX \B} \subseteq$\\$\SforX \oW\ \oh$ by lemma Substitution
+Distributes over $fields$.
 \end{description}
 
 }
@@ -302,12 +317,13 @@ Immediate from Subject Reduction and Progress.
 
 \newcommand{\fieldsAgreeLemma}{
 \begin{lemma}[Agreement of $fields$ and {\it field-vals}]
+\mbox{}\\
 If $\fields \GG = \Tf$ and $\fieldVals \GG = \oTp\ \ofp\ \oe$ then
 $\oT = \oTp$, $\of = \ofp$ and $\eept \oe \oS$ where $\esub \oS \oT$.
 \end{lemma}
 }
 \newcommand{\fieldsAgreeProof}{
-\myProof The proof is exactly analagous to the proof of lemma {\it mtype} and {\it mbody} Agree.
+\myProof The proof is exactly analogous to the proof of lemma {\it mtype} and {\it mbody} Agree.
 }
 
 \newcommand{\noBadCastLemma}
@@ -352,7 +368,7 @@ Also, ${\SpforX {\RforY \A}} = {\substitute {\ov \Y} {\SpforX {\ov \R}}} \A$.  S
 $\esub {\typeArg \C {\SpforX {\ov \R}}} {\substitute {\ov \Y} {\SpforX {\ov \R}}} \A$
 by \rulename{S-Super}, completing the case.
 
-\proofcase{\rulename{S-Kind}} Analagous to \rulename{S-Super}.
+\proofcase{\rulename{S-Kind}} Analogous to \rulename{S-Super}.
 
 \proofcase{\rulename{S-Bound}} In this case, $\U = \X_i$ and $\T =
 \SSS_i$.  Then ${\SpforX \U} = \Sp_i$ and $\SpforX \T = \SpforX

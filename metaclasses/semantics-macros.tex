@@ -9,6 +9,7 @@
 %\newcommand {\true} {\mbox{\tt true}}
 %\newcommand {\false} {\mbox{\tt false}}
 \newcommand {\class} {\mtt {class}}
+\newcommand {\static} {\mtt {static}}
 %\newcommand {\type} {\mbox{\tt type}}
 %\newcommand {\super} {\mbox{\tt super}}
 \newcommand {\kind} {\mtt {kind}}
@@ -29,9 +30,10 @@
 \newcommand{\comma}{\mtt {,}}
 \newcommand{\assign}{\mtt{\ = }}
 \newcommand{\parens}[1]{\mbox{\tt (}#1\mbox{\tt )}}
-\newcommand{\angles}[1]{\mtt {<}#1\mtt {>}}
+\newcommand{\angles}[1]{\mbox{\tt <}#1\mbox{\tt >}}
+%\newcommand{\angles}[1]{\mtt {<}#1\mtt {>}}
 \newcommand{\braces}[1]{\mbox{\tt \{}#1\mbox{\tt \}}}
-\newcommand{\brackets}[1]{\mtt {[}#1\mtt {]}}
+\newcommand{\brackets}[1]{{\mbox{\tt [}}#1\mbox{{\tt ]}}}
 \newcommand{\fieldAnnotation}[1]{{\mbox {\tt \$}}#1}
 \newcommand{\typeof}[1]{\mtt {typeOf}\brackets {\ensuremath{#1}}}
 
@@ -142,7 +144,7 @@
 \newcommand{\B}{\mbox {\tt B}}
 \newcommand{\CL}{\mbox {\tt CL}}
 \newcommand{\C}{\mtt C}
-\newcommand{\D}{\mbox {\tt D}}
+\newcommand{\D}{\mtt D}
 \newcommand{\F}{\mbox {\tt F}}
 \newcommand{\GG}{\mtt G}
 \newcommand{\HH}{\mbox {\tt H}}
@@ -261,7 +263,7 @@
 \newcommand{\eproves}[1]{\ensuremath {\proves {\emptyset} {\ensuremath {#1}}}}
 \newcommand{\eeproves}[1]{\ensuremath {\proves {\emptyset;\emptyset} {\ensuremath {#1}}}}
 \newcommand{\dproves}[1]{\proves \Delta {#1}}
-\newcommand{\subtype}[2]{\ensuremath{{#1} \subtypeSym {#2}}}
+\newcommand{\subtype}[2]{\ensuremath{{#1} \mbox{\tt <:} {#2}}}
 \newcommand{\subtypeSym}{{\ <:\ }}
 \newcommand{\notsubtype}[2]{\ensuremath{{#1} \not< : {#2}}}
 \newcommand{\citeRule}[1]{{\it \bfseries #1}}
@@ -323,7 +325,9 @@
 %\newcommand{\mtypeDef}[5]{{\typeParams #1 #2 #3}\overline{#4}\rightarrow #5}
 \newcommand{\arrType}[2]{{\ensuremath {#1} {\ensuremath \rightarrow} \ensuremath {#2}}}
 
+\newcommand{\proofcasenl}[1]{\item[Case {#1}:]\mbox{}}
 \newcommand{\proofcase}[1]{\item[Case {#1}:]}
+\newcommand{\subcasenl}[1]{\item[Subcase {#1}:]\mbox{}}
 \newcommand{\subcase}[1]{\item[Subcase {#1}:]}
 \newcommand{\rulename}[1]{[{\textsc {#1}}]}
 

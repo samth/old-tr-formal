@@ -1,5 +1,4 @@
-
-\documentclass{acm-sigplan}
+\documentclass[nocopyrightspace,10pt]{acm-sigplan}
 
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -39,57 +38,54 @@
 
 \begin{abstract}
 Metaclasses provide a useful mechanism for abstraction in
-object-oriented languages.  But most languages supporting metaclasses
-have imposed severe restrictions on their use. Typically, a metaclass
+object-oriented languages.  But most languages that support metaclasses
+ impose severe restrictions on their use. Typically, a metaclass
 is allowed to have only a single instance and all metaclasses are
 required to share a common superclass \cite{objvlisp}. In addition,
-few languages supporting metaclasses have included a static type
-system, and none have included a type system with nominal subtyping
-(i.e., subtyping as defined in mainstream languages such as the
+few languages that support metaclasses include a static type
+system, and none include a type system with nominal subtyping
+(i.e., subtyping as defined in languages such as the
 Java${^{\mbox{\tiny{TM}}}}$ Programming Language or C\#).
 
-In order to elucidate the structure of
-metaclasses and their relationship with static types, we present a
-core calculus for a nominally-typed object-oriented language with
-metaclasses and prove type soundness over this core. 
-To our knowledge, no previous formalization of metaclasses in a 
-language with nominal subtyping exists.
-This calculus is
-presented as an adaptation of Featherweight GJ \cite{FJ}, and is
-powerful enough to capture metaclass relationships beyond what are
+To elucidate the structure of metaclasses and their relationship with
+static types, we present a core calculus for a nominally typed
+object-oriented language with metaclasses and prove type soundness
+over this core.  To our knowledge, no previous formalization of
+metaclasses in a language with nominal subtyping exists.  This
+calculus is presented as an adaptation of Featherweight GJ \cite{FJ},
+and is powerful enough to capture metaclass relationships beyond those
 expressible in common object-oriented languages, including arbitrary
-metaclass hierarchies and classes as values.  We also explore the
-integration of object-oriented design patterns with metaclasses, and
-show how our calculus integrates several such patterns cleanly.
+metaclass hierarchies and classes as values.  We also describe how the
+addition of metaclasses allow for integrated and natural expression of
+several common design patterns.
 \end{abstract}
 
 \section{Introduction}
+
+\subsection{A Problem of Modeling}
 One of the stated benefits of object-oriented languages is their
 ability to model aspects of the world in the object hierarchy.
 However, most such languages are unable to model many simple and
-common relationships. 
+common relationships.  An excellent example is provided by Welty and
+Ferrucci \cite{FW96}, where they show the difficulties in modeling
+a simple ontology including the notions {\txt{Species}} and
+{\txt{Eagle}}, while also capturing the relationship between
+{\txt{Eagle}} and {\txt{Harry}}, a particular eagle.  To see the
+problem, consider a system with a class \txt{Eagle} and an instance
+\txt{Harry}.  The static type system can ensure that any messages that
+\txt{Harry} responds to are also understood by any other instance of
+\txt{Eagle}.
 
-An excellent example is provided by Welty and Ferrucci in \cite{FW96}, where
-they show the difficulties in modeling a simple
-ontology including the notions {\txt{Species}} and {\txt{Eagle}}, while
-also capturing the relationship between {\txt{Eagle}} and {\txt{Harry}},
-a particular eagle.  
-
-To see the problem, consider a system with a class \txt{Eagle} and an
-instance \txt{Harry}.  The static type system can ensure that any
-messages that \txt{Harry} responds to are also understood by any other
-instance of \txt{Eagle}.  
-
-However, even in a language where classes themselves can have methods,
-such relationships cannot be expressed.  For example, in a language
-with static methods, we can write the expression
-\txt{Eagle.isEndangered()}
-
-However, if \txt{Salmon} is a species, our type system provides us no
-way of requiring that it also have an \txt{isEndangered} method.  The
-solution that Ferruci and Welty suggest, and that we develop in this
-paper, is to allow a consistent treatment of both instances such as
-\txt{Harry} and classes such as \txt{Eagle}.
+However, even in a language where classes can have static methods, the
+desired relationships cannot be expressed.  For example, in such a
+language, we can write the expression \linebreak[4]\txt{Eagle.isEndangered()}
+provided that \txt{Eagle} has the appropriate static method.  Such a
+method is appropriate for any class that is a species.  However, if
+\txt{Salmon} is another class in our system, our type system provides
+us no way of requiring that it also have an \txt{isEndangered}
+method.  This is because we cannot classify both \txt{Salmon} and
+\txt{Eagle}, \emph{when treated as receivers of methods}, into a
+larger group, such as species.
 
 One solution they consider and reject is to separate the notion of
 ``eagle'' into two concepts: {\txt{the Eagle}} and {\txt{Eagle}}, with
@@ -99,97 +95,103 @@ fails to express a relationship between the notions {\txt{the Eagle}}
 and {\txt{Eagle}}.  Therefore, if we create another species such as
 \txt{Salmon} in our universe, we must define one new class and one new
 instance.  This adds new invariants which the programmer must
-maintain, with no help from the type system.  Instead, we propose that
-the type system should allow the programmer to express the desired
-relationship directly, and enforce the invariants naturally.  
+maintain, with no help from the type system.  
 
 
-For example, consider the relationship between
-physical quantities, units of measurement, and physical dimensions. It
-is obvious that ``length'' is a dimension, and that ``3 feet'' is a
-length.  However, modeling this relationship in a conventional
-language such as the Java Programming Language is difficult without
-attributing to some of these concepts properties which do not properly
-belong to them.  It is natural to model {\txt{3 feet}} as an instance
-of a class {\txt{Length}}. But if we were to define a class {\txt
-Dimension} and define {\txt{Length}} to be an instance of class {\txt
-Dimension}, then {\txt{Length}} could not be a class and so {\txt 3
-feet} could not be an instance of {\txt{Length}}. Alternatively, we
-might define {\txt{Length}} to be a subclass of {\txt{Dimension}}. But
-then we still cannot define {\txt 3 feet} to be an instance of {\txt
-Length} because anything that is an instance of {\txt{Length}} would
-also be an instance of class {\txt{Dimension}} and {\txt 3 feet} is
-obviously not a dimension. The key limitation preventing us from
-modeling this domain properly is that we cannot define a single
-concept to serve both as a class and as an instance of a class.
+These problems are not unique to the modeling of biology.  Consider
+the relationship between physical quantities, units of measurement,
+and physical dimensions. It is obvious that ``length'' is a dimension,
+and that ``3 feet'' is a length.  However, modeling this relationship
+in a conventional language such as the Java Programming Language is
+difficult without attributing to some of these concepts properties
+which do not properly belong to them.  It is natural to model {\txt{3
+    feet}} as an instance of a class {\txt{Length}}. But if we were to
+define a class {\txt Dimension} and define {\txt{Length}} to be an
+instance of class {\txt Dimension}, then {\txt{Length}} could not be a
+class and so {\txt 3 feet} could not be an instance of {\txt{Length}}.
+Alternatively, we might define {\txt{Length}} to be a subclass of
+{\txt{Dimension}}. But then we still cannot define {\txt 3 feet} to be
+an instance of {\txt Length} because anything that is an instance of
+{\txt{Length}} would also be an instance of class {\txt{Dimension}}
+and {\txt 3 feet} is obviously not a dimension. 
 
-Again, the limitation is that we cannot define a class as an instance of another class.
-%Welty and Ferrucci proceed to explain how this limitation prevents conventional modeling
-%languages from capturing many important aspects of the world.  
-%The languages Ferrucci and Welty discuss cannot accommodate multiple
-%universes of discourse, in which a single thing may have different meanings in different universes.
+The fundamental problem that both these examples illustrate is that we
+are unable to describe multi-level \txt{instanceof} hierarchies.
+Everything must be either a class or an instance.  Classes cannot be
+instances of classes, and instances cannot have instances.  The
+solution to this problem is to remove these divisions, and allow
+the relationships we want to have a natural expression in our
+language.
 
-In order to overcome this limitation in expressiveness, several
-object-oriented languages that are not statically typed, such as
-Smalltalk, Python, and Self, allow for more flexible object
-relationships \cite{Smalltalk80}, \cite{ArtMOP}, \cite{PythonMeta}. In
-the case of Smalltalk and Python, classes are instances of
-metaclasses. Static members of a class are modeled as ordinary members
-of the corresponding metaclass.  But in both of these languages there
-are important limitations on expressiveness.  For example, in
-Smalltalk, the metaclass hierarchy is only two levels deep.  If we
-want to represent the relationships ``{\txt A} is an instance of {\txt
-B}", ``{\txt B} is an instance of {\txt C}", and ``{\txt C} is an
-instance of {\txt D}", we can only do this in Smalltalk if {\txt D} is
-the special Smalltalk class {\txt Metaclass}.  This does not allow the
-multi-level hierarchies required to model the examples discussed above
-\cite{Smalltalk80}.  Self, on the other hand, is a prototype-based
-object-oriented language, where there are no classes at all; object
-instantiation consists of cloning an existing instance. The members of
-the clone can be modified and added to at will, dispensing with class
-relationships entirely and making static checking difficult.
+\subsection{Some Previous Solutions}
+In order to overcome this limitation in expressiveness described
+above, several object-oriented languages that are not statically
+typed, such as Smalltalk, Python, and Self, allow for more flexible
+object relationships \cite{Smalltalk80}, \cite{ArtMOP},
+\cite{PythonMeta}. In the case of Smalltalk and Python, classes are
+instances of metaclasses. Static members of a class are modeled as
+ordinary members of the corresponding metaclass.  But in both of these
+languages there are important limitations on expressiveness.  For
+example, in Smalltalk, the metaclass hierarchy is only two levels
+deep.  If we want to represent the relationships ``{\txt A} is an
+instance of {\txt B}'', ``{\txt B} is an instance of {\txt C}'', and
+``{\txt C} is an instance of {\txt D}'', we can only do this in
+Smalltalk if {\txt D} is the special Smalltalk class {\txt Metaclass}.
+This does not allow the multi-level hierarchies required to model the
+examples discussed above \cite{Smalltalk80}.  Self, on the other hand,
+is a prototype-based object-oriented language, where there are no
+classes at all; object instantiation consists of cloning an existing
+instance.  The members of the clone can be modified and added to at
+will, dispensing with class relationships entirely and making static
+checking difficult.
 
-A more expressive metaclass system in ObjVlisp, described informally
-by Cointe in \cite{objvlisp}.  In ObjVlisp, there is no restriction on
+A more expressive metaclass system is ObjVLisp, described informally
+by Cointe \cite{objvlisp}.  In ObjVLisp, there is no restriction on
 the number of instances of a metaclass, and metaclasses are not
 required to share a common superclass. The instance methods of a
-metaclass are inherited as the static members of its instances.  Conte
+metaclass are inherited as the static members of its instances.  Cointe
 makes a number of arguments for the benefits of generalized
-metaclasses.  In response to complaints that the Smalltalk80 metaclass
+metaclasses.  In response to complaints that the Smalltalk-80 metaclass
 system is too complex, he suggests that a more powerful and flexible
 system has the potential to be much simpler.
-%, arguing that ``The ObjVlisp model's primary advantage is uniformity.''
-However, ObjVlisp does not include a static type system. 
-%Cointe quotes from \cite{cardelli:multiple}: ``With respect to
-%Simula, Smalltalk also abandons ... strong typing, allowing it to
-%... introduce the notion of meta-classes''.   
-In this paper, we show that this limitation is not necessary. We
-present a semantics for a statically typed calculus of metaclasses
-where, as in ObjVlisp, every class can serve as both an instance of a
-class and as a class of instances, and there is no limitation on the
-levels of nesting of metaclasses. In the process, we also reveal
-several interesting properties about the structure that a nominal type
-system for metaclasses must take. We then present a formal operational
-semantics for this calculus, as well as a proof of type soundness.
+However, ObjVLisp does not include a static type system.  As Cardelli
+points out in the context of Smalltalk \cite{cardelli:multiple}, ``With
+respect to Simula, Smalltalk also abandons ... strong typing, allowing
+it to ... introduce the notion of meta-classes''.
+
+
+\subsection{A More Expressive Solution}
+
+In this paper, we show that the limitations of previous metaclass
+systems are not inherent. We present a semantics for a calculus with
+metaclasses in which, as in ObjVLisp, every class can serve as both an
+instance of a class and as a class of instances, and there is no
+limitation on the levels of nesting of metaclasses. But, unlike
+ObjVLisp, we present a static type system for this semantics, and use
+it to allow more invariants to be checked statically.  In the process,
+we also reveal several interesting properties about the structure that
+a nominal type system for metaclasses must take. We then present a
+formal operational semantics for this calculus, as well as a proof of
+type soundness.
 
 Our work is motivated by \cite{DimUnits}, which presents a system for
 integrating the static checking of dimensions of physical quantities
 in MetaGen, an extension of the Java Programming Language with support
 for metaclasses. In MetaGen, metaclasses are used to model the type
-relationships of dimensions.  As with ObjVlisp, the notion of a
+relationships of dimensions.  As with ObjVLisp, the notion of a
 metaclass in MetaGen is more general than that of languages such as
-Smalltalk, but, unlike ObjVlisp, MetaGen includes a static type system
+Smalltalk, but, unlike ObjVLisp, MetaGen includes a static type system
 \cite{DimUnits}. The calculus in this paper can be viewed as a
 formalization of a purely functional core of MetaGen.
 
 In the interests of economy and clarity of presentation, in the
 following discussion we restrict ourselves to simple examples, and do
-not delve into the complexities of object-oriented analysis with metaclasses.  
-This is certainly not because we believe that
+not delve into the complexities of object-oriented analysis with
+metaclasses.  This is certainly not because we believe that
 metaclasses are most useful for the development of toy object-oriented
-programs.  On the contrary, metaclasses are most likely to show their value
-in large systems, both in terms of modeling and in the treatment of
-design patterns in section \ref{designpatterns}.
+programs.  On the contrary, metaclasses are most likely to show their
+value in large systems, both in terms of modeling and in the treatment
+of design patterns in section \ref{designpatterns}.
 
 The remainder of this paper is organized as follows.  In section
 \ref{MCJ} we present a core calculus for metaclasses we dub MCJ.
@@ -205,27 +207,6 @@ section \ref{proof} we prove a type soundness result.  In section
 \ref{related} we consider related work and in section \ref{future} we
 describe conclusions and future directions.
 
-%Another, somewhat more flexible solution to this problem can be found in
-%functional languages, where sets can be represented as predicates over
-%objects, and sets of sets can be represented as predicates over
-%predicates.  This hierarchy can obviously be extended indefinitely,
-%but such programs would quickly become unwieldy.  Specialized language
-%constructs would be needed for this approach to become a serious programming
-%style, just as most object-oriented programming languages
-%provide constructs to support that methodology.  Also in the
-%functional world, higher-order functions represent a way of
-%parameterizing at multiple levels, allowing some of the desired
-%behavior described here to be implemented.  But few functional
-%programs nest higher-orderness more than a few levels, since
-%understanding the relationships  becomes more than one programmer
-%could follow.  Instead, we need a way of structuring such
-%relationships explicitly.
-
-%Formal modeling of existing languages has become common, with numerous
-%formal models for languages such as the Java (TM) Programming Language.  However, formal modeling
-%can also serve to aid in the design process for a new language.  In
-%this paper, we describe MCJ, a nominally-typed core calculus for metaclasses,
-%which is intended to be the basis for a language design. While we have focused on a formal model as a language design guide, MCJ can also help understand existing languages with metaclasses.
 
 \section{MCJ}
 \label{MCJ}
@@ -235,7 +216,7 @@ describe conclusions and future directions.
 \label{MCJintro}
 
 MCJ is a object-oriented calculus with generic types based on
-Featherweight GJ which includes metaclasses. An MCJ program consists of
+Featherweight GJ that includes metaclasses. An MCJ program consists of
 a sequence of class definitions followed by a trailing
 expression. This trailing expression is evaluated in the context of
 the class table induced by the class definitions.  Before discussing
@@ -266,47 +247,45 @@ superclass {\txt{Object}} and kind {\txt D} and no type parameters:
 \begin{verbatim}
 class C kind D extends Object {...}
 \end{verbatim}
-\footnote{In other examples, we will leave out the \kind\ and \extends\
-declaration when they refer to \Object.}
 
-Each class may have both class members and instance members. Class
-members define the behavior of the class when used as an
-instance. Instance members define the behavior of instances of a
-class.  In the abstract syntax presented in this paper, class members
-are distinguished from instance members by order, and with the keyword
-\class \footnote{This syntax is not ambiguous because MCJ has no
-inner classes.}.  Members of a class definition are laid out as
-follows: first, class fields are defined, followed by class methods,
-then instance fields and finally instance methods.  For example, the
-following class definition includes a class method {\txt m} and an
-instance method {\txt n}:
+Each class may have both static members and instance members. Static
+members define the behavior of the class when used as an instance.
+Instance members define the behavior of instances of a class.  In the
+abstract syntax presented in this paper, static members are
+distinguished from instance members by order, and with the keyword
+\static.  Members of a class definition are laid out as follows:
+first, static fields are defined, followed by static methods, then
+instance fields and finally instance methods.  For example, the
+following class definition includes a static method {\txt m} and an
+instance method {\txt n}.  Beginning with this example, we will leave
+out the \kind\ and \extends\ declaration when they refer to \Object.
 
 \begin{verbatim}
 class C {
-   class Object m() {...}
+   static Object m() {...}
    Object n() {...}
 }
 \end{verbatim}
 
-Class fields and methods bear a resemblance to static fields and
-methods, but there are important differences. For a given class {\txt
-C}, instance members of {\txt C}'s kind are inherited as class
-members of {\txt C}. For example, a class method {\txt m} in {\txt C}
-with the same name as an instance method of {\txt C}'s kind
+Static fields and methods in MCJ bear a strong resemblance to static
+fields and methods, but there are important differences. For a given
+class {\txt C}, instance members of {\txt C}'s kind are inherited as
+class members of {\txt C}. For example, a static method {\txt m} in
+{\txt C} with the same name as an instance method of {\txt C}'s kind
 overrides the definition of {\txt m} in the kind (and it must have the
 same signature as the overridden method). Note that if an instance
 class {\txt C} of type {\txt T} is assigned to a variable {\txt v} of
 type {\txt T}, references to the instance members of {\txt v} refer to
-the class members of {\txt C}.  As in \cite{DimUnits}, a class is
-allowed to define both a class method and an instance method of the
+the static members of {\txt C}.  As in \cite{DimUnits}, a class is
+allowed to define both a static method and an instance method of the
 same name. We prevent ambiguity in member references by requiring that
-all references to class members in MCJ must explicitly denote the
+all references to static members in MCJ must explicitly denote the
 receiver.
 
 Superclasses behave as in \FGJ, providing implementation inheritance
 of instance behavior and subtyping. A class, when used as an
 expression, is an instance of its kind.  If a method is invoked on a
-class {\txt C}, first the class methods of {\txt C} are examined.  If
+class {\txt C}, first the static methods of {\txt C} are examined.  If
 the method is found there, it is invoked. Otherwise, the
 \emph{instance} methods of the kind {\txt D} of {\txt C} are searched,
 and if it is found there, the method is invoked.  Otherwise, the
@@ -321,7 +300,7 @@ class B extends A {...}
 class C kind B {...}
 \end{verbatim}
 
-To resolve the method call $\invoke \C {\mof {}}$ first the class
+To resolve the method call $\invoke \C {\mof {}}$, first the class
 methods of $\C$ are examined, and if a match is found, it is invoked.
 Then the \emph{instance} methods of $\B$ and then $\A$ are examined.
 
@@ -343,13 +322,13 @@ instance methods of first $\B$ then $\A$ would be examined.
 %C.m()
 %\end{verbatim}
 
-%Class {\txt C} would first be examined to see if it contained a class method named {\txt m}. If so, this method would be invoked. Otherwise, class {\txt D} would be checked to see if it contained an instance method named {\txt m}. If not, class {\txt E} would then be checked for an instance method named {\txt m}.
+%Class {\txt C} would first be examined to see if it contained a static method named {\txt m}. If so, this method would be invoked. Otherwise, class {\txt D} would be checked to see if it contained an instance method named {\txt m}. If not, class {\txt E} would then be checked for an instance method named {\txt m}.
 
 The generic type system of MCJ is similar to the generic type system
 in \FGJ. However, as in \cite{NextGen, DimUnits}, we allow for type
 variables to occur in type-dependent contexts such as casts,
 preventing the use of type erasure as an implementation technique. In
-addition, the receiver of a reference to a class member may be a type
+addition, the receiver of a reference to a static member may be a type
 variable. Unlike the system presented in \cite{MixGen}, MCJ does not
 support first-class genericity because a naked type variable must not
 appear in the \extends\ clause or \kind\ clause of a class definition
@@ -365,8 +344,8 @@ class definition. The first bound on {\txt T} is a bound on the kind
 of an instantiation of {\txt T}; the second bound is a bound on the
 superclass of {\txt T}. For example, the following class header
 declares a class {\txt C} with one type parameter {\txt T} that must
-be instantiated with a type of kind {\txt D} that is a subtype of
-{\txt E}:
+be instantiated with a type that is a subtype of {\txt D} and is of
+kind {\txt E} :
 
 \begin{verbatim}
 class C<T extends D kind E> {...}
@@ -380,18 +359,20 @@ class C<T extends D kind E> {...}
 
 One benefit of a metaclass system is that constructors no longer need
 to play such a central role in the language. Class instances exist at
-the beginning of a program execution; they need not be
-constructed. Non-class instances are naturally constructed with class
-(factory) methods \cite{GOF}; in this way a class instance can be
-passed as a type parameter and factory methods can be called on the
-class instance to construct new instances without stipulating the
-class of the constructed instance. This flexibility is similar to that
-provided with first-class genericity \cite{NextGen, MixGen}, but
-obviates the need for {\txt{with}} clauses because the bound on the
-kind of a type variable stipulates what factory methods can be called
-on it.  
+the beginning of a program execution; they need not be constructed.
+Non-class instances are naturally constructed with class (factory)
+methods \cite{GOF}; in this way a class instance can be passed as a
+type parameter and factory methods can be called on the class instance
+to construct new instances without stipulating the class of the
+constructed instance.  In a language with first-class genericity, type
+parameters may used in arbitrary contexts, including in \txt{new}
+expressions \cite{NextGen, MixGen}, however additional bounds, called
+\txt{with} clauses, are required on the type parameters.  MCJ provides
+similar flexibility, but obviates the need for {\txt{with}} clauses
+because the bound on the kind of a type variable stipulates what
+factory methods can be called on it.
 
-For example, in MixGen the following program is legal:
+For example, in MixGen \cite{MixGen} the following program is legal:
 
 \begin{verbatim}
 class C<T extends S with T()> {
@@ -411,9 +392,9 @@ class C<T extends S> {
 }
 \end{verbatim}
 
-Here, no with clause is required.  
+Here, no \txt{with} clause is required.  
 
-A class can define class methods with arbitrary signatures that return
+A class can define static methods with arbitrary signatures that return
 new instances of the class, but each such method must ultimately
 include a {\txt{new}} expression, which can occur only within the
 scope of the class whose instance it returns. A {\txt{new}} expression
@@ -430,13 +411,14 @@ can be determined merely by the lexical scopes of the {\txt{new}}
 expressions.
 
 All uses of constructors in \FGJ\ \cite{FJ} are macro-expressible
-\cite{FellExpress} in MCJ, that is, they can be expressed via local
+\cite{FellExpress} in MCJ; that is, they can be expressed via local
 transformations.  Of course, not all \FGJ\ programs can be expressed
-in MCJ, because of the differences in the type system. Namely, MCJ
-does not include polymorphic methods.
+in MCJ, because of the differences in the type system. Specifically,
+MCJ does not include polymorphic methods.
 
-Metaclasses allow other kinds of flexibility in object creation, as
-discussed in section \ref{designpatterns}.
+While these choices may seem constricting, the architecture of MCJ
+allows for considerable flexibility in object creation.  We discuss
+this point further in section \ref{designpatterns}.
 
 \paragraph{Fields and Initialization}
 
@@ -448,43 +430,41 @@ field.  Combined with the solution for flexibility in object creation
 outlined above, this allows us the simplicity in semantics of FGJ, and
 the flexibility of more general constructors.  
 
-However, classes which are themselves instances of other classes have
-fields as well, and these fields must also be initialized before they
-are used.  These fields include those instance fields of the kind
-which become class fields of the new class.  Our solution is to
-require that \emph{all class fields, including those obtained by
-inheritance, must be redeclared} and provided with values.  
+Classes that are themselves instances of other classes have fields as
+well, and these fields must also be initialized before they are used.
+These fields include instance fields of the kind, which become static
+fields of the new class.  Our solution is to require that \emph{all
+  static fields, including those obtained by inheritance, must be
+  redeclared} and provided with values.
 
 
 % In a {\txt{new}} expression, all instance fields must be initialized at
 % creation time. This requirement eliminates the problem of
 % uninitialized instance fields. However, when a class is the kind of
-% another class, the instance fields of the kind become class fields of
+% another class, the instance fields of the kind become static fields of
 % the instance class.  Since the instance class can then be used as a
 % value with no further initialization, these variables must be
 % initialized somewhere. Our solution is to require that every class
 % field inherited from a container class be included in a new class
-% field definition and that every class field in a class definition
+% field definition and that every static field in a class definition
 % include an initializing expression.
 
 
 \paragraph{typeOf}
 
 Given that class references can be used as expressions, it is natural
-to ask: what is the type of a class reference?  
-%In the world of the
-%$\lambda$-calculus, such types are known as kinds.  
-In MCJ, however, the kind of a class does not capture all of the
-properties of the class as a value.  For example, a class may add new
-class fields or class methods which are not present in the kind.
-Therefore, each class freely generates a new type, which is the type
-of the class considered as a value.  We represent this type with the
-{\txt{typeOf}} operator, which takes a class instantiation and produces
-a type that is not also a class.  Because this type is not a class, it
+to ask: what is the type of a class reference?  In MCJ, however, the
+kind of a class does not capture all of the properties of the class as
+a value.  For example, a class may add new static fields or static
+methods that are not present in the kind.  Therefore, each class
+freely generates a new type, which is the type of the class considered
+as a value.  We represent these types with a compile time
+{\txt{typeOf}} operator that takes a class instantiation and produces
+a new type that is not also a class.  Because this type is not a class, it
 cannot be the superclass or kind of another class, and it cannot serve
-as the instantiation of a generic type parameter.  We refer to this as
-{\txt{typeOf}} because it is the type of the expression that is its
-argument.  
+as the instantiation of a generic type parameter.  We refer to it as
+{\txt{typeOf}} because it returns the type of the expression that is its
+argument.
 
 These new types can create complex relationships between classes and types.  For
 example, the following class headers:
@@ -522,7 +502,7 @@ hold for {\txt{instanceof}} relationships.  In general, if $\B$ is an
 instance of $\C$ and $\C$ is an instance of $\D$, no judgment
 about the relationship of $\B$ to $\D$ can be inferred.
 
-Another difference between subclassing and {\txt{instanceof}}
+Another difference between subclassing and instance class
 relationships is that cycles can occur among instance class
 relationships. The simplest such cycle is:
 
@@ -537,9 +517,9 @@ instances can be used.  \C\ can be thought of as a self-replicating
 value. This class hierarchy causes no problems for method lookup
 because method resolution never proceeds through more than a single
 containing class to an instance class. If the programmer uses a field
-of \C\ to initialize a class field of \C\, the evaulation of the
+of \C\ to initialize a static field of \C\, the evaluation of the
 expression \C\ may fail to terminate.  But this is no different than
-the possibility of non-termination from any other self-reference.
+the possibility of nontermination from any other self-reference.
 Therefore, we see no reason to disallow it.
 
 
@@ -549,7 +529,7 @@ Therefore, we see no reason to disallow it.
 
 Having seen this outline of MCJ, we return to the motivational
 examples discussed earlier.  First, the relationships between
-dimensions is easy to capture. \footnote{Of course, dimensions have
+dimensions is easy to capture.\footnote{Of course, dimensions have
 many subtleties, not captured here.  All we present is the essence of
 the type relationships.} We define 
 
@@ -560,7 +540,7 @@ class Meter kind Length { ... }
 \end{verbatim}
 
 Here {\txt{Meter}} is a singleton class (there is only one Meter, in
-the Platonic sense).  We have easily expressed the desired type
+the platonic sense).  We have easily expressed the desired type
 relationships, and can statically check program invariants that rely
 on dimensional relationships.
 
@@ -569,7 +549,7 @@ The example from \cite{FW96} is also easily expressed:
 \begin{verbatim}
 class Species { ... }
 class Eagle kind Species {
-      class Eagle make(String name) { ... }
+      static Eagle make(String name) { ... }
 }
 Eagle harry = Eagle.make("Harry")
 \end{verbatim}
@@ -595,57 +575,33 @@ This means that our type checker cannot determine what we want and
 cannot help us avoid mistakes.
 
 Another problem, which is in some ways just a symptom of the first
-problem but which bears special attention, is the use of generic
+problem but that bears special attention, is the use of generic
 types.  Consider the following class definition, added to the
-definitions of \txt{Species}, \txt{theEagle}, etc. above.  
+definitions of \txt{Species}, \txt{theEagle}, etc. above, where
+\txt{?} is a placeholder for the bound.  
 
 \begin{verbatim}
-class C<T extends X> {
-   foo(T x) { return T.isEndangered() }
+class C<T extends ?> {
+   T foo(T x) { return T.isEndangered() }
 }
 \end{verbatim}
 
-If we want to perform the call {\txt{foo(harry)}}, then we have two
+If we want to perform the call {\txt{c.foo(harry)}}, then we have two
 choices for the bound \txt{X} on {\txt T}.  It must be either \Object,
-in which case {\txt{m}} must be a method that \Object\
+in which case {\txt{isEndangered}} must be a method that \Object\
 understands. Otherwise, it must be \txt{Eagle}, in which case the
 function cannot handle multiple {\txt{Species}}.  The ``solution'' in
 conventional languages is to use a bound of \Object\ and insert a
 downcast, which fails at runtime if the wrong argument is passed.
 This is the problem that generics were intended to alleviate.  In
-MCJ {\txt T} can be bound by kind {\txt{Species}}, and instantiated
+MCJ, {\txt T} can be bound by kind {\txt{Species}}, and instantiated
 with {\txt{Eagle}}, allowing the original call to be type-checked.
 This gives the programmer both safety and expressiveness.
-
-\paragraph{Metaclasses and Nested Classes}
-Some of the problems are alleviated in a language with nested, or
-inner classes.  In the language Scala\cite{Scala} the following
-program expresses some of the desired invariants:
-
-\begin{verbatim}
-class Species {
-  class Member {}
-}
-object Eagles extends Species;
-class Eagle() extends Eagles.Member;
-val harry = new Eagle;
-\end{verbatim}
-\footnote{This example, and this discussion, was suggested by an
-anonymous reviewer.}
-
-This program automates many of the invariants required in a language
-without metaclasses.  However, two seperate classes must still be
-constructed per \txt{Species}.  Further, the fundamental problem, of
-not being able to group classes by functionality in the same way as
-instances, still remains.  Inner classes are not constrained by
-invariants imposed by their container.  In MCJ, the invariants of the
-kind are enforced by the type system.  
-
 
 \section{Design Patterns as Language Features}
 \label{designpatterns}
 
-Design Patterns, as exemplified in \cite{GOF}, have had a substantial
+Design patterns, as exemplified in \cite{GOF}, have had a substantial
 impact on the world of object-oriented programming and beyond.  Design
 patterns allow programmers to increase the flexibility and abstraction
 of their software designs.  However, few design patterns have been
@@ -656,16 +612,56 @@ clean expression of several common design patterns in the language,
 rather than requiring that they be expressed with abstraction
 techniques on top of the language.  For example, a number of the
 classic design patterns deal with object creation, as discussed above
-in section \ref{privconst}.  It is clear that the concept of a Factory
-method is easily (and necessarily) expressed in MCJ.  However, a
-number of other patterns also find easy expression.  The Abstract
-Factory pattern is a simple application of inheritance in the
-metaclass hierarchy.  In this, several classes could share a kind,
-giving them all a single interface for construction. The Prototype
-pattern is, as mentioned in the Design Patterns book, supported in
-languages with metaclasses.  A class is in many ways a clone of its
-metaclass.  Finally, there is no need for the Singleton pattern; a
-class itself can serve as a singleton. If no factory methods are
+in section \ref{privconst}.  Several of these are naturally expressed
+in MCJ.
+
+\paragraph{Factory}
+The requirement that all constructors be private enforces the factory
+pattern for all MCJ programs.
+\begin{verbatim}
+class MyClass {
+    static MyClass make() { return new(); }
+}
+\end{verbatim}
+Since \txt{make()} is a method, any computation can be performed,
+without the problems of constructors.
+
+\paragraph{Abstract Factory}
+ The Abstract Factory pattern is a simple application of
+inheritance in the metaclass hierarchy.  In this, several classes
+could share a kind, giving them all a single interface for
+construction. Again, the example is very simple:
+\begin{verbatim}
+class AbsFac {
+    AbsFac make() { ... }
+}
+class Derived kind AbsFac {
+    AbsFac make() { return new(); }
+}
+\end{verbatim}
+
+
+\paragraph{Prototype}
+As mentioned in \cite{GOF}, languages with metaclasses naturally
+support the prototype pattern.  A class is in many ways a clone of its
+metaclass.  Thus the following example uses a prototype:
+\begin{verbatim}
+class Proto {
+    Object x;
+}
+class Clone kind Proto {
+    Object x = ...;
+}
+\end{verbatim}
+
+\paragraph{Singleton}
+Finally, there is no need for the Singleton pattern; a
+class itself can serve as a singleton. 
+\begin{verbatim}
+class AClass { ... }
+class AClassSingleton kind AClass { ... }
+\end{verbatim}
+If no factory methods are
 provided, no instances can be created at runtime.  While classes can
 be used as limited singletons in the Java Programming Language and in
 \Cpp, doing so is undesirable because the static behavior of a class
@@ -683,16 +679,16 @@ have obvious invariants, but they cannot be expressed directly and
 they require complex cooperation from many parts of the system.
 
 Sophisticated macro systems, such as those found in Common Lisp
-\cite{steele-90} or Scheme \cite{SyntaxCase} allow for expression of
+\cite{steele-90} and Scheme \cite{SyntaxCase}, allow for expression of
 many forms of abstraction, as do extremely flexible object systems
 such as CLOS. However, these solutions add significantly to what a
 programmer must understand in order to use the language productively.
 In contrast, the inclusion of metaclasses does not allow for arbitrary
-additional abstraction, but instead makes the abstractions commonly
-needed easy to express.  One does not need the full power of macros to
-encode the Factory pattern.  In MCJ, we have presented a language
-where several kinds of patterns are easy to express, without adding an
-additional language on top of the original.
+additional abstraction, but instead makes the commonly needed
+abstractions easy to express.  One does not need the full power of
+macros to encode the Factory pattern.  In MCJ, we can easily express
+several kinds of patterns, without adding an additional language on
+top of the original.
 
 
 \section{Formal Specification of MCJ}
@@ -715,7 +711,7 @@ the formal semantics of MCJ, we use the following metavariables:
 
 \metavars
 
-As in \FJ\ and many other works, $\ox$\ stands for a possibly-empty
+As in \FJ, $\ox$\ stands for a possibly-empty
 sequence of \x.  $\SforX$ denotes a substitution of the $\oS$ for the
 $\oX$, which can be applied to either an expression or a type, and
 which can substitute either type or expression variables.
@@ -723,18 +719,18 @@ which can substitute either type or expression variables.
 A number of symbols are used to abbreviate keywords: $\superSym$
 stands for \extends\ and $\kindSym$ stands for \kind. Also
 $@$ represents concatenation of sequences of syntactic constructs.
-Finally, $CT(\T)$ is a lookup in the class table for the definition of
-$\T$.
+Finally, $CT(\C)$ is a lookup in the class table for the definition of
+the class named $\C$.
 
 A number of restrictions on MCJ programs are implicit in the formal
 rules.  First, we assume that all sequences of methods and fields are
 free of duplicates.  Second, there is an implicit well-formedness
 constraint on programs that no class be a superclass of itself, either
 directly or indirectly (however, as discussed below, cycles in the
-kind hierarchy are allowed).  Third, we assume that \this is
+kind hierarchy are allowed).  Third, we assume that \this\ is
 never used as the name of a variable, method or field.  We also take
 \Object\ to be a distinguished member of the hierarchy, with no
-specific definition, which does not have a superclass or a kind.
+specific definition that does not have a superclass or a kind.
 
 For example, the simplest MCJ class is:
 
@@ -745,16 +741,16 @@ $\typeFront {\typeArg \C {}}  {\Object} \Object \braces{}$
 This is a class named $\C$, with no type arguments, with kind \Object\
 and superclass \Object\, which has no fields or methods whatsoever.
 In examples that follow, we omit empty type parameter lists.  Note
-that both the kind and the superclass are $\Object$.  Unlike Smalltalk
-or ObjVLisp, MCJ does not have a distinguished class
-$\Class$.\footnote{This is not the same as the \Class\ class used in
-reflection.}  Interestingly, we determined that a class $\Class$ would
-need no consideration from the type system.  Because both $\Class$ and
-$\Object$ would sit atop the hierarchy with no contents, there is no
-need to include both of them.  In a more substantial language, where
-$\Object$ might have methods or fields, there might be a use for a
-distinguished $\Class$ class, but it would not need any special
-treatment by the type system.
+that both the kind and the superclass of \C\ are $\Object$.  Unlike
+Smalltalk or ObjVLisp, MCJ does not have a distinguished class
+$\Class$.\footnote{This is not the same as the \Class\ class used for
+  reflection in the Java Programming Language.}  Interestingly, we
+determined that a class $\Class$ would need no consideration from the
+type system.  Because both $\Class$ and $\Object$ would sit atop the
+hierarchy with no contents, there is no need to include both of them.
+In a more substantial language, where $\Object$ might have methods or
+fields, there might be a use for a distinguished $\Class$ class, but
+it would not need any special treatment by the type system.
 
 A more complicated MCJ class is:
 
@@ -762,14 +758,14 @@ A more complicated MCJ class is:
 class Pair<A extends Object kind Object,
            B extends Object kind Object>
 {
- class Pair<A,B> make(A a, B b){ 
+ static Pair<A,B> make(A a, B b){ 
     return new <A,B> (a,b) 
-} ;
+ } 
  A fst;
  B snd;
  Pair<B,B> setfst(B b){
      return new <B,B> (b, this.snd);
- };
+ }
 }
 \end{verbatim}
 
@@ -783,7 +779,7 @@ positionally, so that the first argument to {\txt{make}} becomes
 must mention the type parameters of the newly created instance.
 
 Second, we have an instance method, {\txt{setfst}}, which creates a new
-pair with the old second element, and a new first element which has
+pair with the old second element, and a new first element that has
 the same type as the second element.
 
 Finally, adding the following to the above definition of {\txt{Pair}}
@@ -792,19 +788,19 @@ gives a full MCJ program:
 \begin{verbatim}
 class O
 {
- class O make(){return new () ()};
+ static O make(){return new () ()};
 }
 
 Pair<O,O>.make(O.make(), O.make()).fst
 \end{verbatim}
 
-This program, which creates two instances of {\txt O}, then creates
-a {\txt{Pair}} to hold them both, and finally selects one of the two to
+This program, which creates two instances of {\txt O}, then creates a
+{\txt{Pair}} to hold them both, and finally selects one of the two to
 become the value of the program, demonstrates three of the expression
-forms in MCJ.  {\txt{Pair<O,O>}} is a type, which, by itself, can
-be a value.  {\txt{O.make()}} is a method invocation (here with a
-class, not an instance, as the receiver).  The entire expression is a
-field access, of the {\txt{fst}} instance field.
+forms in MCJ.  {\txt{Pair<O,O>}} is a type that by itself can be a
+value.  {\txt{O.make()}} is a method invocation (here with a class, as
+the receiver).  The entire expression is a field access, of the
+{\txt{fst}} instance field.
 
 Other kinds of expressions are seen in the body of the {\txt{Pair}}
 class.  {\txt{new<A,B> (a,b)}} is a new expression, which creates an
@@ -815,13 +811,13 @@ semantics. For example, {\txt{(Object)O.make()}}\ is an expression of
 type \Object\ that evaluates to an instance of {\txt O}.
 
 With an understanding of expressions, we can examine the rest of the
-{\txt{Pair}} class.  There are two methods: a class method
+{\txt{Pair}} class.  There are two methods: a static method
 ({\txt{make}}) and an instance method ({\txt{setfst}}).  There are
 also two fields, both of which are instance fields and initialized the
 {\txt{new}} expressions. In MCJ, a {\txt{new}} expression is different
 from those in \FGJ; each {\txt{new}} expression evaluates to an
 instance of the syntactically enclosing class.\footnote{In the grammar
-of figure \ref{fig:syntax}, {\txt{new}} expressions are annotated with
+of Figure \ref{fig:syntax}, {\txt{new}} expressions are annotated with
 this enclosing class.  In the examples, this redundant information is
 elided.}  Had there been additional fields in the superclass of
 {\txt{Pair}}, it would have been necessary to initialize them in the
@@ -849,10 +845,10 @@ mapping takes field names to expressions, and is annotated with a
 ground type. Mappings from a sequence of fields $\of$ to a sequence of
 expressions $\oe$ with type $\GG$ are written $\mapping \of \oe \GG$.
 A mapping denoting an instance class {\txt C} consists of a sequence
-of class fields mapped to a sequence of expressions and is annotated
+of static fields mapped to a sequence of expressions and is annotated
 with the type \typeof{\C}. Note that the right hand sides of such
 maps need not always be values, and thus computation can take place
-inside of a mappings.  Mappings are not available to the programmer,
+inside of a mapping.  Mappings are not available to the programmer,
 and thus can only be created by operation of the reduction rules.
 Therefore, unlike \FJ, our reductions do not operate entirely in the
 user-level syntax of the language.  We use the metavariable $\Phi$ to
@@ -884,12 +880,12 @@ variables to their bounds, and leaves others unchanged.
 The metavariables $\Delta$ and $\Gamma$ range over bounds
 environments, written $\oX \superSym \oS$ and type environments,
 written $\typ \ox \oT$ respectively.  A bounds environment contains
-two bounds for each type variable, so that if $\Delta = \X \subtypeSym
-(\A,\B)$, then $\Delta(\X) = \A$ and $\Delta({\typeof \X}) = \B$.
+two bounds for each type variable, so that if $\Delta = \X \superSym
+\A \kindSym \B$, then $\Delta(\X) = \A$ and $\Delta({\typeof \X}) = \B$.
 
 The notation $\A \subtypeSym \B$ means $\A$ is a subtype of $\B$.
-Subtyping judgments are made in the context of a bounds environment,
-which relates a type to the declared bound of that type from the class
+Subtyping judgments are made in the context of a bounds environment
+that relates a type to the declared bound of that type from the class
 header.
 
 Type judgments are of the form $\dgprove {\typ \e \T}$, which states
@@ -926,13 +922,13 @@ which together determine if a class table is well-formed, and thus
 part of a legal MCJ program.  Method well-formedness is a
 judgment of the form ``$\M \okin\ \GG$'', where $\M$ is a method.  We make
 use of the latter portion ($\GG$) of this judgment as a second argument,
-allowing us to use this rule to check both instance and class methods.
+allowing us to use this rule to check both instance and static methods.
 Method well-formedness consists mostly in fitting the body to the
 return type, and checking for invalid overrides.
 
 Class well-formedness involves all of the above checks.
-All methods must be well-formed, and all class fields must
-have correct initialization expressions.  Further, class fields
+All methods must be well-formed, and all static fields must
+have correct initialization expressions.  Further, static fields
 must contain the instance fields of the kind.  Finally, all
 {\txt{new}} expressions must have the correct class name annotation.
 
@@ -973,7 +969,7 @@ expression $\e$ is a bad cast iff $\e = \cast \SSS {\Phi_{\T}}$ where
 The evaluation relation given here is non-deterministic. For example,
 no order is prescribed for evaluating the arguments to a {\txt{new}}
 expression or method call, or for evaluating the initializers for
-class fields.  There are also a number of places where either
+static fields.  There are also a number of places where either
 congruence or reduction rules can be applied.  Therefore, in the
 presence of non-termination or bad casts, the results may differ
 depending on evaluation order.  However, confluence can be regained
@@ -1000,11 +996,13 @@ important. The full proof is available at:
 \vspace{.1cm}
 \verb|http://research.sun.com/projects/plrg/|
 
+\newpage
 \fieldsPreservedLemma
 
 \fieldsPreservedProof
 
 \methodTypingLemma
+\newpage
 
 \methodTypingProof
 
@@ -1033,7 +1031,7 @@ requires only one new lemma.
 
 \progressProof
 
-From these, we can conclude the desired type safety result.
+From these, we can conclude the desired type soundness result.
 
 \soundness
 
@@ -1043,6 +1041,7 @@ From these, we can conclude the desired type safety result.
 \section{Related Work}
 \label{related}
 
+\paragraph{Other Systems with Metaclasses}
 A number of object-oriented languages have included some form of
 metaclass system. Most notable among these is Smalltalk
 \cite{Smalltalk80}, but others include Common Lisp with CLOS
@@ -1050,34 +1049,17 @@ metaclass system. Most notable among these is Smalltalk
 
 All of these systems share a common architecture of the metaclass system
 in which each class has its own freely generated metaclass, defined by
-the class methods and fields of the class.  In contrast, MCJ
+the static methods and fields of the class.  In contrast, MCJ
 provides a hierarchy for structuring metaclass relationships, which
 provides significantly more modeling and abstraction flexibility.
 
 The metaclass system present in Python \cite{PythonMeta} is
-similar to that provided here, where classes inheritance the instance methods
-of their metaclasses as class methods.  However,
+similar to that provided here, where classes inherit the instance methods
+of their metaclasses as static methods.  However,
 Python is dynamically-typed, and many of the uses to which Python
 metaclasses are put are not possible in a statically typed language.
 The work on static type systems for Python has not included
 metaclasses \cite{Starkiller}.
-
-Several type systems have also been proposed for languages with
-metaclasses, including the Strongtalk language \cite{Strongtalk},
-which turns Smalltalk into a structurally-typed language with
-static checking.  However, because the Smalltalk metaclass
-system is so different from the one in MCJ, many of the interesting
-aspects of the type system do not carry over.  Furthermore, the
-Strongtalk papers do not provide a formal semantics and analysis of
-the system.  A formal analysis of inheritance in Smalltalk is provided
-in \cite{cook:thesis} but this again does not consider the hierarchy
-of metaclasses presented here.
-
-Graver and Johnson \cite{graver:90} present another type system for
-Smalltalk, with a formalism and sketch of a safety proof.  Again, the
-metaclass type system is substantially different, reflecting the
-underlying Smalltalk system.  Additionally, the paper is concerned
-primarily with optimization as opposed to static checking.
 
 Cointe \cite{objvlisp} presents a model of metaclasses
 similar to that presented here, but for a dynamically typed object-oriented
@@ -1091,6 +1073,53 @@ determine the exact relationship between the two systems.  Additionally,
 his work is in a untyped setting (Lisp and Smalltalk) and thus the
 safety theorems proved here are not possible. 
 
+\paragraph{Type Systems for Metaclasses}
+Several type systems have also been proposed for languages with
+metaclasses, including the Strongtalk language \cite{Strongtalk},
+which turns Smalltalk into a structurally-typed language with
+static checking.  However, because the Small\-talk metaclass
+system is so different from the one in MCJ, many of the interesting
+aspects of the type system do not carry over.  Furthermore, the
+Strongtalk papers do not provide a formal semantics and analysis of
+the system.  A formal analysis of inheritance in Smalltalk is provided
+in \cite{cook:thesis} but this again does not consider the hierarchy
+of metaclasses presented here.
+
+Graver and Johnson \cite{graver:90} present another type system for
+Smalltalk, with a formalism and sketch of a safety proof.  Again, the
+metaclass type system is substantially different, reflecting the
+underlying Smalltalk system.  Additionally, the paper is concerned
+primarily with optimization as opposed to static checking.
+
+
+
+
+\paragraph{Metaclasses and Nested Classes}
+Some of the problems are alleviated in a language with nested, or
+inner classes.  In the language Scala \cite{Scala} the following
+program expresses some of the desired invariants:\footnote{This
+  example, and this discussion, was suggested by an anonymous
+  reviewer.}
+
+
+\begin{verbatim}
+class Species {
+  class Member {}
+}
+object Eagles extends Species;
+class Eagle() extends Eagles.Member;
+val harry = new Eagle;
+\end{verbatim}
+
+This program automates many of the invariants required in a language
+without metaclasses.  However, two separate classes must still be
+constructed per \txt{Species}.  Further, the fundamental problem of
+not being able to group classes by functionality in the same way as
+instances remains.  Inner classes are not constrained by
+invariants imposed by their enclosing class.  In MCJ, the invariants of the
+kind are enforced by the type system.  
+
+\paragraph{Prototype Systems}
 When viewed as ``instance generators'', our metaclasses are similar to
 prototypes in untyped languages such as Self.  Prototypes generate new
 instances, which themselves can generate new instances.  Our language
@@ -1103,9 +1132,9 @@ language is statically typed.
 
 Formalized calculi for object-oriented languages are abundant in the
 programming languages community today, including \FJ\ \cite{FJ}, upon
-which MCJ is based.  However, none of them have considered static
-methods, which are the closest analogue of the metaclass functionality
-in MCJ.
+which MCJ is based.  However, none of them have considered
+metaclasses, or even static methods, which are the closest analogue in
+the Java Programming Language of the metaclass functionality in MCJ.
 
 Finally, the motivation for this work comes from the language MetaGen,
 introduced in \cite{DimUnits}.  MetaGen can be seen as an extension of
@@ -1138,18 +1167,18 @@ include more of the features presented in \cite{DimUnits}, so as to
 allow inclusion of the system for checking dimensions of physical
 quantities. Such an extension would allow for a proof of  ``dimensional
 soundness'' in the resulting system.  Further, the calculus presented
-here is sufficent for demonstrating the techincal detail, but not for
-practical programming.  Many extensions would be neccessary for MCJ to
+here is sufficient for demonstrating the technical detail, but not for
+practical programming.  Many extensions would be necessary for MCJ to
 become a usable language in practice.
 
 One of the most important extensions is a mechanism for side effects.
-Imperative features present a some difficulties for this calculus as
+Imperative features present some difficulties for this calculus as
 formulated.  The most important problem is that the initializers for
-class fields are re-evaluated every time the class is used as an
+static fields are re-evaluated every time the class is used as an
 expression.  If those expressions had side effects, this prospect
-would make class fields unusable.  One potential solution is to
-remember the previously evaluated results, but much more work remains
-in this area.
+would make static fields unusable.  One potential solution is to
+remember the previously evaluated results, as is done in the Java
+Programming Language, but more work remains in this area.
 
 Another interesting extension would be to expand our calculus to
 include either multiple inheritance (as does Python) or some
@@ -1160,15 +1189,16 @@ be discovered.
 Finally, the language has not yet been implemented.  An implementation
 might suggest changes to the language, or make the differences with
 other languages clearer.  Further, an implementation on the Java
-Virtual Machine would be a useful are of exploration.
+Virtual Machine would be a useful area of exploration.
 
 \section*{Acknowledgments}
 
 We would like to thank Jan-Willem Maessen for his 
 feedback on the formal rules presented in this paper.  We also thank
-David Chase for not believing in us unless we were right, Victor
+David Chase for helpful skepticism, Victor
 Luchangco for many valuable discussions, and Guy Steele for his many
-helpful comments.
+helpful comments.  Finally, several anonymous reviewers gave very
+helpful critiques.  
 
 \bibliographystyle{plain}
 
