@@ -1,4 +1,4 @@
-(module semantic-analysis mzscheme
+(module iface-checker mzscheme
   (require (lib "class.ss"))
   (require (prefix ast: "../syntactic/ast.ss"))
   ;(require "analyze-ast.ss")
@@ -66,26 +66,27 @@
   (define (class%? x) (is-a? x class%))
   (define (class/interface-name c) (send c get-name))
   
-  (define (print-some-errors ast)
+  (define (collect f . l)
+    (filter (lambda (x) x) (apply map f l)))
+  
+  (define (find-errors ast)
     (let ((types (all-types ast)))
-      (for-each 
+      (collect 
        (match-lambda
          [((? class%? c) tyspec) (let ((ifaces (send c get-interfaces)))
-                                   (unless (null? ifaces)
-                                     (printf "Used a class ~a where you could have used interfaces ~a~n at source ~a~n~n"
-                                             (class/interface-name c)
-                                             (map class/interface-name (send c get-interfaces))
-                                             (ast:ast-src tyspec))))]
-         [_ (void)])
+                                   (if (null? ifaces) #f
+                                       (list 
+                                        (class/interface-name c)
+                                        (map class/interface-name (send c get-interfaces))
+                                        (ast:ast-src tyspec))))]
+         [_ #f])
        types)))
   
-  (define check (compose print-some-errors parse open-input-file pathlike->path))
+  (define check (compose find-errors parse open-input-file pathlike->path))
 
-  (define check-str (compose print-some-errors parse))
+  (define check-str (compose find-errors parse))
   
-  (provide check check-str print-some-errors)
-
-  (define x "import java.util ; class C{int x;java.lang.Object y;Vector z;}")
+  (provide check check-str find-errors)
 
   
   )

@@ -1,8 +1,9 @@
-#cs(module class-resolver mzscheme
+(module class-resolver mzscheme
   (require (lib "string.ss" "srfi" "13"))
   (require (lib "class.ss"))
   (require (lib "contract.ss"))
-  (require "../lang/struct.ss")
+  ;(require "../lang/struct.ss")
+  (require (planet "inspector.ss" ("dherman" "inspector.plt" 1 0)))
 
   (define class-resolver<%>
     (interface ()
@@ -19,9 +20,9 @@
                          new-resolver)))
 
   (with-public-inspector
-   (define-struct type-name (package type))
-   (provide/contract (struct type-name ((package (listof symbol?))
-                                        (type symbol?)))))
+   (define-struct type-name (package type)))
+  (provide/contract (struct type-name ((package (listof symbol?))
+                                       (type symbol?))))
 
   ;; build-type-name : (listof symbol) -> type-name
   (define (build-type-name name)
@@ -34,7 +35,9 @@
     (string-append
      (string-join (map symbol->string (type-name-package name)) "." 'suffix)
      (symbol->string (type-name-type name))))
-  (provide/contract (type-name->string (type-name? . -> . string?)))
+     (provide type-name->string)
+     
+  ;(provide/contract (type-name->string (type-name? . -> . string?)))
 
   ;; TODO: I can't give these contracts because of cyclic module dependencies!
 

@@ -88,7 +88,6 @@
 
     (let* ([flags (parse-flags (class-file-flags cf))]
            [modifiers (lset-intersection eq? flags type-modifiers)])
-      (printf "in analyze-classfile~n")
       (match cf
         [($ class-file _ _ _ _ iface-infos fields methods attributes)
          (match (build-type-name (this))

@@ -11,7 +11,7 @@
   (require "../util/classfile.ss")
   (require "../util/unzip.ss")
   (require "../config.ss")
-  (require (lib "utils.ss" "reduction-semantics" "examples" "classic-java"))
+  ;(require (lib "utils.ss" "reduction-semantics" "examples" "classic-java"))
 
   ;; ===========================================================================
   ;; DELEGATES TO PERFORM RESOLUTION
@@ -34,21 +34,20 @@
   (define (make-jar-resolver filename)
     (time
      (zip-file-inflate (unzip/lazy filename (lambda (filename in)
-                                              (printf "whee, in a lambda~n")
                                               (analyze-classfile (read-class-file in)))))))
 
   ;; make-directory-resolver : string -> (string -> (optional declared-type%))
   (define (make-directory-resolver basedir)
     (lambda (filename)
-      (printf "in a directory resolver, for ~a ~a~n" basedir filename)
+      ;(printf "in a directory resolver, for ~a ~a~n" basedir filename)
       (and (class-filename? filename)
            (let ([fullpath (build-path basedir filename)])
-             (and (printf "about to analyze-classfile fp: ~a~n" fullpath)
+             (and ;(printf "about to analyze-classfile fp: ~a~n" fullpath)
                   (file-exists? fullpath)
                   (analyze-classfile
                    (with-input-from-file fullpath
                      (lambda ()
-                       (begin (printf "analyzing a class file~n")
+                       (begin ;(printf "analyzing a class file~n")
                               (read-class-file (current-input-port)))))))))))
 
   ;; make-binary-resolver : string -> (string -> (optional declared-type%))
@@ -57,7 +56,7 @@
       [(directory-exists? classpath-entry)
        (make-directory-resolver classpath-entry)]
       [(and (jar-filename? classpath-entry) (file-exists? classpath-entry))
-       (printf "making jar resolver ~a~n" classpath-entry)
+       ;(printf "making jar resolver ~a~n" classpath-entry)
        (make-jar-resolver classpath-entry)]
       [else
        (error 'make-resolver "bad classpath entry: ~v" classpath-entry)]))
@@ -67,7 +66,7 @@
     (and (pair? preds)
          (or (let ((z ((car preds) x)))
                (begin
-               (printf "trying a predicate ~a, got ~a~n" (car preds) z)
+               ;(printf "trying a predicate ~a, got ~a~n" (car preds) z)
                z))
              (try (cdr preds) x))))
 
@@ -82,7 +81,7 @@
      (symbol->string (type-name-type name))
      ".class"))
 
-  (with-public-inspector
+ 
   (define class-resolver%
     (class* object% (class-resolver<%>)
       (public resolve-package resolve-type)
@@ -90,7 +89,7 @@
       
       (define/public (ap) all-packages)
       (define classpath
-        (begin (printf "the classpath is ~a~n" (current-classpath))
+        (begin ;(printf "the classpath is ~a~n" (current-classpath))
                (map make-binary-resolver (current-classpath))))
       
       (define/public (cp) classpath)
@@ -140,12 +139,12 @@
                              (lambda ()
                                (let ([type (try classpath (class-filename ty))])
                                  (and type
-                                      (printf "attempting to resolve type: ~a ty: ~a~n" type ty)
+                                      ;(printf "attempting to resolve type: ~a ty: ~a~n" type ty)
                                       (begin 
                                         (hash-table-put! types type-name type)
                                         (send type resolve-all)
                                         type))))))]))
 
-      (super-new))))
+      (super-new)))
 
   (provide class-resolver%))
