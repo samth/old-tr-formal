@@ -2,11 +2,9 @@
   
   (require (lib "match.ss") (lib "list.ss") (lib "etc.ss"))
   
+  (require "test.scm")
+  
   (define-struct fun-ty (args result) (make-inspector))
-  
-  (define-struct cons-ty (first rest) (make-inspector))
-  
-  (define-struct union-ty (alts) (make-inspector))
   
  
   
@@ -68,8 +66,6 @@
                         accs tys)))
       (list* pred-ty maker-ty acc-tys)))
   
-  (define (lookup sym env)
-    (and (assoc sym env) (cadr (assoc sym env))))
   
   (define current-exp (make-parameter #f))
   
@@ -91,13 +87,27 @@
   
   (define (extend-env-from-q question old-env)
     (match question
-      [('cons? v) (match (lookup v old-env)
-                   [('Listof t)
-                    (if (variable? v) 
-                        (cons (list v (make-cons-ty t (list 'Listof t))) old-env)
-                        old-env)])]
+      [('cons? (? symbol? v))
+       (let* ((t (lookup v old-env))
+              (new-t (cons?-trans t)))
+         (if new-t
+             (cons (list v new-t) old-env)
+             old-env))]
+         
+      [('cons? ('car (? symbol? v))) 
+       (let* ((t (lookup v old-env))
+              (new-t (update-type-car cons?-trans t)))
+         (if new-t
+             (cons (list v new-t) old-env)
+             old-env))]
+      [('cons? ('cdr (? symbol? v)))
+       (let* ((t (lookup v old-env))
+              (new-t (update-type-cdr cons?-trans t)))
+         (if new-t
+             (cons (list v new-t) old-env)
+             old-env))]
                    
-      [(f . args) (let ((info (assoc f informing)))
+      #;[(f . args) (let ((info (assoc f informing)))
                     (if info
                         (let* ((new-tys (third info))
                                (new-assocs (filter (lambda (x) (variable? (car x))) (map list args new-tys)))
@@ -117,7 +127,7 @@
             (pair? a)
             (equal? (car a) 'Listof)
             (or (equal? 'Empty b)
-                (equal? (make-cons-ty (cadr a) a) b))) a]
+                (equal? (cons (cadr a) a) b))) a]
           [else
            (begin (printf "mismatched types - expected: ~a actual: ~a~n" a b)
                   (if (equal? 'cond (car (current-exp))) 
@@ -127,16 +137,32 @@
                   (newline)
                   a)]))
   
+  (define (car-of-ty t)
+    (match t
+      [(a . _) a]
+      [($ union-ty (cl ...))
+       (make-union-ty (map-opt car-of-ty cl))]))
+  
+  (define (cdr-of-ty t)
+    (match t
+      [(_ . a) a]
+      [($ union-ty (cl ...))
+       (make-union-ty (map-opt cdr-of-ty cl))]))
+  
   (define (check-exp exp exp-ty env)
     (match exp
       [(or 'empty '()) (verify-ty exp-ty 'Empty exp)]
       [(? number? exp) (verify-ty exp-ty 'Number exp)]
       [(or 'true 'false) (verify-ty exp-ty 'Boolean exp)]
       [('cond . clauses) (check-cond clauses exp-ty env)]
-      [('car x) (let ((t (verify-ty (make-cons-ty exp-ty `(Listof ,exp-ty)) (lookup x env) exp)))
+      #;[('car x) (let ((t (verify-ty (cons exp-ty `(Listof ,exp-ty)) (lookup x env) exp)))
                   exp-ty)]
+      [('car x) (let ((t (car-of-ty (lookup x env))))
+                  (verify-ty exp-ty t))]
+      [('cdr x) (let ((t (cdr-of-ty (lookup x env))))
+                  (verify-ty exp-ty t exp))]
       [('cons f r) (let ((ft (check-exp f 'Any env)))
-                     (make-cons-ty ft (check-exp r `(Listof ,ft) env)))]
+                     (cons ft (check-exp r `(Listof ,ft) env)))]
       [((? symbol? fun) . args) (check-fun-app fun args exp-ty env)]
       [(? symbol? exp) (verify-ty exp-ty (lookup exp env) exp)]
       ))
@@ -192,6 +218,11 @@
   (define new-env (append (list (list 'p 'posn) (list 'a 'Any))
                           (type-struct 'posn '(x y) '(Number Number)) 
                           base-env))
+  
+  (define new-test `(define (max l) ((nelon)) Number
+                      (cond
+                        [(cons? (cdr l)) (car (cdr l))]
+                        [(empty? (cdr l)) (car l)])))
   
   (check test-exp 'Number base-env)
   (check test-exp2 'Number new-env)
