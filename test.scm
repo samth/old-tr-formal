@@ -2,6 +2,17 @@
   
   (require (lib "match.ss") (lib "list.ss") (lib "etc.ss") (lib "contract.ss"))
   
+  (define (simplify-list l)
+    (let loop ((l l) (result l))
+      (if (null? l) result
+          (loop (cdr l)
+                (cons (car l)
+                      (filter (lambda (x) (not (equal? x (car l))))
+                        result))))))
+  
+  (define (extend env key val)
+    (cons (list key val) env))
+  
   (define-syntax define*/c
     (syntax-rules ()
       [(_ (a args ...) cont b ...)
@@ -26,12 +37,18 @@
   ; alts is a list of types
   (define-struct union-ty (alts) (make-inspector))
   
+  (define (mk-union-ty l)
+    (let ((l (simplify-list l)))
+          (if (= 1 (length l)) (car l) (make-union-ty l))))
+  
+  (print-struct #t)
+  
   ; name is a symbol
   (define-struct ty-ref (name) (make-inspector))
 
-  (define* lon (make-union-ty `(Empty (Number . ,(make-ty-ref 'LoN)))))
+  (define* lon (mk-union-ty `(Empty (Number . ,(make-ty-ref 'LoN)))))
   
-  (define* nelon (make-union-ty `((Number . Empty) (Number . ,(make-ty-ref 'nelon)))))
+  (define* nelon (mk-union-ty `((Number . Empty) (Number . ,(make-ty-ref 'nelon)))))
   
   ; alist of symbol * type 
   (define* tyenv `((LoN ,lon)
@@ -57,7 +74,7 @@
       [($ ty-ref t) (cons?-trans (lookup t tyenv))]
       [(_ . _) ty]
       [($ union-ty (cl ...))
-       (make-union-ty (map-opt cons?-trans cl))]
+       (mk-union-ty (map-opt cons?-trans cl))]
       [ty #f])
     )
   
@@ -68,7 +85,7 @@
       [($ ty-ref t) (empty?-trans (lookup t tyenv))]
       ['Empty ty]
       [($ union-ty (cl ...))
-       (make-union-ty (map-opt empty?-trans cl))]
+       (mk-union-ty (map-opt empty?-trans cl))]
       [ty #f])
     )
   
@@ -76,7 +93,8 @@
   (define*/c (update-type-car ty transform)
     (type/c (type/c . -> . type/c) . -> . type/c)
     (match ty
-      [($ union-ty (cl ...)) (make-union-ty (map-opt (lambda (x) (update-type-car x transform)) cl))]
+      [($ ty-ref t) (update-type-cdr (lookup t tyenv) transform)]
+      [($ union-ty (cl ...)) (mk-union-ty (map-opt (lambda (x) (update-type-car x transform)) cl))]
       [_ (let ((t (transform (car ty))))
            (and t (cons  t (cdr ty)) ))]))
 
@@ -84,16 +102,19 @@
   (define*/c (update-type-cdr ty transform)
     (type/c (type/c . -> . type/c) . -> . type/c)
     (match ty
-      [($ union-ty (cl ...)) (make-union-ty (map-opt (lambda (x) (update-type-cdr x transform)) cl))]
+      [($ union-ty (cl ...)) (mk-union-ty (map-opt (lambda (x) (update-type-cdr x transform)) cl))]
+      [($ ty-ref t) (update-type-cdr (lookup t tyenv) transform)]
       [_ (let ((t (transform (cdr ty))))
            (and t (cons (car ty) t)))]))
   
   (define (update-type exp env transform)
     (match exp
       [('car (? symbol? v))
-       (update-type-car (lookup v env) transform)]
+       (let ((new-t (update-type-car (lookup v env) transform)))
+         (extend env v new-t))]
       [('cdr (? symbol? v))
-       (update-type-cdr (lookup v env) transform)] 
+       (let ((new-t (update-type-cdr (lookup v env) transform)))
+         (extend env v new-t))]
       [(? symbol? v)
        (transform (lookup v env))]
       [_ (error "bad cond question exp")]
@@ -104,34 +125,65 @@
       [('cons? e) (update-type e env cons?-trans)]
       [('empty? e) (update-type e env empty?-trans)]))
   
+  (define equal-ty 
+    (match-lambda*
+      [('Any _) #t]
+      [(_ 'Any) #t] 
+      [(t (and g ($ union-ty ts)))
+       (andmap (lambda (x) (equal? t x)) ts)]
+      [(goal actual)
+       (equal? goal actual)]))
+  
   (define (check-equal-ty goal actual)
-    (if (not (equal? goal actual))
-        (printf "typecheck failed: ~a and ~a~n" goal actual)))
+    (if (not (equal-ty goal actual))
+        (type-error goal actual)))
+       
+           
 
+  (define (type-error goal actual)
+    (printf "typecheck failed: ~a and ~a~n" goal actual))
+  
   (define (car-of-ty t)
     (match t
+      [($ ty-ref t) (car-of-ty (lookup t tyenv))]
       [(a . _) a]
       [($ union-ty (cl ...))
-       (make-union-ty (map-opt car-of-ty cl))]
-      [_ (error "bad car" t)]))
+       (mk-union-ty (map-opt car-of-ty cl))]
+      [_ #f]))
   
   (define (cdr-of-ty t)
     (match t
+      [($ ty-ref t) (cdr-of-ty (lookup t tyenv))]
       [(_ . a) a]
       [($ union-ty (cl ...))
-       (make-union-ty (map-opt cdr-of-ty cl))]))  
-
-  (define (check-car expr goal env)
-    
-    )
+       (mk-union-ty (map-opt cdr-of-ty cl))]))  
+  
+  
+  (define (check-cond-clause question answer goal env)
+    (let ((new-env (extend-env-from-q question env)))
+      (check-exp answer goal new-env)))
   
   (define (check-exp expr goal env)
     (match expr
       [(or 'empty '()) (check-equal-ty goal 'Empty) goal]
       [(? number? e) (check-equal-ty goal 'Number) goal]
-      [('car e) (check-car e goal env)]
-      [('cdr e) (check-cdr e goal env)]
+      [('car e) (let* ((t (check-exp e 'Any env))
+                       (car-t (car-of-ty t)))
+                      (check-equal-ty goal car-t)
+                  car-t)]
+      [('cdr e) 
+       (printf "env: ~a" env)
+       (let* ((t (check-exp e 'Any env))
+              (cdr-t (cdr-of-ty t)))
+         (check-equal-ty goal cdr-t)
+         cdr-t)]
+      [(? symbol? exp) (let ((var-ty (lookup exp env)))
+                         (check-equal-ty goal var-ty)
+                         var-ty)]
       ))
   
+  (define simple-env 
+    `((l ,(make-ty-ref 'LoN))
+      (l2 ,(make-ty-ref 'nelon))))
   
   )
