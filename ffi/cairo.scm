@@ -183,5 +183,41 @@
   
   (defcairo clip)
   
-  (defcairo stroke-extents)
+  (defcairo stroke-extents : _double* _double* _double* _double*)
+
+  (defcairo fill-extents : _double* _double* _double* _double*)
+  
+  (define-cpointer-type _cairo_font)
+  
+  (define-cstruct _cairo_glyph
+                  ((index _ulong)
+                   (x _double*)
+                   (y _double*)))
+  
+  (define-cstruct _cairo_text_extents
+                  ((x_bearing _double*)
+                   (y_bearing _double*)
+                   (width _double*)
+                   (height _double*)
+                   (x_advance _double*)
+                   (y_advance _double*)))
+                  
+  (define-cstruct _cairo_font_extents
+                  ((ascent _double*)
+                   (descent _double*)
+                   (height _double*)
+                   (max_x_advance _double*)
+                   (max_y_advance _double*)))
+  
+  (define _cairo_font_slant
+    (_enum
+     '(font-slant-normal
+       font-slant-italic
+       font-slant-oblique)))
+
+  (define _cairo_font_weight
+    (_enum
+     '(font-weight-normal
+       font-weight-bold)))
+
   )
