@@ -1,0 +1,28 @@
+PL Seminar Talk
+---------------
+
+* Motivation for metaclasses
+
+** Ferruci + Welty
+
+** Eagle example
+
+** Design Patterns
+
+* Review of FJ
+
+** Very Quick
+
+* Introduction to MCJ
+
+** Metaclasses
+
+** Method Dispatch
+
+** Constructors
+
+* MCJ Formal Semantics
+
+** Static Semantics
+
+** Dynamics Semantics
