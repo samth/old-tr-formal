@@ -25,16 +25,19 @@
   (define typenames (make-hash-table 'equal))
   
   (define (add-type str)
+    (display "adding type ")
+    (display str)
+    (newline)
     (hash-table-put! typenames str (token-TYPE_NAME str)))
   
   (define (lex-ident str)
     (hash-table-get typenames str (thunk (token-IDENTIFIER str))))
   
-  (define-struct var (name type) (make-inspector))
+  (def-struct var (name type))
 
-  (define-struct func (name ret-type args) (make-inspector))
+  (def-struct func-type (ret-type args))
 
-  (define-struct typedef (name type) (make-inspector))
+  (def-struct typedef (name type))
   
   (def-struct all-struct ())
   
@@ -44,7 +47,7 @@
   
   (def-struct (full-struct all-struct) (name elems))
 
-  (def-struct ptr-type (base))
+  (def-struct pointer (base))
   
   (def-struct type-mod (base mod))
   
@@ -143,6 +146,7 @@
      ["auto" 'AUTO]
      ["char" 'CHAR]
      ["const" 'CONST]
+     ["__const" 'CONST] ;; appears in some include files I've seen
      ["double" 'DOUBLE]
      ["enum" 'ENUM]
      ["extern" 'EXTERN]
@@ -203,13 +207,15 @@
       
       (decl
        [(name-decl |;|) $1]
+       [(EXTERN name-decl |;|) $2]
        [(type-decl |;|) $1]
        [(typedef |;|) $1])
       
       (typedef
        [(TYPEDEF name-decl)
         (match $2
-          [(($ var nm ty)) 
+          [(or ($ var nm ty) 
+               (($ var nm ty)))
            (begin
              (add-type nm)
              (make-typedef nm ty))])])
@@ -261,8 +267,10 @@
       
       (type
        [(unmod-type) $1]
+       [(type * CONST)  $1]
+       [(type *)  $1]
        [(type-mod type) (make-type-mod $2 $1)]
-       [(type *) (make-ptr-type $1)])
+       )
       
       (type-mod
        [(CONST) 'const]
@@ -276,8 +284,8 @@
        [(add-expr) $1])
       
       (func-decl
-       [(type IDENTIFIER |(| funargs/opt |)|) (make-func $2 $1 $4)]
-       [(type |(| * IDENTIFIER |)| |(| funargs/opt |)|) (make-func $2 $1 $4)]
+       [(type IDENTIFIER |(| funargs/opt |)|) (make-var $2 (make-func-type $1 $4))]
+       [(type |(| * IDENTIFIER |)| |(| funargs/opt |)|) (make-var $4 (make-func-type $1 $7))]
        )
       
       (funargs/opt
@@ -287,6 +295,7 @@
       
       (funargs
        [(funarg) (list $1)]
+       [(...) (list '...)]
        [(funarg |,| funargs) (cons $1 $3)]
        )
       
@@ -333,6 +342,7 @@
 
       (id/array/init
        [(IDENTIFIER) $1]
+       [(id/array/init |[| |]|) (list $1 'array)]
        [(id/array/init |[| const-expr |]|) (list $1 'array $3)]
        [(id/array/init = const-expr) (list $1 '= $3)])
       
