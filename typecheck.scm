@@ -96,13 +96,13 @@
          
       [('cons? ('car (? symbol? v))) 
        (let* ((t (lookup v old-env))
-              (new-t (update-type-car cons?-trans t)))
+              (new-t (update-type-car t cons?-trans)))
          (if new-t
              (cons (list v new-t) old-env)
              old-env))]
       [('cons? ('cdr (? symbol? v)))
        (let* ((t (lookup v old-env))
-              (new-t (update-type-cdr cons?-trans t)))
+              (new-t (update-type-cdr t cons?-trans)))
          (if new-t
              (cons (list v new-t) old-env)
              old-env))]
@@ -141,7 +141,8 @@
     (match t
       [(a . _) a]
       [($ union-ty (cl ...))
-       (make-union-ty (map-opt car-of-ty cl))]))
+       (make-union-ty (map-opt car-of-ty cl))]
+      [_ (error "bad car" t)]))
   
   (define (cdr-of-ty t)
     (match t
@@ -149,7 +150,15 @@
       [($ union-ty (cl ...))
        (make-union-ty (map-opt cdr-of-ty cl))]))
   
-  (define (check-exp exp exp-ty env)
+  (define (all-is-cons t)
+    (match t
+      [(_ . _) #t]
+      [($ union-ty (cl ...))
+       (andmap all-is-cons cl)]
+      [($ ty-ref t)
+       (lookup t tyenv)]))
+  
+  #;(define (check-exp exp exp-ty env)
     (match exp
       [(or 'empty '()) (verify-ty exp-ty 'Empty exp)]
       [(? number? exp) (verify-ty exp-ty 'Number exp)]
@@ -157,8 +166,8 @@
       [('cond . clauses) (check-cond clauses exp-ty env)]
       #;[('car x) (let ((t (verify-ty (cons exp-ty `(Listof ,exp-ty)) (lookup x env) exp)))
                   exp-ty)]
-      [('car x) (let ((t (car-of-ty (lookup x env))))
-                  (verify-ty exp-ty t))]
+      [('car x) (let ((t (check-exp )
+                  (verify-ty exp-ty t))))]
       [('cdr x) (let ((t (cdr-of-ty (lookup x env))))
                   (verify-ty exp-ty t exp))]
       [('cons f r) (let ((ft (check-exp f 'Any env)))
