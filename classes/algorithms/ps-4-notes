@@ -3,7 +3,7 @@ Problem 1a:
 Greedy selection of shortest.  Sort first.  Running time n log n +
 size of solution.
 
-Problem 1b: 
+Problem 1b: Apply 0-1 knapsack.  each song's value = weight = length
 
 Problem 2a: Select furthest gas station that can be reached from the
 current station.
