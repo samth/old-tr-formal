@@ -219,5 +219,25 @@
     (_enum
      '(font-weight-normal
        font-weight-bold)))
+  
+  (defcairo select-font : _string _cairo_font_slant _cairo_font_weight)
+
+  (define-syntax deflots
+    (syntax-rules ()
+      [(_ (dc ...) ...)
+       (begin
+         (defcairo dc ...) ...)]
+      ))
+  
+  (deflots
+   (scale-font : _double*)
+   (transform-font : _cairo_matrix)
+   (show-text : _string)
+   (show-glyphs : _cairo_glyph-pointer _int)
+   (current-font : -> _cairo_font)
+   (current-font-extents : _cairo_font_extents-pointer)
+   (set-font : _cairo_font)
+   
+   )
 
   )
