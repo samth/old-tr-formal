@@ -1,0 +1,13 @@
+Consider a component registry CR, which consists of a set of component
+directed graphs. Each component in a graph is labeled with a unique
+id.  Each edge in the graph is labeled with an API name.
+
+Installation consists of the addition of a new component graph to CR.  
+
+Upgrade/Component consists of replacing a subset of the components
+labeled with a particular id.
+
+Upgrade/API consists of replacing a subset of the components who are
+the source of an edge labeled with a particular API name.
+
+Upgrade can potentially replace nodes below the specified one as well.   
