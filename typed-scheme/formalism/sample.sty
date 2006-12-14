@@ -7,6 +7,7 @@
 % types
 \newmeta\s{\sigma}              % these are automatically wrapped in \ma
 \newmeta\t{\tau}
+\newmeta\p{\psi}
 
 % expressions
 \newmeta\M{M}
@@ -17,17 +18,24 @@
 % will all look the same!
 
 % types
-\newbfop\int{int}
-\newbfop\bool{bool}
-\newcommand\proctype[2]{(#1 \to #2)}
+\newbfop\num{number}
+\newbfop\bool{boolean}
+\newbfop\ifsym{if}
+%\newbfop\usym{\ma{\cup}}
+\newcommand\usym{\cup}
+\newcommand\proctype[3]{(#1 \stackrel{#3}{\to} #2)}
+%\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
 
 % terms
 \newmeta\x{x}                   % not sure if \x is reserved...
 \newmeta\c{c}
+\newcommand\numberp{\ma{\mathrm{number?}}}
+\newcommand\boolp{\ma{\mathrm{boolean?}}}
 \newcommand\abs[2]{\ma{\l #1 . #2}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
+\newcommand\cond[3]{\ma{(\ifsym\ #1\ #2\ #3)}}
 
 % typing judgements
 \newcommand\hastype[2]{\ma{#1 \mathbin{:} #2}}
