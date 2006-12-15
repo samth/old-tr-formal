@@ -21,6 +21,7 @@
 \newbfop\num{number}
 \newbfop\bool{boolean}
 \newbfop\ifsym{if}
+\newcommand\noeffect{\ma{\bullet}}
 %\newbfop\usym{\ma{\cup}}
 \newcommand\usym{\cup}
 \newcommand\proctype[3]{(#1 \stackrel{#3}{\to} #2)}
@@ -33,10 +34,14 @@
 \newmeta\c{c}
 \newcommand\numberp{\ma{\mathrm{number?}}}
 \newcommand\boolp{\ma{\mathrm{boolean?}}}
-\newcommand\abs[2]{\ma{\l #1 . #2}}
+\newcommand\plus{\mathbin{+}}
+\newcommand\abs[3]{\ma{\l #1 : #2 . #3}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
 \newcommand\cond[3]{\ma{(\ifsym\ #1\ #2\ #3)}}
 
 % typing judgements
 \newcommand\hastype[2]{\ma{#1 \mathbin{:} #2}}
+\newcommand\hasty[3]{\hastype{#1 \vdash #2}{#3}}
+\newcommand\ghastyeff[3]{\ma{\hasty{\Gamma}{#1}{#2 ; #3}}}
+\newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
 
