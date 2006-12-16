@@ -42,6 +42,7 @@
 % typing judgements
 \newcommand\hastype[2]{\ma{#1 \mathbin{:} #2}}
 \newcommand\hasty[3]{\hastype{#1 \vdash #2}{#3}}
-\newcommand\ghastyeff[3]{\ma{\hasty{\Gamma}{#1}{#2 ; #3}}}
+\newcommand\hastyeff[4]{\hastype{#1 \vdash #2}{#3 ; #4}}
+\newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
 \newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
 
