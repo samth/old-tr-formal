@@ -22,7 +22,7 @@
 \newbfop\bool{boolean}
 \newbfop\tt{true}
 \newbfop\ff{false}
-\newbfop\wrong{wrong}
+%\newbfop\wrong{wrong}
 \newbfop\ifsym{if}
 \newcommand\noeffect{\ma{\bullet}}
 %\newbfop\usym{\ma{\cup}}
@@ -53,10 +53,12 @@
 \newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
 \newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
 \newcommand\subtype[2]{\ma{\vdash #1 \subtypesym #2}}
+\newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{e} #2}}
 
 % reductions
 
 \newcommand\subs[3]{\ma{#1[#2/#3]}}
+\newcommand\step[2]{\ma{#1 \hookrightarrow #2}}
 \newcommand\reduce[2]{\ma{#1 \rightarrow #2}}
 \newcommand\reduces[2]{\ma{#1 \rightarrow^* #2}}
 
