@@ -76,13 +76,19 @@ lemma depth_pos:
 
 thm lam.induct
 
-lemma lam_comp_induct1:
+lemma depth_eqvt:
+  fixes pi :: "name prm"
+  and   t  :: "lam"
+  shows "depth (pi\<bullet>t) = depth t"
+by (nominal_induct t rule: lam.induct) auto
+
+lemma lam_comp_induct1[consumes 0, case_names Var App Lam]:
   fixes P::"'a::fs_name \<Rightarrow> lam \<Rightarrow> bool"
   and t::"lam"
   and x::"'a::fs_name"
   assumes a1:"!! n z. (!! x t. (t,Var n) : smaller_than \<Longrightarrow> P x t) \<Longrightarrow> P z (Var n)"
   and a2:"!! t1 t2 z. (!! x t. (t,App t1 t2) : smaller_than \<Longrightarrow> P x t) \<Longrightarrow> P z (App t1 t2)"
-  and a3:"!! a b z. (!! x t. (t,Lam[a].b) : smaller_than \<Longrightarrow> P x t) \<Longrightarrow> a \<sharp> z \<Longrightarrow> P z (Lam[a].b)"
+  and a3:"!! a b z. \<lbrakk>a \<sharp> z ; (!! x t. (t,Lam[a].b) : smaller_than \<Longrightarrow> P x t)\<rbrakk> \<Longrightarrow> P z (Lam[a].b)"
   shows "P x t"
   proof (induct arbitrary: x rule: wf_induct[of smaller_than])
     case 1 thus ?case using wf_st by auto
@@ -90,10 +96,49 @@ lemma lam_comp_induct1:
     case (2 s x) thus ?case
       proof (induct s  rule: lam_cases)
 	case (Var v) thus ?case using a1[of v x] by auto
+      next
+        case (App t1 t2) thus ?case using a2 by auto
+      next
+        case (Lam a b)
+        have f: "\<exists>c::name. c\<sharp>(a,b,x)"
+	  by (rule exists_fresh', simp add: fs_name1)
+        then obtain c::"name" 
+	  where f1: "c\<noteq>a" and f2: "c\<sharp>x" and f3: "c\<sharp>b"
+	  by (force simp add: fresh_prod fresh_atm)
+        have "depth b = depth (([(c,a)])\<bullet>b)" using depth_eqvt by simp
+        hence "depth (Lam[a].b) = depth (Lam[c].(([(c,a)])\<bullet>b))" by simp
+        hence A:"!! t. (t,Lam[c].(([(c,a)])\<bullet>b))  : smaller_than \<Longrightarrow> (t,Lam[a].b) : smaller_than"
+	  by (simp add: smaller_than_def measure_def)
+        have "\<And>x t. (t, Lam [a].b) \<in> smaller_than \<Longrightarrow> P x t" using Lam by auto
+        hence "\<And>x t. (t, Lam [c].(([(c,a)])\<bullet>b)) \<in> smaller_than \<Longrightarrow> P x t" using A by auto
+        hence x: "P x (Lam [c].(([(c,a)])\<bullet>b))" using a3 f2 by simp
+        have alpha1: "(Lam [c].([(c,a)]\<bullet>(b))) = (Lam [a].b)" using f1 f3
+	  by (simp add: lam.inject alpha)
+        hence "P x (Lam[a].b)" using x by simp
+        thus ?case by simp
+      qed
+    qed
 
-	
+lemma lam_comp_induct:
+  fixes P::"'a::fs_name \<Rightarrow> lam \<Rightarrow> bool"
+  and t::"lam"
+  and x::"'a::fs_name"
+  assumes a1:"!! n z. (!! x t. (t,Var n) : smaller_than \<Longrightarrow> P x t) \<Longrightarrow> P z (Var n)"
+  and a2:"!! t1 t2 z. (!! x t. (t,App t1 t2) : smaller_than \<Longrightarrow> P x t) \<Longrightarrow> (!! x. P x t1) \<Longrightarrow> (!! x . P x t2) \<Longrightarrow> P z (App t1 t2)"
+  and a3:"!! a b z. (!! x t. (t,Lam[a].b) : smaller_than \<Longrightarrow> P x t) \<Longrightarrow> (!! x . P x b) \<Longrightarrow> a \<sharp> z \<Longrightarrow> P z (Lam[a].b)"
+  shows "P x t"
+  proof (nominal_induct t avoiding: x rule: lam_comp_induct1)
+    case App thus ?case using a2 
+      by (auto simp add: smaller_than_def measure_def)
+  next
+    case Var thus ?case using a1
+      by (auto simp add: smaller_than_def measure_def)
+  next
+    case Lam thus ?case using a3
+      by (auto simp add: smaller_than_def measure_def)
+  qed
+      
 
-lemma "(0 :: nat) = 0" by simp
 
 text {* free variables of a lambda-term *}
 
