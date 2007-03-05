@@ -378,6 +378,32 @@ apply(force simp add: calc_atm)
 apply(force intro!: pt_fresh_fresh[OF pt_name_inst, OF at_name_inst])
 done
 
+lemma typing_induct2[consumes 1, case_names t1 t2 t3]:
+  fixes  P :: "'a::fs_name\<Rightarrow>(name\<times>ty) list \<Rightarrow> lam \<Rightarrow> ty \<Rightarrow>bool"
+  and    \<Gamma> :: "(name\<times>ty) list"
+  and    t :: "lam"
+  and    \<tau> :: "ty"
+  and    x :: "'a::fs_name"
+  assumes a: "\<Gamma> \<turnstile> t : \<tau>"
+  and a1:    "\<And>\<Gamma> (a::name) \<tau> x. valid \<Gamma> \<Longrightarrow> (a,\<tau>) \<in> set \<Gamma> \<Longrightarrow> P x \<Gamma> (Var a) \<tau>"
+  and a2:    "\<And>\<Gamma> \<tau> \<sigma> t1 t2 x. 
+              \<Gamma> \<turnstile> t1 : \<tau>\<rightarrow>\<sigma> \<Longrightarrow> (\<And>z. P z \<Gamma> t1 (\<tau>\<rightarrow>\<sigma>)) \<Longrightarrow> \<Gamma> \<turnstile> t2 : \<tau> \<Longrightarrow> (\<And>z. P z \<Gamma> t2 \<tau>)
+              \<Longrightarrow> P x \<Gamma> (App t1 t2) \<sigma>"
+  and a3:    "\<And>a \<Gamma> \<tau> \<sigma> t x. a\<sharp>x \<Longrightarrow> a\<sharp>\<Gamma> \<Longrightarrow> ((a,\<tau>) # \<Gamma>) \<turnstile> t : \<sigma> \<Longrightarrow> (\<And>z. P z ((a,\<tau>)#\<Gamma>) t \<sigma>)
+              \<Longrightarrow> P x \<Gamma> (Lam [a].t) (\<tau>\<rightarrow>\<sigma>)"
+  shows "P x \<Gamma> t \<tau>"
+  using a
+proof (nominal_induct t avoiding: x \<Gamma> \<tau> rule: lam.induct)
+    case (Var v) 
+    thus ?case using a1 t1_elim[of \<Gamma> v \<tau>] by auto
+  next
+    case (App t1 t2 x \<Gamma> \<tau>)
+    thus ?case using a2 t2_elim[of \<Gamma> t1 t2 \<tau>] by auto
+  next
+    case (Lam a b x \<Gamma> \<tau>)
+    thus ?case using a3 t3_elim[of \<Gamma> a b \<tau>] by auto
+qed
+
 lemma typing_valid: 
   assumes a: "\<Gamma> \<turnstile> t : \<tau>" 
   shows "valid \<Gamma>"
@@ -402,20 +428,14 @@ lemma typing_induct_complete[consumes 1, case_names t1 t2 t3]:
   using a
   proof (nominal_induct t avoiding: x \<Gamma> \<tau> rule: lam_comp_induct)
     case (Var v) 
-    thus ?case using a1[of \<Gamma> v \<tau> x] t1_elim[of \<Gamma> v \<tau>] by auto
+    thus ?case using a1 t1_elim[of \<Gamma> v \<tau>] by auto
   next
     case (App t1 t2 x \<Gamma> \<tau>)
-    note t2_elim[of \<Gamma> t1 t2 \<tau>]  `\<Gamma> \<turnstile> App t1 t2 : \<tau>`
-    then obtain \<sigma> where A:"\<Gamma> \<turnstile> t1 : \<sigma> \<rightarrow> \<tau>" and B:"\<Gamma> \<turnstile> t2 : \<sigma>" by auto
-    note a2[of t1 t2 \<Gamma> \<sigma> \<tau> x]
-    thus ?case using A B App by auto
+    thus ?case using a2 t2_elim[of \<Gamma> t1 t2 \<tau>] by auto
   next
     case (Lam a b x \<Gamma> \<tau>)
-    note t3_elim[of \<Gamma> a b \<tau>]
-    then obtain T1 T2 where A:"\<tau> = T1 \<rightarrow> T2" "((a,T1)#\<Gamma>) \<turnstile> b : T2" using Lam by auto
-    note a3[of a x \<Gamma> T1 b T2]
-    thus ?case using A Lam by auto
-  qed
+    thus ?case using a3 t3_elim[of \<Gamma> a b \<tau>] by auto
+qed
 
 lemma ty_subs:
   assumes a: "((c,\<sigma>)#\<Gamma>) \<turnstile> t1:\<tau>"
