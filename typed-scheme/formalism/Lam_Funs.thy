@@ -119,7 +119,7 @@ lemma lam_comp_induct1[consumes 0, case_names Var App Lam]:
       qed
     qed
 
-lemma lam_comp_induct:
+lemma lam_comp_induct[consumes 0, case_names Var App Lam]:
   fixes P::"'a::fs_name \<Rightarrow> lam \<Rightarrow> bool"
   and t::"lam"
   and x::"'a::fs_name"

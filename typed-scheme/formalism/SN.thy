@@ -383,9 +383,7 @@ lemma typing_valid:
   shows "valid \<Gamma>"
 using a by (induct, auto dest!: valid_elim)
 
-thm typing_induct
-
-lemma typing_induct_complete1[consumes 1, case_names t1 t2 t3]:
+lemma typing_induct_complete[consumes 1, case_names t1 t2 t3]:
   fixes  P :: "'a::fs_name\<Rightarrow>(name\<times>ty) list \<Rightarrow> lam \<Rightarrow> ty \<Rightarrow>bool"
   and    \<Gamma> :: "(name\<times>ty) list"
   and    t :: "lam"
@@ -403,26 +401,21 @@ lemma typing_induct_complete1[consumes 1, case_names t1 t2 t3]:
   shows "P x \<Gamma> t \<tau>"
   using a
   proof (nominal_induct t avoiding: x \<Gamma> \<tau> rule: lam_comp_induct)
-    case (1 v) 
+    case (Var v) 
     thus ?case using a1[of \<Gamma> v \<tau> x] t1_elim[of \<Gamma> v \<tau>] by auto
   next
-    case (2 t1 t2 x \<Gamma> \<tau>)
+    case (App t1 t2 x \<Gamma> \<tau>)
     note t2_elim[of \<Gamma> t1 t2 \<tau>]  `\<Gamma> \<turnstile> App t1 t2 : \<tau>`
     then obtain \<sigma> where A:"\<Gamma> \<turnstile> t1 : \<sigma> \<rightarrow> \<tau>" and B:"\<Gamma> \<turnstile> t2 : \<sigma>" by auto
     note a2[of t1 t2 \<Gamma> \<sigma> \<tau> x]
-    thus ?case using A B 2 by auto
+    thus ?case using A B App by auto
   next
-    case (3 a b x \<Gamma> \<tau>)
+    case (Lam a b x \<Gamma> \<tau>)
     note t3_elim[of \<Gamma> a b \<tau>]
-    then obtain T1 T2 where A:"\<tau> = T1 \<rightarrow> T2" "((a,T1)#\<Gamma>) \<turnstile> b : T2" using 3 by auto
+    then obtain T1 T2 where A:"\<tau> = T1 \<rightarrow> T2" "((a,T1)#\<Gamma>) \<turnstile> b : T2" using Lam by auto
     note a3[of a x \<Gamma> T1 b T2]
-    thus ?case using A 3 by auto
+    thus ?case using A Lam by auto
   qed
-
-
-lemma typing_complete_induct1:
-  fixes ""
-  assumes ""
 
 lemma ty_subs:
   assumes a: "((c,\<sigma>)#\<Gamma>) \<turnstile> t1:\<tau>"
