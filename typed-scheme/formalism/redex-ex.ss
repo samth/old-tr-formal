@@ -47,7 +47,23 @@
   
   (define t11 (term ((lambda (v : (U number boolean)) (if (boolean? v) 5 (add1 v))) #f)))
   
-  (define terms (list t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11))
+  ;; more examples
+  
+  (define t12 (term ((if 12 (lambda (x : top) 5) (lambda (x : top) 4)) 11)))
+  (define t13 (term ((lambda (v : top) ((if v (lambda (x : top) 5) (lambda (x : top) 4)) 11)) #f)))
+  
+  (define bad 
+    (term
+     ((((lambda (x : (int -> (U int bool)))
+          (lambda (y : bool)
+            (if y
+                x
+                (lambda (z : int) z))))
+        (lambda (x : int) #f))
+       #f)
+      0)))
+  
+  (define terms (list t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12))
   
   
   )
