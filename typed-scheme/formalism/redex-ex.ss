@@ -1,8 +1,8 @@
 (module redex-ex mzscheme
   
-  (require (planet "reduction-semantics.ss" ("robby" "redex.plt" 3 1))
-           (planet "gui.ss" ("robby" "redex.plt" 3 1))
-           (planet "subst.ss" ("robby" "redex.plt" 3 1))
+  (require (planet "reduction-semantics.ss" ("robby" "redex.plt" 3 2))
+           (planet "gui.ss" ("robby" "redex.plt" 3 2))
+           (planet "subst.ss" ("robby" "redex.plt" 3 2))
            (lib "list.ss")
            (lib "trace.ss")
            (lib "match.ss"))
@@ -10,12 +10,12 @@
   (provide (all-defined))
     
   (define t1 (term ((lambda (x : top) x) 3)))
-  (define t2 (term ((lambda (x : number) (add1 x)) 3)))
+  (define t2 (term ((lambda (x : int) (add1 x)) 3)))
   
   (define t3 (term ((lambda (x : top) (if (number? x) (add1 x) 0)) #t)))
 
-  (define t4 (term ((lambda (x : (U number boolean)) (if (number? x) (add1 x) 0)) #t)))
-  (define t5 (term ((lambda (x : (U number boolean)) (if (number? x) (zero? x) (not x))) #t)))
+  (define t4 (term ((lambda (x : (U int bool)) (if (number? x) (add1 x) 0)) #t)))
+  (define t5 (term ((lambda (x : (U int bool)) (if (number? x) (zero? x) (not x))) #t)))
 
   ;; these use the experimental features
 
@@ -25,7 +25,7 @@
   (define t7 (term ((lambda (x : top) (if (if (boolean? x) x #f) (not x) #t)) 0)))
 
   ;; breaks T-IfAnd
-  (define t8 (term ((lambda (x : (U number boolean)) 
+  (define t8 (term ((lambda (x : (U int bool)) 
                       (if 
                        (if (boolean? x) ((lambda (y : top) #f) x) #f)
                        3
@@ -45,7 +45,7 @@
   ;; shows red
   (define t9 (term (if #f (add1 #f) #f)))
   
-  (define t11 (term ((lambda (v : (U number boolean)) (if (boolean? v) 5 (add1 v))) #f)))
+  (define t11 (term ((lambda (v : (U int bool)) (if (boolean? v) 5 (add1 v))) #f)))
   
   ;; more examples
   
@@ -63,7 +63,7 @@
        #f)
       0)))
   
-  (define terms (list t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12))
+  (define terms (list t1 t2 t3 t4 t5 t6 t7 #;t8 t9 #;t10 t11 t12 t13 bad))
   
   
   )
