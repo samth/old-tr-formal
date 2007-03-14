@@ -1,12 +1,11 @@
 (module redex-ex mzscheme
   
-  (require (planet "reduction-semantics.ss" ("robby" "redex.plt" 3 2))
-           (planet "gui.ss" ("robby" "redex.plt" 3 2))
-           (planet "subst.ss" ("robby" "redex.plt" 3 2))
-           (lib "list.ss")
+  (require (lib "list.ss")
            (lib "trace.ss")
-           (lib "match.ss"))
+           (lib "match.ss")
+           "redex-both.ss")
   
+  (require-redex)
   (provide (all-defined))
     
   (define t1 (term ((lambda (x : top) x) 3)))
