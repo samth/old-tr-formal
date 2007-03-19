@@ -1,7 +1,5 @@
 %% macros for sample.tex
 
-\usepackage{mathpartir}
-
 %% metavariables
 
 % types
@@ -18,15 +16,15 @@
 % will all look the same!
 
 % types
-\newbfop\num{number}
-\newbfop\bool{boolean}
+\newbfop\num{Number}
+\newbfop\bool{Boolean}
 \newbfop\tt{true}
 \newbfop\ff{false}
 %\newbfop\wrong{wrong}
 \newbfop\ifsym{if}
 \newcommand\noeffect{\ma{\bullet}}
-%\newbfop\usym{\ma{\cup}}
-\newcommand\usym{\cup}
+%\newbfop\usym{\ma{\bigcup}}
+\newcommand\usym{\bigcup}
 \newcommand\proctype[3]{(#1 \stackrel{#3}{\to} #2)}
 %\newcommand\uty
 % \proctype is a little overkill.
