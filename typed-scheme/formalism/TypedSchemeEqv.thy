@@ -10,12 +10,6 @@ imports Nominal
 
 begin
 
-(* these should really be in nominal.thy *)
-
-thm eqvts
-lemma true_eqvt[eqvt]: "pi \<bullet> True = True" using perm_bool by auto
-lemma false_eqvt[eqvt]: "pi \<bullet> False = False" using perm_bool by auto
-
 (* datatype definitions *)
 atom_decl name
 
@@ -23,17 +17,6 @@ atom_decl name
 datatype ty =
     Top | Int | Bool | Arr "ty" "ty" "latent_eff" ("_ \<rightarrow> _ : _" [100,100] 100) | Union "ty list"  
 and latent_eff = NE | Latent ty
-
-(*  
-primrec (unchecked perm_ty)
- "pi\<bullet>(ty.Top) = ty.Top"
- "pi\<bullet>(ty.Int) = ty.Int"
- "pi\<bullet>(ty.Bool) = ty.Bool"
- "pi\<bullet>(\<tau> \<rightarrow> \<sigma> : L) = (\<tau> \<rightarrow> \<sigma> : L)"
- "pi\<bullet>(Union l) = Union l" 
- "pi\<bullet>latent_eff.NE = latent_eff.NE"
- "pi\<bullet>(Latent S) = Latent S"
-*)
 
 primrec (unchecked perm_ty)
  "pi\<bullet>(ty.Top) = ty.Top"
@@ -259,12 +242,7 @@ nominal_primrec
  "(BI c)[y::=t'] = (BI c)"
  "(Num c)[y::=t'] = (Num c)"
  "(Bool c)[y::=t'] = (Bool c)"
-apply(finite_guess)+
-apply (rule TrueI)+ 
-apply(simp add: abs_fresh)
-apply(fresh_guess)+
-done
-
+  by (finite_guess+, auto simp add: abs_fresh, fresh_guess+)
 
 lemma subst_eqvt[simp, eqvt]:
   fixes pi:: "name prm"
@@ -727,7 +705,6 @@ lemma closed_in_ctxt:
   by (induct C) (auto simp add: closed_def trm.supp)
 
 
-
 text{* Reduction *}
 
 inductive2 reduce :: "trm \<Rightarrow> trm \<Rightarrow> bool" ("_ \<hookrightarrow> _" [200,200] 200)
@@ -740,14 +717,12 @@ inductive2 reduce :: "trm \<Rightarrow> trm \<Rightarrow> bool" ("_ \<hookrighta
 equivariance reduce
 
 nominal_inductive reduce
-  apply (simp add: forget abs_fresh)
-  by (simp add: subst_removes_var)
+  by (simp_all add: abs_fresh subst_removes_var)
 
 inductive2
   "step" :: "trm\<Rightarrow>trm\<Rightarrow>bool" (" _ \<longrightarrow> _" [80,80]80)
 where
   step_one[intro]:"\<lbrakk>E : ctxt; L \<hookrightarrow> R\<rbrakk> \<Longrightarrow> E L \<longrightarrow> E R"
-
 
 inductive2
 step_multi :: "trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<longrightarrow>\<^sup>* _" [80,80] 80)
@@ -785,14 +760,11 @@ proof (nominal_induct tst rule: trm.induct)
     by (cases b) (auto simp add: trm.inject)
 qed (auto)
 
+(* a helper lemma - whee abstraction *)
 lemma ex_help: 
   assumes a:"e = E t \<and> E : ctxt \<and>  t \<hookrightarrow> t'"
   shows "\<exists>E t t' . e = E t \<and> E \<in> ctxt \<and> t \<hookrightarrow> t'"
-  proof -
-    from a have "\<exists>E . e = E t \<and> E \<in> ctxt \<and> t \<hookrightarrow> t'" by auto
-    hence "\<exists>E t . e = E t \<and> E \<in> ctxt \<and> t \<hookrightarrow> t'" by auto
-    thus "\<exists>E t t' . e = E t \<and> E \<in> ctxt \<and> t \<hookrightarrow> t'" by auto
-  qed
+  using a by blast
 
 lemma reduce_in_ctxt:
   fixes e :: trm
@@ -800,12 +772,11 @@ lemma reduce_in_ctxt:
   and ih:"(EX E L R. e = E L \<and> E : ctxt \<and> L \<hookrightarrow> R)"
   shows "(EX E L R. C e = E L \<and> E : ctxt \<and> L \<hookrightarrow> R)"
 proof -
-  from ih ct obtain Enew tnew t'new where "e = Enew tnew" and  "Enew \<in> ctxt" and g1:"tnew \<hookrightarrow> t'new" by auto
+  from ih ct obtain Enew tnew t'new where "e = Enew tnew" and  1:"Enew \<in> ctxt" and g1:"tnew \<hookrightarrow> t'new" by auto
   let ?E="(%t . C (Enew t))"
-  have g2:"?E : ctxt" using  `Enew : ctxt` using ct ctxt_compose[of "(%t . C t)" Enew] by auto
   have g3:"?E tnew = C e" using `e = Enew tnew` by auto
   thus "\<exists>E t t' . C e = E t \<and> E \<in> ctxt \<and> t \<hookrightarrow> t'"
-    using g1 g2 g3 ex_help[of "C e" ?E tnew] by auto
+    using ctxt_compose[OF ct 1] g1 g3 ex_help[of "C e" ?E tnew] by auto
 qed
 
 inductive_cases2 iff_bi_red : "(Iff (Const (BI bi)) thn els) \<hookrightarrow> e"
@@ -912,7 +883,7 @@ qed
 text{* subtyping *}
 
 
-
+(*
 lemma int_eqvt[eqvt]: "(pi \<bullet> ty.Int) = ty.Int" by simp
 lemma bool_eqvt[eqvt]: "(pi \<bullet> ty.Bool) = ty.Bool" by simp
 lemma arr_eqvt[eqvt]: 
@@ -926,7 +897,7 @@ lemma union_eqvt[eqvt]:
   fixes pi :: "name prm"
   shows "pi \<bullet> Union Ts = Union (pi \<bullet> Ts) " 
   by (induct Ts) auto
-
+*)
 
 inductive2
   subtype :: "ty \<Rightarrow> ty \<Rightarrow> bool" ("\<turnstile> _ <: _" [60,60] 60)
@@ -1121,6 +1092,8 @@ where
   | v2[intro]: "\<lbrakk>valid \<Gamma>;a\<sharp>\<Gamma>\<rbrakk>\<Longrightarrow> valid ((a,\<sigma>)#\<Gamma>)"
 
 equivariance valid
+
+nominal_inductive valid done
 
 lemma fresh_context[rule_format]: 
   fixes  \<Gamma> :: "(name\<times>ty)list"
@@ -1518,35 +1491,10 @@ where
 | T_IfTrue[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; TT ; \<Gamma> \<turnstile> e2 : T2 ; eff;  \<turnstile> T2 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
 | T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
 
-(* ERROR *)
-(* equivariance typing *)
+equivariance typing
 
 
 (* general lemmas about typing *)
-
-lemma eqvt_typing[eqvt]: 
-  fixes  \<Gamma> :: "(name\<times>ty) list"
-  and    t :: "trm"
-  and    f :: eff
-  and    \<tau> :: "ty"
-  and    pi:: "name prm"
-  assumes a: "\<Gamma> \<turnstile> t : \<tau> ; f"
-  shows "(pi\<bullet>\<Gamma>) \<turnstile> (pi\<bullet>t) : (pi\<bullet>\<tau>) ; (pi\<bullet>f)"
-using a
-proof (induct)
-  case (T_Var \<Gamma> a \<tau>)
-  have "valid (pi\<bullet>\<Gamma>)" by (rule valid.eqvt)
-  moreover
-  have "(pi\<bullet>(a,\<tau>))\<in>((pi::name prm)\<bullet>set \<Gamma>)" by (rule pt_set_bij2[OF pt_name_inst, OF at_name_inst])
-  ultimately show ?case
-    using typing.T_Var by (force simp add: pt_set_eqvt[OF pt_name_inst, symmetric])
-next 
-  case (T_Abs a \<Gamma> T t \<sigma> eff)
-  moreover have "(pi\<bullet>a)\<sharp>(pi\<bullet>\<Gamma>)" by (simp add: fresh_bij)
-  ultimately show ?case by force
-next
-  case T_If thus ?case by (auto simp add: env_plus_eqvt env_minus_eqvt)
-qed (auto simp add: valid.eqvt values.eqvt closed_eqvt )
 
 lemma eqvt_typing2: 
   fixes  \<Gamma> :: "(name\<times>ty) list"
@@ -1556,141 +1504,11 @@ lemma eqvt_typing2:
   and    pi:: "name prm"
   assumes a: "\<Gamma> \<turnstile> t : \<tau> ; f"
   shows "(pi\<bullet>\<Gamma>) \<turnstile> (pi\<bullet>t) : \<tau> ; (pi\<bullet>f)"
-  using a eqvt_typing perm_ty by auto
+  using a typing.eqvt perm_ty by auto
 
 
-(* nominal_inductive typing 
-  sorry *)
-
-(* thm typing.strong_induct *)
-
-
-text {* nominal induction for typing - only needed for weakening! *}
-
-lemma typing_induct[consumes 1, case_names T_Var T_Const T_Num T_True T_False T_App T_Lam T_AppPred T_If 
-  T_AppPredTrue T_AppPredFalse T_IfTrue T_IfFalse]:
-  fixes  P :: "'a::fs_name\<Rightarrow>(name\<times>ty) list \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> eff \<Rightarrow> bool"
-  and    \<Gamma> :: "(name\<times>ty) list"
-  and    t :: "trm"
-  and    T :: "ty"
-  and    F :: "eff"
-  and    x :: "'a::fs_name"
-  assumes a: "\<Gamma> \<turnstile> t : T ; F"
-  and a1:    "\<And>\<Gamma> (a::name) \<tau> x. valid \<Gamma> \<Longrightarrow> (a,\<tau>) \<in> set \<Gamma> \<Longrightarrow> P x \<Gamma> (Var a) \<tau> (VE a)"
-  and a2:    "!! \<Gamma> b T x. valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> P x \<Gamma> (BI b) T NE"
-  and a3:    "!! \<Gamma> n x. valid \<Gamma> \<Longrightarrow> P x \<Gamma> (Num n) ty.Int NE"
-  and a4:    "!! \<Gamma> x. valid \<Gamma> \<Longrightarrow> P x \<Gamma> (Bool True) ty.Bool TT"
-  and a5:    "!! \<Gamma> x. valid \<Gamma> \<Longrightarrow> P x \<Gamma> (Bool False) ty.Bool FF"
-  and a6:    "\<And>\<Gamma> \<tau> \<sigma> t1 t2 x F1 F2 le \<tau>0 U. 
-              \<Gamma> \<turnstile> t1  :U ; F1 \<Longrightarrow> \<turnstile> U <:  \<tau>\<rightarrow>\<sigma>:le  \<Longrightarrow> (\<And>z. P z \<Gamma> t1 U F1) \<Longrightarrow> \<Gamma> \<turnstile> t2 : \<tau>0 ; F2 \<Longrightarrow> 
-              (\<And>z. P z \<Gamma> t2 \<tau>0 F2) \<Longrightarrow> \<turnstile> \<tau>0 <: \<tau>
-              \<Longrightarrow> P x \<Gamma> (App t1 t2) \<sigma> NE"
-  and a7:    "\<And>a \<Gamma> \<tau> \<sigma> t x F0. a\<sharp>x \<Longrightarrow> a\<sharp>\<Gamma> \<Longrightarrow> ((a,\<tau>) # \<Gamma>) \<turnstile> t : \<sigma> ; F0 \<Longrightarrow> (\<And>z. P z ((a,\<tau>)#\<Gamma>) t \<sigma> F0)
-              \<Longrightarrow> P x \<Gamma> (Lam [a:\<tau>].t) (\<tau>\<rightarrow>\<sigma>:latent_eff.NE) NE"
-  and a8:    "\<And>\<Gamma> \<tau> \<sigma> t1 t2 x F1 \<tau>0 S v U. 
-              \<Gamma> \<turnstile> t1 :U ; F1 \<Longrightarrow> \<turnstile> U <:  \<tau>\<rightarrow>\<sigma>:Latent S \<Longrightarrow> (\<And>z. P z \<Gamma> t1 U F1) \<Longrightarrow> \<Gamma> \<turnstile> t2 : \<tau>0 ; VE v \<Longrightarrow> 
-              (\<And>z. P z \<Gamma> t2 \<tau>0 (VE v)) \<Longrightarrow> \<turnstile> \<tau>0 <: \<tau>  \<Longrightarrow> P x \<Gamma> (App t1 t2) \<sigma> (TE S v)"
-  and a9:    "!! \<Gamma> e1 e2 e3 T1 T2 T3 T eff1 eff2 eff3 x. 
-                 \<lbrakk>\<Gamma> \<turnstile> e1 : T1; eff1; !!z. P z \<Gamma> e1 T1 eff1; (\<Gamma> |+ eff1) \<turnstile> e2 : T2; eff2; !!z. P z (\<Gamma>|+ eff1) e2 T2 eff2; 
-                 (\<Gamma> |- eff1) \<turnstile> e3 : T3; eff3; !!z. P z (\<Gamma>|- eff1) e3 T3 eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk>
-                 \<Longrightarrow> P x \<Gamma> (Iff e1 e2 e3) T NE"
-  and a10:   "!! \<Gamma> e1 e2 T0 T1 T S eff1 eff2 x U. \<lbrakk>\<Gamma> \<turnstile> e1 : U ; eff1 ; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S); !!z. P z \<Gamma> e1 U eff1;
-              \<Gamma> \<turnstile> e2 : T; eff2 ;  !! z. P z \<Gamma> e2 T eff2; \<turnstile> T <: T0; \<turnstile> T <: S\<rbrakk> \<Longrightarrow> P x \<Gamma> (App e1 e2) T1 TT"
-  and a11:   "!! \<Gamma> e1 e2 T0 T1 T S eff1 eff2 x U. \<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1 ; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S); !!z. P z \<Gamma> e1 U eff1;
-              \<Gamma> \<turnstile> e2 : T; eff2 ;  !! z. P z \<Gamma> e2 T eff2; \<turnstile> T <: T0; ~(\<turnstile> T <: S) ; e2 : values; closed e2\<rbrakk>
-  \<Longrightarrow> P x \<Gamma> (App e1 e2) T1 FF"
-  and a12:   "!! \<Gamma> e1 e2 e3 T T1 T2 eff x. \<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; TT ; !! z. P z \<Gamma> e1 T1 TT; 
-               \<Gamma> \<turnstile> e2 : T2 ; eff;  !!z .P z \<Gamma> e2 T2 eff; \<turnstile> T2 <: T\<rbrakk> \<Longrightarrow> P x \<Gamma> (Iff e1 e2 e3) T NE"
-  and a13:   "!! \<Gamma> e1 e2 e3 T T1 T3 eff x. \<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; !! z. P z \<Gamma> e1 T1 FF; 
-               \<Gamma> \<turnstile> e3 : T3 ; eff;  !!z .P z \<Gamma> e3 T3 eff; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> P x \<Gamma> (Iff e1 e2 e3) T NE"
-  shows "P x \<Gamma> t T F"
-  proof -
-    from a have "\<And>(pi::name prm) x. P x (pi\<bullet>\<Gamma>) (pi\<bullet>t) T (pi\<bullet>F)"
-    proof (induct)
-      case (T_Const b T) thus ?case using a2 perm_builtin valid.eqvt by auto
-    next
-      case T_Num thus ?case using a3 valid.eqvt by auto
-    next
-      case T_True thus ?case using a4 valid.eqvt by auto
-    next
-      case T_False thus ?case using a5 valid.eqvt by auto
-    next
-      case (T_App \<Gamma> e1 T0 T1 le F1 e2 T F2) thus  ?case using a6
-        by simp (blast intro: eqvt_typing2)
-    next
-      case T_AppPredTrue thus  ?case using a10
-        by simp (blast intro: eqvt_typing2)
-    next
-      case T_AppPredFalse thus  ?case using a11
-        by simp (blast intro: eqvt_typing2 values.eqvt closed_eqvt)
-    next
-      case (T_If \<Gamma> e1 T1 eff1 e2 T2 eff2 e3 T3 eff3 T)
-	have A:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e1 : T1 ; pi \<bullet> eff1" using T_If eqvt_typing by auto
-	have B:" pi \<bullet> (\<Gamma> |+ eff1) \<turnstile> pi \<bullet> e2 : T2 ; pi \<bullet> eff2" using T_If eqvt_typing by auto
-	have C:" pi \<bullet> (\<Gamma> |- eff1) \<turnstile> pi \<bullet> e3 : T3 ; pi \<bullet> eff3" using T_If eqvt_typing by auto
-	from B have B': " (pi \<bullet> \<Gamma>) |+ (pi \<bullet> eff1) \<turnstile> pi \<bullet> e2 : T2 ; pi \<bullet> eff2" using T_If env_plus_eqvt by auto
-	from C have C': " (pi \<bullet> \<Gamma>) |- (pi \<bullet> eff1) \<turnstile> pi \<bullet> e3 : T3 ; pi \<bullet> eff3" using T_If env_minus_eqvt by auto
-	have D:"!! x. P x (pi \<bullet> \<Gamma>) (pi \<bullet> e1) T1 (pi \<bullet> eff1)" .
-	have E:"!! x. P x ((pi \<bullet> \<Gamma>) |+ (pi \<bullet> eff1)) (pi \<bullet> e2) T2 (pi \<bullet> eff2)" using env_plus_eqvt T_If by auto
-	have F:"!! x. P x ((pi \<bullet> \<Gamma>) |- (pi \<bullet> eff1)) (pi \<bullet> e3) T3 (pi \<bullet> eff3)" using env_minus_eqvt T_If by auto	
-	show  ?case using a9 A B' C' D E F T_If by auto
-    next
-      case (T_IfTrue \<Gamma> e1 T1 e2 T2 eff2 T e3) 
-      have A:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e1 : T1 ; pi \<bullet> TT" using T_IfTrue eqvt_typing[of \<Gamma> e1 T1 TT] by auto
-      have B:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e2 : T2 ; pi \<bullet> eff2" using T_IfTrue eqvt_typing[of \<Gamma> e2 T2] by auto
-      show ?case using A B  T_IfTrue(2)[of _ pi] T_IfTrue(4)[of _ pi] `\<turnstile> T2 <: T` a12 by auto
-    next
-      case (T_IfFalse \<Gamma> e1 T1 e3 T3 eff3 T e2)
-      have A:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e1 : T1 ; pi \<bullet> FF" using T_IfFalse eqvt_typing[of \<Gamma> e1 T1 FF] by auto
-      have B:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e3 : T3 ; pi \<bullet> eff3" using T_IfFalse eqvt_typing[of \<Gamma> e3 T3] by auto
-      show ?case using A B  T_IfFalse(2)[of _ pi] T_IfFalse(4)[of _ pi] `\<turnstile> T3 <: T` a13 by auto
-    next
-      case (T_AppPred \<Gamma> e1 U eff1 T0 T1 S  e2 T v) 
-      have A:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e1 : U ; pi \<bullet> eff1" using T_AppPred eqvt_typing[of \<Gamma> e1 _ eff1] by auto
-      have B:" pi \<bullet> \<Gamma> \<turnstile> pi \<bullet> e2 : T ; pi \<bullet> (VE v)" using T_AppPred eqvt_typing[of \<Gamma> e2 T "VE v"] by auto
-      show ?case using A B T_AppPred a8 by auto
-    next
-      case (T_Var \<Gamma> a T)	
-      have j1: "valid \<Gamma>" by fact
-      have j2: "(a,T)\<in>set \<Gamma>" by fact
-      from j1 have j3: "valid (pi\<bullet>\<Gamma>)" by (rule valid.eqvt)
-      from j2 have "pi\<bullet>(a,T)\<in>pi\<bullet>(set \<Gamma>)" by (simp only: pt_set_bij[OF pt_name_inst, OF at_name_inst])  
-      hence j4: "(pi\<bullet>a,T)\<in>set (pi\<bullet>\<Gamma>)" by (simp add: pt_set_eqvt[OF pt_name_inst])
-      show "P x (pi\<bullet>\<Gamma>) (pi\<bullet>(Var a)) T (pi\<bullet> VE a) " using a1 j3 j4 by simp
-    next
-      case (T_Abs a \<Gamma> \<tau> t \<sigma> F)
-      have k1: "a\<sharp>\<Gamma>" by fact
-      have k2: "((a,\<tau>)#\<Gamma>)\<turnstile>t:\<sigma>;F" by fact
-      have k3: "\<And>(pi::name prm) (x::'a::fs_name). P x (pi \<bullet>((a,\<tau>)#\<Gamma>)) (pi\<bullet>t) \<sigma> (pi\<bullet>F)" by fact
-      have f: "\<exists>c::name. c\<sharp>(pi\<bullet>a,pi\<bullet>t,pi\<bullet>\<Gamma>,x,pi\<bullet>F)"
-	by (rule exists_fresh', simp add: fs_name1)
-      then obtain c::"name" 
-	where f1: "c\<noteq>(pi\<bullet>a)" and f2: "c\<sharp>x" and f3: "c\<sharp>(pi\<bullet>t)" and f4: "c\<sharp>(pi\<bullet>\<Gamma>)" and f5: "c\<sharp>(pi\<bullet>F)"
-	by (force simp add: fresh_prod at_fresh[OF at_name_inst])
-      from k1 have k1a: "(pi\<bullet>a)\<sharp>(pi\<bullet>\<Gamma>)" 
-	by (simp add: pt_fresh_left[OF pt_name_inst, OF at_name_inst] 
-          pt_rev_pi[OF pt_name_inst, OF at_name_inst])
-      have l1: "(([(c,pi\<bullet>a)]@pi)\<bullet>\<Gamma>) = (pi\<bullet>\<Gamma>)" using f4 k1a 
-	by (simp only: pt2[OF pt_name_inst], rule pt_fresh_fresh[OF pt_name_inst, OF at_name_inst])
-      have "\<And>x. P x (([(c,pi\<bullet>a)]@pi)\<bullet>((a,\<tau>)#\<Gamma>)) (([(c,pi\<bullet>a)]@pi)\<bullet>t) \<sigma> (([(c,pi\<bullet>a)]@pi)\<bullet>F)" using k3 by force
-      hence l2: "\<And>x. P x ((c, \<tau>)#(pi\<bullet>\<Gamma>)) (([(c,pi\<bullet>a)]@pi)\<bullet>t) \<sigma> (([(c,pi\<bullet>a)]@pi)\<bullet>F)" using f1 l1
-	by (force simp add: pt2[OF pt_name_inst]  at_calc[OF at_name_inst])
-      have "(([(c,pi\<bullet>a)]@pi)\<bullet>((a,\<tau>)#\<Gamma>)) \<turnstile> (([(c,pi\<bullet>a)]@pi)\<bullet>t) : \<sigma> ; (([(c,pi\<bullet>a)]@pi)\<bullet>F)" using k2 by (rule eqvt_typing2)
-      hence l3: "((c, \<tau>)#(pi\<bullet>\<Gamma>)) \<turnstile> (([(c,pi\<bullet>a)]@pi)\<bullet>t) : \<sigma> ; (([(c,pi\<bullet>a)]@pi)\<bullet>F)" using l1 f1 
-	by (force simp add: pt2[OF pt_name_inst]  at_calc[OF at_name_inst])
-      have l4: "P x (pi\<bullet>\<Gamma>) (Lam [c:\<tau>].(([(c,pi\<bullet>a)]@pi)\<bullet>t)) (\<tau> \<rightarrow> \<sigma> : latent_eff.NE) eff.NE" using f2 f4 f5 l2 l3 l1
-	a7[of c x "pi \<bullet> \<Gamma>" \<tau> "(([(c, pi \<bullet> a)] @ pi) \<bullet> t) " \<sigma>] by auto
-      have alpha: "(Lam [c:\<tau>].([(c,pi\<bullet>a)]\<bullet>(pi\<bullet>t))) = (Lam [(pi\<bullet>a):\<tau>].(pi\<bullet>t))" using f1 f3
-	by (simp add: trm.inject alpha)
-      show "P x (pi\<bullet>\<Gamma>) (pi\<bullet>(Lam [a:\<tau>].t)) (\<tau> \<rightarrow> \<sigma> : latent_eff.NE) (pi\<bullet>eff.NE)" using l4 alpha 
-	by (simp only: pt2[OF pt_name_inst], simp)
-    qed
-  hence "P x (([]::name prm)\<bullet>\<Gamma>) (([]::name prm)\<bullet>t) T (([]::name prm)\<bullet>F)" by blast
-  thus "P x \<Gamma> t T F" by simp
-qed
-
-
-(* typing example *)
+nominal_inductive typing 
+  by (auto simp add: abs_fresh)
 
 text {* then we begin on preservation *}
 
@@ -1723,10 +1541,6 @@ lemma weakening_envplus:
     hence "(map ?mapfun \<Gamma>1) \<lless> (map ?mapfun \<Gamma>2)" by blast
     thus ?case using A B by auto
   qed (auto)
-
-
-lemma "(a:: 'a set) <= b \<Longrightarrow> f`a <= f`b "
-  by blast
 
 lemma weakening_envminus: 
   assumes "\<Gamma> \<lless> \<Gamma>'" and a:"valid \<Gamma>'" and b:"valid \<Gamma>"
@@ -1830,8 +1644,8 @@ lemma weakening:
   and d:"valid \<Gamma>1"
   shows "\<Gamma>2 \<turnstile> t:\<sigma> ; F"
 using a b c d
-proof (nominal_induct \<Gamma>1 t \<sigma> F avoiding: \<Gamma>2 rule: typing_induct)
-  case (T_If \<Gamma> t1 t2 t3 T1 T2 T3 T F1 F2 F3 \<Gamma>2)
+proof (nominal_induct \<Gamma>1 t \<sigma> F avoiding: \<Gamma>2 rule: typing.strong_induct)
+  case (T_If \<Gamma> t1 T1 F1 t2 T2 F2 t3 T3 F3 T \<Gamma>2)
     have A:"valid (\<Gamma> |+ F1)" using T_If envplus_valid by auto
     have B:"valid (\<Gamma> |- F1)" using T_If envminus_valid by auto
     have A':"valid (\<Gamma>2 |+ F1)" using T_If envplus_valid by auto
@@ -1843,16 +1657,6 @@ qed (auto | atomize)+
 (* FIXME: before using meta-connectives and the new induction *)
 (* method, this was completely automatic *)
 (* need weakening lemmas about env+/- *)
-
-
-lemma eff_parts_typing:
-  assumes "\<Gamma> \<turnstile> e : T ; F" and "!! a S. (a,S) : set \<Gamma> \<Longrightarrow> eff_parts S <= {ty.Int, ty.Bool}"
-  shows "eff_parts T <= {ty.Int, ty.Bool}"
-  using prems
-  proof (induct rule: typing.induct)
-    case (T_Var \<Gamma> v T') thus ?case by auto
-  next
-    case (T_Abs x b T) oops
 
 
 lemma "[] \<turnstile> (Lam[x:Top]. (Iff (App (BI NumberP) (Var x)) (App (BI Add1) (Var x)) (Num 12))) : (Top \<rightarrow> ty.Int : latent_eff.NE) ; NE"
@@ -2179,7 +1983,7 @@ lemma abs_ty_elim[rule_format]:
   \<exists> T1 eff'. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : latent_eff.NE) \<and> eff = eff.NE)"
 apply (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
 apply(auto simp add: trm.distinct trm.inject alpha) 
-apply(drule_tac pi="[(a,x)]::name prm" in eqvt_typing)
+apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
 apply(auto)
 apply(subgoal_tac "([(a,x)]::name prm)\<bullet>\<Gamma> = \<Gamma>")(*A*)
 apply(force simp add: calc_atm)
@@ -2318,7 +2122,6 @@ lemma var_ty_elim:
      (auto simp add: trm.inject)
 
 inductive_cases2 app_ty_ff:"\<Gamma> \<turnstile> App e arg : T' ; FF"
-thm app_ty_ff
   
 lemma app_ty_ff_elim:
   "\<Gamma> \<turnstile> App rator rand : T ; FF \<Longrightarrow>
@@ -2481,7 +2284,8 @@ lemma booleanp_eff_simple:
 proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; eff1")
   fix T0 T1 S eff1a e1 e2 xa T
   assume "\<Gamma> \<turnstile> e2 : T ; VE xa" "App (BI BooleanP) v = App e1 e2" "v : values"
-  hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"] by (auto simp add: trm.inject)
+  hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"] 
+    by (auto simp add: trm.inject)
   thus ?thesis using ty.distinct by auto
 qed (auto)
 
@@ -2490,7 +2294,8 @@ lemma numberp_eff_simple:
 proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI NumberP) v) :  T1 ; eff1")
   fix T0 T1 S eff1a e1 e2 xa T
   assume "\<Gamma> \<turnstile> e2 : T ; VE xa" "App (BI NumberP) v = App e1 e2" "v : values"
-  hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"] by (auto simp add: trm.inject)
+  hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"]
+    by (auto simp add: trm.inject)
   thus ?thesis using ty.distinct by auto
 qed (auto)
 
@@ -2499,13 +2304,13 @@ lemma procp_eff_simple:
 proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; eff1")
   fix T0 T1 S eff1a e1 e2 xa T
   assume "\<Gamma> \<turnstile> e2 : T ; VE xa" "App (BI ProcP) v = App e1 e2" "v : values"
-  hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"] by (auto simp add: trm.inject)
+  hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"]
+    by (auto simp add: trm.inject)
   thus ?thesis using ty.distinct by auto
 qed (auto)
 
 
 inductive_cases2 app_boolp_ff: "\<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; FF"
-thm app_boolp_ff
 
 lemma booleanp_FF_preserved:
   assumes "\<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; FF" and "v : values" and "\<Delta> BooleanP v = Some u"
@@ -2944,14 +2749,14 @@ lemma fresh_weakening:
   assumes a:"x\<sharp>e" and b:"\<Gamma> \<turnstile> e : T ; F" and c: "valid \<Gamma>" 
   shows "(\<Gamma> - (x,T')) \<turnstile> e : T ; F"
   using b a c 
-proof (nominal_induct \<Gamma> e T F avoiding: x T'  rule: typing_induct)
+proof (nominal_induct \<Gamma> e T F avoiding: x T'  rule: typing.strong_induct)
   case T_Var thus ?case
     by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)+
 next
   case (T_App \<Gamma>' _ _ t1 t2) thus ?case
     by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)
 next
-  case T_Lam thus ?case
+  case T_Abs thus ?case
     by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)+
 next
   case T_AppPred thus ?case
@@ -2975,19 +2780,19 @@ next
   case T_Const thus ?case
     by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)+
 next
-  case (T_AppPredTrue \<Gamma>' e1 e2 T1 T2 T0 S F1 F2 x T' U )
+  case (T_AppPredTrue \<Gamma>' e1 U F1 T0 T1 S e2 T F2 x T')
   have A:"x \<sharp> e1" "x \<sharp> e2" using T_AppPredTrue by auto
   hence "\<Gamma>' - (x,T') \<turnstile> e1 : U; F1" using T_AppPredTrue by auto
-  also have "\<Gamma>' - (x,T') \<turnstile> e2 : T0 ; F2" using T_AppPredTrue A by auto
-  ultimately show ?case using T_AppPredTrue(2) `\<turnstile> T0 <: T1` `\<turnstile> T0 <: S` by auto
+  also have "\<Gamma>' - (x,T') \<turnstile> e2 : T ; F2" using T_AppPredTrue A by auto
+  ultimately show ?case using T_AppPredTrue(3) `\<turnstile> T <: T0` `\<turnstile> T <: S` by auto
 next
-  case (T_AppPredFalse \<Gamma>' e1 e2 T1 T2 T0 S F1 F2 x T' U)
+  case (T_AppPredFalse  \<Gamma>' e1 U F1 T0 T1 S e2 T F2 x T')
   have A:"x \<sharp> e1" "x \<sharp> e2" using T_AppPredFalse by auto
   hence "\<Gamma>' - (x,T') \<turnstile> e1 : U ; F1" using T_AppPredFalse by auto
-  also have "\<Gamma>' - (x,T') \<turnstile> e2 : T0 ; F2" using T_AppPredFalse A by auto
-  ultimately show ?case using `~ (\<turnstile> T0 <: S)` `\<turnstile> T0 <: T1` `e2 : values` `closed e2`  T_AppPredFalse(2) by auto
+  also have "\<Gamma>' - (x,T') \<turnstile> e2 : T ; F2" using T_AppPredFalse A by auto
+  ultimately show ?case using `~ (\<turnstile> T <: S)` `\<turnstile> T <: T0` `e2 : values` `closed e2`  T_AppPredFalse(3) by auto
 next
-  case (T_If \<Gamma>' e1 e2 e3 T1 T2 T3 T F1 F2 F3 x)
+  case (T_If \<Gamma>' e1 T1 F1 e2 T2 F2 e3 T3 F3 T x)
   have A:"x \<sharp> e1" "x \<sharp> e2" "x \<sharp> e3" using T_If by auto
   have "\<Gamma>' - (x,T') \<turnstile> e1 : T1 ; F1" using T_If A by auto
   thus ?case using T_If
@@ -3090,8 +2895,6 @@ next
     qed
   qed
 
-thm wf_induct
-
 lemma fresh_weakening_cons:
   assumes "valid ((a,S)#\<Gamma>)" (is "valid ?\<Gamma>") and "(a,S)# \<Gamma> \<turnstile> e : T ; F" and "a \<sharp> e"
   shows "\<Gamma> \<turnstile> e : T ; F"
@@ -3132,7 +2935,6 @@ lemma closed_any_env:
   qed    
 
 inductive_cases2 ve_ty_elim: "\<Gamma> \<turnstile> e : T ; VE x"  
-thm ve_ty_elim
 
 lemma te_ty_elim: 
  "\<Gamma> \<turnstile> t1 : T ; TE U z \<Longrightarrow>
@@ -3613,7 +3415,6 @@ qed
 
 
 inductive_cases2 beta_cases:"App (Abs x b T) v \<hookrightarrow> e "
-thm beta_cases
 
 lemma preserve_red:
   assumes typed:"\<Gamma> \<turnstile> e : t ; eff" and cl:"closed e"
