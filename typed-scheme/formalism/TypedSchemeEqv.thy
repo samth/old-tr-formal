@@ -1496,17 +1496,6 @@ equivariance typing
 
 (* general lemmas about typing *)
 
-lemma eqvt_typing2: 
-  fixes  \<Gamma> :: "(name\<times>ty) list"
-  and    t :: "trm"
-  and    f :: eff
-  and    \<tau> :: "ty"
-  and    pi:: "name prm"
-  assumes a: "\<Gamma> \<turnstile> t : \<tau> ; f"
-  shows "(pi\<bullet>\<Gamma>) \<turnstile> (pi\<bullet>t) : \<tau> ; (pi\<bullet>f)"
-  using a typing.eqvt perm_ty by auto
-
-
 nominal_inductive typing 
   by (auto simp add: abs_fresh)
 
@@ -4015,7 +4004,6 @@ proof -
   }
   ultimately show ?thesis using B ground_type_def by auto
 qed
-
 
 end
 
