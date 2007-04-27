@@ -15,13 +15,17 @@ atom_decl name
 
 
 datatype ty =
-    Top | Int | Bool | Arr "ty" "ty" "latent_eff" ("_ \<rightarrow> _ : _" [100,100] 100) | Union "ty list"  
+    Top | Int | TT | FF | Arr "ty" "ty" "latent_eff" ("_ \<rightarrow> _ : _" [100,100] 100) | Union "ty list"  
 and latent_eff = NE | Latent ty
+
+constdefs
+"BoolTy == Union [TT , FF]"
 
 primrec (unchecked perm_ty)
  "pi\<bullet>(ty.Top) = ty.Top"
  "pi\<bullet>(ty.Int) = ty.Int"
- "pi\<bullet>(ty.Bool) = ty.Bool"
+ "pi\<bullet>(TT) = TT"
+ "pi\<bullet>(FF) = FF"
  "pi\<bullet>(\<tau> \<rightarrow> \<sigma> : L) = ((pi\<bullet>\<tau>) \<rightarrow> (pi\<bullet>\<sigma>) : (pi\<bullet>L))"
  "pi\<bullet>(Union l) = Union (pi\<bullet>l)" 
  "pi\<bullet>latent_eff.NE = latent_eff.NE"
@@ -54,7 +58,8 @@ fun
   size_le :: "latent_eff \<Rightarrow> nat" 
 where 
   "size_ty (ty.Int) = 1"
-| "size_ty (ty.Bool) = 1"
+| "size_ty (TT) = 1"
+| "size_ty (FF) = 1"
 | "size_ty (Top) = 1"
 | "size_ty (Union []) = 1"
 | "size_ty (Union (t#ts)) = size_ty t + size_ty (Union ts)"
@@ -424,11 +429,11 @@ consts
   \<Delta>\<^isub>\<tau> :: "builtin \<Rightarrow> ty"
 
 nominal_primrec
-  "\<Delta>\<^isub>\<tau> NumberP = (Top \<rightarrow> ty.Bool : Latent ty.Int)"
-  "\<Delta>\<^isub>\<tau> BooleanP = (Top \<rightarrow> ty.Bool : Latent ty.Bool)"
-  "\<Delta>\<^isub>\<tau> ProcP = (Top \<rightarrow> ty.Bool : Latent (Union [] \<rightarrow> Top : latent_eff.NE))"
+  "\<Delta>\<^isub>\<tau> NumberP = (Top \<rightarrow> BoolTy : Latent ty.Int)"
+  "\<Delta>\<^isub>\<tau> BooleanP = (Top \<rightarrow> BoolTy : Latent BoolTy)"
+  "\<Delta>\<^isub>\<tau> ProcP = (Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE))"
   "\<Delta>\<^isub>\<tau> Add1 = (ty.Int \<rightarrow> ty.Int : latent_eff.NE)"
-  "\<Delta>\<^isub>\<tau> Nott = (Top \<rightarrow> ty.Bool : latent_eff.NE)"
+  "\<Delta>\<^isub>\<tau> Nott = (Top \<rightarrow> BoolTy : latent_eff.NE)"
   by simp_all
 
 lemma delta_t_eqvt[eqvt]:
@@ -882,23 +887,6 @@ qed
 
 text{* subtyping *}
 
-
-(*
-lemma int_eqvt[eqvt]: "(pi \<bullet> ty.Int) = ty.Int" by simp
-lemma bool_eqvt[eqvt]: "(pi \<bullet> ty.Bool) = ty.Bool" by simp
-lemma arr_eqvt[eqvt]: 
-  fixes pi :: "name prm"
-  shows "(pi \<bullet> (A \<rightarrow> B : C)) = ((pi \<bullet> A) \<rightarrow> (pi \<bullet> B) : (pi \<bullet> C))" 
-  by auto
-lemma latent_ne_eqvt[eqvt]: "pi \<bullet> latent_eff.NE = latent_eff.NE" by simp
-  
-lemma top_eqvt[eqvt]: "pi \<bullet> Top = Top" by simp
-lemma union_eqvt[eqvt]: 
-  fixes pi :: "name prm"
-  shows "pi \<bullet> Union Ts = Union (pi \<bullet> Ts) " 
-  by (induct Ts) auto
-*)
-
 inductive2
   subtype :: "ty \<Rightarrow> ty \<Rightarrow> bool" ("\<turnstile> _ <: _" [60,60] 60)
 where
@@ -1153,21 +1141,30 @@ by (induct T2) (auto)
 
 text {* this is the key lemma in the whole soundness proof *}
 
-constdefs
-  simple_ty :: "ty \<Rightarrow> bool"
-  simple_ty_def[simp]:"simple_ty e == e = ty.Int \<or> e = ty.Bool \<or> (EX A1 A2 L. e = A1 \<rightarrow> A2 : L)"
+fun simple_ty :: "ty \<Rightarrow> bool"
+where
+  "simple_ty ty.Int = True"
+|  "simple_ty ty.TT = True"
+|  "simple_ty ty.FF = True"
+|  "simple_ty (A1 \<rightarrow> A2 : L) = True"
+(* |  "simple_ty (Union [ty.TT,ty.FF]) = True" *)
+|  "simple_ty T = False"
 
-lemma ty_cases[consumes 0, case_names Top Int Bool Arr Union]:
+lemma ty_cases[consumes 0, case_names Top Int TT FF Arr Union]:
   fixes P :: "ty \<Rightarrow> bool"
   and T :: ty
   assumes a1:"P Top"
   and a2:"P ty.Int"
-  and a3:"P ty.Bool"
+  and a3:"P ty.TT"
+  and a3':"P ty.FF"
   and a4:"!! t1 t2 L. P (t1 \<rightarrow> t2 : L)"
   and a5:"!! Ts . P (Union Ts)"
   shows "P T"
   using  ty_latent_eff.induct[of P "(%e . True)" "(%e . True)" T] prems
   by auto
+
+inductive_cases2 tt_below_union:  "\<turnstile> ty.TT <: ty.Union Ts"
+inductive_cases2 ff_below_union:  "\<turnstile> ty.FF <: ty.Union Ts"
 
 (* I believe this to be true without C, but it's easier to prove this way, and that's all we need *)
 lemma restrict_soundness:
@@ -1184,7 +1181,9 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
   next
     case Int thus ?case by auto
   next
-    case Bool thus ?case by auto
+    case TT thus ?case by auto
+  next
+    case FF thus ?case by auto
   next
     case Arr thus ?case by auto
   next
@@ -1211,13 +1210,39 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
 	have T:"\<turnstile> T0 <: Union Ts" using prems by simp
 	have "?this \<Longrightarrow> ?thesis"
 	proof (ind_cases2 "\<turnstile> T0 <: Union Ts")
-	  assume "Union Ts = T0" 
-	  thus ?thesis using `simple_ty T0` by auto
+	  assume 0:"Union Ts = T0" thus ?thesis using `simple_ty T0` by (induct T0 rule: simple_ty.induct) auto
 	next
 	  fix Ts'
-	  assume "T0 = ty.Union Ts'"
-	  thus ?thesis using `simple_ty T0` by auto
-	next
+	  assume "T0 = ty.Union Ts'" thus ?thesis using `simple_ty T0` by (induct T0 rule: simple_ty.induct) auto
+(* 
+	  hence 1:"T0 = Union [ty.TT,ty.FF]" using `simple_ty T0` by (induct T0 rule: simple_ty.induct) auto
+
+          have "\<turnstile> ty.TT <: T0" using 1 by auto
+          hence "\<turnstile> ty.TT <: Union Ts" "\<turnstile> ty.TT <: T" "\<turnstile> ty.TT <: S" using T `\<turnstile> T0 <: S` `\<turnstile> T0 <: T` by auto
+          hence "EX \<sigma> . \<sigma> : set Ts \<and> \<turnstile> ty.TT <: \<sigma>" using tt_below_union by auto
+          then guess \<sigma> by auto
+          hence "size_ty \<sigma> < size_ty T" using prems union_size_ty by auto
+          note prems(4)[OF `size_ty \<sigma> < size_ty T` `\<turnstile> ty.TT <: \<sigma>` `\<turnstile> ty.TT <: S`, simplified]
+          hence A_tt:"\<turnstile> ty.TT <: restrict S \<sigma>" .
+          have mem:"restrict S \<sigma> : set (map (restrict S) Ts)" using `\<sigma> : set Ts` by auto
+          hence "\<turnstile> ty.TT <: Union (map (restrict S) Ts)" using A_tt S_UnionAbove by auto
+          hence tt_sub:"\<turnstile> ty.TT <: restrict S T" using req by auto
+
+          have "\<turnstile> ty.FF <: T0" using 1 by auto
+          hence "\<turnstile> ty.FF <: Union Ts" "\<turnstile> ty.FF <: T" "\<turnstile> ty.FF <: S" using T `\<turnstile> T0 <: S` `\<turnstile> T0 <: T` by auto
+          hence "EX \<sigma> . \<sigma> : set Ts \<and> \<turnstile> ty.FF <: \<sigma>" using ff_below_union by auto
+          then guess \<sigma> by auto
+          hence "size_ty \<sigma> < size_ty T" using prems union_size_ty by auto
+          note prems(4)[OF `size_ty \<sigma> < size_ty T` `\<turnstile> ty.FF <: \<sigma>` `\<turnstile> ty.FF <: S`, simplified]
+          hence A_ff:"\<turnstile> ty.FF <: restrict S \<sigma>" .
+          have mem:"restrict S \<sigma> : set (map (restrict S) Ts)" using `\<sigma> : set Ts` by auto
+          hence "\<turnstile> ty.FF <: Union (map (restrict S) Ts)" using A_ff S_UnionAbove by auto
+          hence ff_sub:"\<turnstile> ty.FF <: restrict S T" using req by auto
+
+          from ff_sub tt_sub have "\<turnstile> Union [ty.TT, ty.FF] <: restrict S T" by auto
+          thus ?thesis using 1 by auto
+*)
+        next
 	  fix T'
 	  assume "T' : set Ts" "\<turnstile> T0 <: T'"
 	  have 1:"\<turnstile> T0 <: restrict S T'" using union_size_ty prems by auto
@@ -1273,8 +1298,7 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
 	have T:"\<turnstile> T0 <: Union Ts" using prems by simp
 	have "?this \<Longrightarrow> ?thesis"
 	proof (ind_cases2 "\<turnstile> T0 <: Union Ts")
-	  assume "Union Ts = T0" 
-	  thus ?thesis using `simple_ty T0` by auto
+	  assume 0:"Union Ts = T0" thus ?thesis using `simple_ty T0` by auto
 	next
 	  fix Ts'
 	  assume "T0 = ty.Union Ts'"
@@ -1438,8 +1462,8 @@ where
   T_Var[intro]:   "\<lbrakk>valid \<Gamma>; (v,T)\<in>set \<Gamma>\<rbrakk>\<Longrightarrow> \<Gamma> \<turnstile> Var v : T ; VE v" 
 | T_Const[intro]: "valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> \<Gamma> \<turnstile> (BI b) : T ; NE"
 | T_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Num n) : ty.Int ; NE"
-| T_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Bool True) : ty.Bool ; TT"
-| T_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Bool False) : ty.Bool ; FF"
+| T_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Bool True) : ty.TT ; TT"
+| T_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Bool False) : ty.FF ; FF"
 | T_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile> b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; NE"
 | T_App[intro]: "\<lbrakk>(\<Gamma> \<turnstile> e1 : U ; eff1) ; \<turnstile> U <: (T0 \<rightarrow> T1 : le); (\<Gamma> \<turnstile> e2 : T; eff2) ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; NE"
 | T_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile> e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; TE S x"
@@ -1647,7 +1671,7 @@ inductive_cases2 app_bi_ty: "\<Gamma> \<turnstile> App (BI b) arg : t ; eff"
 
 
 lemma false_ty_elim[rule_format]: 
-  "\<Gamma> \<turnstile> (trm.Bool False) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.Bool \<and> eff = FF \<and> valid \<Gamma>"
+  "\<Gamma> \<turnstile> (trm.Bool False) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.FF \<and> eff = FF \<and> valid \<Gamma>"
 apply (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool False) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
@@ -1659,13 +1683,13 @@ apply (auto simp add: trm.inject)
 done
 
 lemma true_ty_elim[rule_format]: 
-  "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.Bool \<and> eff = TT \<and> valid \<Gamma> "
+  "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.TT \<and> eff = TT \<and> valid \<Gamma> "
 apply (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
 
 lemma bool_ty_elim[rule_format]: 
-  "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.Bool \<and> valid \<Gamma> "
+  "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff \<Longrightarrow>  (\<sigma> = ty.TT \<or> \<sigma> = ty.FF) \<and> valid \<Gamma> "
 apply (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
@@ -1676,10 +1700,40 @@ apply (ind_cases2 "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
 
-inductive_cases2 bool_sub_int: "\<turnstile> ty.Bool <: ty.Int"
+inductive_cases2 bool_sub_int: "\<turnstile> BoolTy <: ty.Int"
+inductive_cases2 tt_sub_int: "\<turnstile> ty.TT <: ty.Int"
+inductive_cases2 ff_sub_int: "\<turnstile> ty.FF <: ty.Int"
+thm bool_sub_int
 inductive_cases2 arr_sub_int: "\<turnstile> A\<rightarrow>B:L <: ty.Int"
-inductive_cases2 int_sub_bool: "\<turnstile> ty.Int <: ty.Bool"
-inductive_cases2 arr_sub_bool: "\<turnstile> A\<rightarrow>B:L <: ty.Bool"
+inductive_cases2 int_sub_tt: "\<turnstile> ty.Int <: ty.TT"
+inductive_cases2 int_sub_ff: "\<turnstile> ty.Int <: ty.FF"
+inductive_cases2 arr_sub_tt: "\<turnstile> A\<rightarrow>B:L <: ty.TT"
+inductive_cases2 arr_sub_ff: "\<turnstile> A\<rightarrow>B:L <: ty.FF"
+inductive_cases2 int_sub_bool_cases: "\<turnstile> ty.Int <: Union [ty.TT, ty.FF]"
+inductive_cases2 arr_sub_bool_cases: "\<turnstile> A\<rightarrow>B:L <: Union [ty.TT, ty.FF]"
+
+declare BoolTy_def[simp]
+
+
+lemma int_sub_bool:
+  assumes "\<turnstile> ty.Int <: BoolTy"
+  shows "P"
+  using prems
+proof -
+  have "\<turnstile> ty.Int <: ty.TT \<or> \<turnstile> ty.Int <: ty.FF" using prems int_sub_bool_cases by auto
+  thus ?thesis using int_sub_ff int_sub_tt by auto
+qed
+
+lemma arr_sub_bool:
+  assumes "\<turnstile> A\<rightarrow>B:L <: BoolTy"
+  shows "P"
+  using prems
+proof -
+  have "\<turnstile> A\<rightarrow>B:L <: ty.TT \<or> \<turnstile> A\<rightarrow>B:L <: ty.FF" using prems arr_sub_bool_cases[of A B L] by auto
+  thus ?thesis using arr_sub_ff[of A B L] arr_sub_tt[of A B L] by auto
+qed
+
+thm int_sub_bool
 
 inductive_cases2 abs_ty_elim2[consumes 1, case_names 1]: "\<Gamma> \<turnstile> Lam[x:S].b : T ; eff"
 
@@ -1693,9 +1747,8 @@ proof (induct rule: values.induct)
   case num_value thus ?case by auto
 next
   case (bool_value b)
-  hence "T = ty.Bool" using bool_ty_elim by auto
-  hence "\<turnstile> ty.Bool <: ty.Int" using bool_value by auto
-  thus ?case using bool_sub_int by auto
+  hence "T = ty.TT \<or> T = ty.FF" using bool_ty_elim by auto
+  thus ?case using bool_value tt_sub_int ff_sub_int by auto
 next
   case (abs_value b S x)
   thus ?case using arr_sub_int
@@ -1704,11 +1757,12 @@ next
   case (bi_value b)
   thus ?case using bi_ty_elim[of \<Gamma> b T F] using arr_sub_int by (nominal_induct b rule: builtin.induct) auto
 qed
+
   
 lemma bool_value:
   assumes a:"v : values"
   and b:"\<Gamma> \<turnstile> v : T ; F"
-  and c:"\<turnstile> T <: ty.Bool"
+  and c:"\<turnstile> T <: BoolTy"
   shows "EX b. v = (Bool b)"
   using prems
 proof (induct rule: values.induct)
@@ -1731,7 +1785,7 @@ lemma value_int_ty:
   using b a int_value[of e _ ty.Int] by auto
 
 lemma value_bool_ty:
-  assumes a:"\<Gamma> \<turnstile> e : ty.Bool ; eff"
+  assumes a:"\<Gamma> \<turnstile> e : BoolTy ; eff"
   and b: "e : values"
   shows "EX b. e = (Bool b)"
   using b a bool_value[OF b a] by auto
@@ -1796,7 +1850,8 @@ lemma if_decomp:
   qed
   
 
-inductive_cases2 bool_sub_arr_cases: "\<turnstile> ty.Bool <:A1 \<rightarrow> A2 : L"
+inductive_cases2 tt_sub_arr_cases: "\<turnstile> ty.TT <:A1 \<rightarrow> A2 : L"
+inductive_cases2 ff_sub_arr_cases: "\<turnstile> ty.FF <:A1 \<rightarrow> A2 : L"
 inductive_cases2 num_sub_arr_cases: "\<turnstile> ty.Int <:A1 \<rightarrow> A2 : L"
 
 lemma app_decomp:
@@ -1826,8 +1881,8 @@ lemma app_decomp:
           thus ?case using ex_help[of ?L ?E ?L] by auto
         next
           case (bool_value b)
-	  hence "U = ty.Bool" using true_ty_elim false_ty_elim by (cases b) auto
-	  thus ?case using bool_sub_arr_cases[of T0 T1 le] bool_value by auto
+	  hence "U = ty.TT \<or> U = ty.FF" using true_ty_elim false_ty_elim by (cases b) auto
+	  thus ?case using tt_sub_arr_cases[of T0 T1 le] ff_sub_arr_cases[of T0 T1 le] `\<turnstile> U <: T0 \<rightarrow> T1 : le` by blast
         next
           case (num_value b)
 	  hence "U = ty.Int" using num_ty_elim by auto
@@ -2107,9 +2162,9 @@ proof (nominal_induct v avoiding: \<Gamma> rule: values.strong_induct)
     by (nominal_induct b rule: builtin.induct)  
        (auto simp add: trm.inject)
 next
-  case num_value thus ?case using num_ty_elim by auto
+  case num_value thus ?case using num_ty_elim[OF num_value] by auto
 next
-  case bool_value thus ?case using bool_ty_elim by auto
+  case bool_value thus ?case using bool_ty_elim[OF bool_value] by auto
 next
   case (abs_value a b T' \<Gamma>') thus ?case using abs_ty_elim[of \<Gamma>' a b T' T F] by auto
 qed
@@ -2191,22 +2246,22 @@ next
   assume "\<Gamma> \<turnstile> e1 : U ; eff1a" "App (BI Nott) v = App e1 e2" "\<turnstile> U <: T0 \<rightarrow> T1 : Latent S"
   hence "\<Gamma> \<turnstile> (BI Nott) : U ; eff1a" by (simp add: trm.inject)
   hence "\<Delta>\<^isub>\<tau> Nott = U" using type_nott_case[of \<Gamma> "U"] by (auto simp add: trm.inject)
-  hence "\<dots> = Top \<rightarrow> ty.Bool : latent_eff.NE" by auto
-  thus ?thesis using prems arr_sub_arr_cases[of Top ty.Bool latent_eff.NE] by (auto simp add: ty.inject)
+  hence "\<dots> = Top \<rightarrow> BoolTy : latent_eff.NE" by auto
+  thus ?thesis using prems arr_sub_arr_cases[of Top BoolTy latent_eff.NE] by (auto simp add: ty.inject)
 next
   fix T0 T1 S eff1a e1 e2 U
   assume "\<Gamma> \<turnstile> e1 : U ; eff1a" "App (BI Nott) v = App e1 e2" "\<turnstile> U <: T0 \<rightarrow> T1 : Latent S"
   hence "\<Gamma> \<turnstile> (BI Nott) : U ; eff1a" by (simp add: trm.inject)
   hence "\<Delta>\<^isub>\<tau> Nott = U" using type_nott_case[of \<Gamma> "U"] by (auto simp add: trm.inject)
-  hence "\<dots> = Top \<rightarrow> ty.Bool : latent_eff.NE" by auto
-  thus ?thesis using prems arr_sub_arr_cases[of Top ty.Bool latent_eff.NE] by (auto simp add: ty.inject)
+  hence "\<dots> = Top \<rightarrow> BoolTy : latent_eff.NE" by auto
+  thus ?thesis using prems arr_sub_arr_cases[of Top BoolTy latent_eff.NE] by (auto simp add: ty.inject)
 next
   fix T0 T1 S eff1a e1 e2 U
   assume "\<Gamma> \<turnstile> e1 : U ; eff1a" "App (BI Nott) v = App e1 e2" "\<turnstile> U <: T0 \<rightarrow> T1 : Latent S"
   hence "\<Gamma> \<turnstile> (BI Nott) : U ; eff1a" by (simp add: trm.inject)
   hence "\<Delta>\<^isub>\<tau> Nott = U" using type_nott_case[of \<Gamma> "U"] by (auto simp add: trm.inject)
-  hence "\<dots> = Top \<rightarrow> ty.Bool : latent_eff.NE" by auto
-  thus ?thesis using prems arr_sub_arr_cases[of Top ty.Bool latent_eff.NE] by (auto simp add: ty.inject)
+  hence "\<dots> = Top \<rightarrow> BoolTy : latent_eff.NE" by auto
+  thus ?thesis using prems arr_sub_arr_cases[of Top BoolTy latent_eff.NE] by (auto simp add: ty.inject)
 qed
 
 inductive_cases2 type_booleanp_case: "\<Gamma> \<turnstile> (BI BooleanP) : t ; e"
@@ -2272,9 +2327,9 @@ lemma booleanp_FF_preserved:
           "~ (\<turnstile> T <: S)" "e2 : values" "\<turnstile> U <:  T0 \<rightarrow> T1 : Latent S"
         hence a:"\<Gamma> \<turnstile> (BI BooleanP) : U ; eff1 " using trm.inject by auto
         from prems have b:"\<Gamma> \<turnstile> Bool b : T ; eff2" using trm.inject by auto
-	have "U = Top \<rightarrow> ty.Bool : Latent ty.Bool" using a bi_ty_elim[of \<Gamma> BooleanP "U"] by auto
-	hence c:"S = ty.Bool" using prems arr_sub_arr_cases[of Top ty.Bool _ T0 T1 "Latent S"] latent_eff.inject by auto
-        from b have d:"T = ty.Bool" using true_ty_elim false_ty_elim by (cases b) auto
+	have "U = Top \<rightarrow> BoolTy : Latent BoolTy" using a bi_ty_elim[of \<Gamma> BooleanP "U"] by auto
+	hence c:"S = BoolTy" using prems arr_sub_arr_cases[of Top BoolTy _ T0 T1 "Latent S"] latent_eff.inject by auto
+        from b have d:"T = ty.TT \<or> T = ty.FF" using true_ty_elim false_ty_elim by (cases b) auto
         from c d have "\<turnstile> T <: S" by auto
         thus ?thesis using prems by auto
       qed
@@ -2298,9 +2353,9 @@ lemma booleanp_TT_preserved:
     then obtain A1 U T0 T1 S eff1 eff2 where  
       A:"\<Gamma> \<turnstile> (BI BooleanP) : U ; eff1"  "\<turnstile> U <: A1 \<rightarrow> T1 : Latent S" "\<Gamma> \<turnstile> v : T0 ; eff2" "\<turnstile> T0 <: A1"  "\<turnstile> T0 <: S"
       using prems by auto
-    hence B:"U = Top \<rightarrow> ty.Bool : Latent ty.Bool " using bi_ty_elim[of \<Gamma> BooleanP U] by auto
-    hence C:"\<turnstile> T0 <: ty.Bool"      
-      using prems arr_sub_arr_cases[of Top ty.Bool "Latent ty.Bool" _ _ "Latent S"] latent_eff.inject A by auto
+    hence B:"U = Top \<rightarrow> BoolTy : Latent BoolTy " using bi_ty_elim[of \<Gamma> BooleanP U] by auto
+    hence C:"\<turnstile> T0 <: BoolTy"      
+      using prems arr_sub_arr_cases[of Top BoolTy "Latent BoolTy" _ _ "Latent S"] latent_eff.inject A by auto
     then obtain b where D:"v = Bool b" using A bool_value[of v \<Gamma> T0] prems by auto
     thus ?thesis using prems by auto
   qed
@@ -2341,7 +2396,7 @@ lemma numberp_FF_preserved:
           "~ (\<turnstile> T <: S)" "e2 : values" "\<turnstile> U <:  T0 \<rightarrow> T1 : Latent S"
         hence a:"\<Gamma> \<turnstile> (BI NumberP) : U ; eff1 " using trm.inject by auto
         from prems have b:"\<Gamma> \<turnstile> Num b : T ; eff2" using trm.inject by auto
-	have "U = Top \<rightarrow> ty.Bool : Latent ty.Int" using a bi_ty_elim[of \<Gamma> NumberP "U"] by auto
+	have "U = Top \<rightarrow> BoolTy : Latent ty.Int" using a bi_ty_elim[of \<Gamma> NumberP "U"] by auto
 	hence c:"S = ty.Int" using prems arr_sub_arr_cases[of Top _ _ T0 T1 "Latent S"] latent_eff.inject by auto
         from b have d:"T = ty.Int" using num_ty_elim by auto
         from c d have "\<turnstile> T <: S" by auto
@@ -2358,9 +2413,9 @@ lemma numberp_TT_preserved:
     then obtain A1 U T0 T1 S eff1 eff2 where  
       A:"\<Gamma> \<turnstile> (BI NumberP) : U ; eff1"  "\<turnstile> U <: A1 \<rightarrow> T1 : Latent S" "\<Gamma> \<turnstile> v : T0 ; eff2" "\<turnstile> T0 <: A1"  "\<turnstile> T0 <: S"
       using prems by auto
-    hence B:"U = Top \<rightarrow> ty.Bool : Latent ty.Int " using bi_ty_elim[of \<Gamma> NumberP U] by auto
+    hence B:"U = Top \<rightarrow> BoolTy : Latent ty.Int " using bi_ty_elim[of \<Gamma> NumberP U] by auto
     hence C:"\<turnstile> T0 <: ty.Int"      
-      using prems arr_sub_arr_cases[of Top ty.Bool "Latent ty.Int" _ _ "Latent S"] latent_eff.inject A by auto
+      using prems arr_sub_arr_cases[of Top BoolTy "Latent ty.Int" _ _ "Latent S"] latent_eff.inject A by auto
     then obtain b where D:"v = Num b" using A int_value[of v \<Gamma> T0] prems by auto
     thus ?thesis using prems by auto
   qed
@@ -2417,7 +2472,7 @@ lemma procp_FF_preserved:
 	  "\<Gamma> \<turnstile> e2 : T ; eff2 ""  \<turnstile> T <: T0 "" \<not> \<turnstile> T <: S "" e2 \<in> values "" closed e2"
         hence a:"\<Gamma> \<turnstile> (BI ProcP) : U ; eff1 " using trm.inject by auto
         from prems have b:"\<Gamma> \<turnstile> Lam[x:t].b : T ; eff2" using trm.inject by auto
-	have "U = Top \<rightarrow> ty.Bool : Latent (Union [] \<rightarrow> Top : latent_eff.NE)" using a bi_ty_elim[of \<Gamma> ProcP "U"] by auto
+	have "U = Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE)" using a bi_ty_elim[of \<Gamma> ProcP "U"] by auto
 	hence c:"S = Union [] \<rightarrow> Top : latent_eff.NE" using prems arr_sub_arr_cases[of Top _ _ T0 T1 "Latent S"] latent_eff.inject by auto
         have "EX A1 A2. T = A1 \<rightarrow> A2 : latent_eff.NE" using abs_ty_elim[OF b `x \<sharp> \<Gamma>`] by auto
 	then obtain A1 A2 where d:"T = A1 \<rightarrow> A2 : latent_eff.NE" by auto
@@ -2435,7 +2490,7 @@ lemma procp_FF_preserved:
 	"\<Gamma> \<turnstile> e2 : T ; eff2 ""  \<turnstile> T <: T0 "" \<not> \<turnstile> T <: S "" e2 \<in> values "" closed e2"
       hence a:"\<Gamma> \<turnstile> (BI ProcP) : U ; eff1 " using trm.inject by auto
       from prems have b:"\<Gamma> \<turnstile> (BI c) : T ; eff2" using trm.inject by auto
-      have "U = Top \<rightarrow> ty.Bool : Latent (Union [] \<rightarrow> Top : latent_eff.NE)" using a bi_ty_elim[of \<Gamma> ProcP "U"] by auto
+      have "U = Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE)" using a bi_ty_elim[of \<Gamma> ProcP "U"] by auto
       hence c:"S = Union [] \<rightarrow> Top : latent_eff.NE" using prems arr_sub_arr_cases[of Top _ _ T0 T1 "Latent S"] latent_eff.inject by auto
       have b':"T = \<Delta>\<^isub>\<tau> c" using bi_ty_elim[OF b] by auto
       hence "EX A1 A2 FA. T = A1 \<rightarrow> A2 : FA"  by (nominal_induct c rule: builtin.induct) auto
@@ -2456,7 +2511,7 @@ proof (nominal_induct v avoiding: \<Gamma> rule: values.strong_induct)
   case abs_value thus ?case by auto
 next
   case (bool_value b)
-  hence "T = ty.Bool" using bool_ty_elim by auto
+  hence "T = ty.TT \<or> T = ty.FF" using bool_ty_elim by auto
   thus ?case using sub_arr_cases[of T A1 A2 latent_eff.NE] using bool_value by auto
 next
   case (num_value b)
@@ -2475,9 +2530,9 @@ lemma procp_TT_preserved:
     then obtain A1 U T0 T1 S eff1 eff2 where  
       A:"\<Gamma> \<turnstile> (BI ProcP) : U ; eff1"  "\<turnstile> U <: A1 \<rightarrow> T1 : Latent S" "\<Gamma> \<turnstile> v : T0 ; eff2" "\<turnstile> T0 <: A1"  "\<turnstile> T0 <: S"
       using prems by auto
-    hence B:"U = Top \<rightarrow> ty.Bool : Latent (Union [] \<rightarrow> Top : latent_eff.NE) " using bi_ty_elim[of \<Gamma> ProcP U] by auto
+    hence B:"U = Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE) " using bi_ty_elim[of \<Gamma> ProcP U] by auto
     hence C:"\<turnstile> T0 <:  (Union [] \<rightarrow> Top : latent_eff.NE)"      
-      using prems arr_sub_arr_cases[of Top ty.Bool "Latent  (Union [] \<rightarrow> Top : latent_eff.NE)" _ _ "Latent S"] latent_eff.inject A 
+      using prems arr_sub_arr_cases[of Top BoolTy "Latent  (Union [] \<rightarrow> Top : latent_eff.NE)" _ _ "Latent S"] latent_eff.inject A 
       by auto
     moreover
     {
@@ -2514,11 +2569,14 @@ lemma procp_soundness_eff:
 
 text {* soundness of the \<Delta> rule *}
 
+lemma bool_sub_boolty[simp]: "\<turnstile> ty.FF <: BoolTy" "\<turnstile> ty.TT <: BoolTy" by auto
+
+
 lemma delta_soundness:
   assumes "\<Delta>\<^isub>\<tau> b = (T0 \<rightarrow> T1 : le)" and "v : values" and "\<Gamma> \<turnstile> v : T ; eff1" and "\<turnstile> T <: T0" 
   and "\<Gamma> \<turnstile> (App (BI b) v) : T1' ; eff" and "\<turnstile> T1 <: T1'"
   and "\<Delta> b v = Some u" and "valid \<Gamma>"
-  shows "EX eff'. \<Gamma> \<turnstile> u : T1 ; eff' \<and> \<turnstile> eff' <e: eff "
+  shows "EX eff' T1'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> eff' <e: eff \<and> \<turnstile> T1' <: T1"
   using prems
 proof (nominal_induct b rule: builtin.induct)
   case Add1
@@ -2532,20 +2590,40 @@ proof (nominal_induct b rule: builtin.induct)
 next
   case Nott
   hence a:"eff = NE" using nott_eff_ne[of \<Gamma> v T1' eff] by auto
-  have "EX  eff'. \<Gamma> \<turnstile> u : T1 ; eff'" using `v : values` `valid \<Gamma>` Nott
+  have "EX  eff' T1'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" using `v : values` `valid \<Gamma>` Nott
   proof (induct v rule: values.induct) 
     case (bool_value b)
-    thus ?case by (cases b) (auto simp add: ty.inject)
-  qed (auto)
-  then obtain eff' where b:"\<Gamma> \<turnstile> u : T1 ; eff'" by auto
+    thus ?case using bool_value bool_sub_boolty by (cases b) auto
+  next
+    case num_value thus ?case using bool_sub_boolty by auto
+  next
+    case bi_value thus ?case using bool_sub_boolty by auto
+  next
+    case abs_value thus ?case using bool_sub_boolty by auto
+  qed 
+  then obtain eff' T1' where b:"\<Gamma> \<turnstile> u : T1' ; eff'" and b':"\<turnstile> T1' <: T1" by auto
   have "simple_eff eff'" using delta_closed[of Nott v u] closed_eff b Nott by auto
   hence c:"\<turnstile> eff' <e: eff" using a simple_eff_below_ne by auto 
-  from b c show ?case by auto
+  from b b' c show ?case by auto
 next
   case BooleanP
-  have "T1 = ty.Bool" using BooleanP by (simp add: ty.inject)
-  then obtain bb where "\<Delta> BooleanP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
-  then obtain eff' where a:"\<Gamma> \<turnstile> u : T1 ; eff'" using `T1 = ty.Bool` BooleanP by (cases bb) (auto simp add: trm.inject)
+  have "valid \<Gamma>" using typing_valid prems by auto
+  have "T1 = BoolTy" using BooleanP by (simp add: ty.inject)
+  then obtain bb where veq:"\<Delta> BooleanP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
+  hence "EX  T1' eff'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" 
+    using `T1 = BoolTy` BooleanP bool_sub_boolty
+  proof (cases bb)
+    case True
+    hence "u = Bool True" using veq BooleanP by auto
+    hence "\<Gamma> \<turnstile> u : ty.TT; TT" using `valid \<Gamma>` by auto
+    thus ?thesis using `T1 = BoolTy` bool_sub_boolty by auto
+  next
+    case False
+    hence "u = Bool False" using veq BooleanP by auto
+    hence "\<Gamma> \<turnstile> u : ty.FF; FF" using `valid \<Gamma>` by auto
+    thus ?thesis using `T1 = BoolTy` bool_sub_boolty by auto
+  qed
+  then obtain T1a eff' where a:"\<Gamma> \<turnstile> u : T1a ; eff'" and a':"\<turnstile> T1a <: T1" by auto
   have c:"simple_eff eff'" using delta_closed[of BooleanP v u] closed_eff prems by auto  
   have b:"simple_eff eff" using BooleanP booleanp_eff_simple by auto
   hence "\<turnstile> eff' <e: eff" using b prems
@@ -2564,17 +2642,31 @@ next
     hence "eff'= TT" using a true_ty_elim by auto
     thus ?case using TT by auto
   qed
-  thus ?case using a by auto
+  thus ?case using a a' by auto
 next
   case NumberP
-  have "T1 = ty.Bool" using NumberP by (simp add: ty.inject)
-  then obtain bb where "\<Delta> NumberP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
-  then obtain eff' where a:"\<Gamma> \<turnstile> u : T1 ; eff'" using `T1 = ty.Bool` NumberP by (cases bb) (auto simp add: trm.inject)
+  have "valid \<Gamma>" using typing_valid prems by auto
+  have "T1 = BoolTy" using NumberP by (simp add: ty.inject)
+  then obtain bb where veq:"\<Delta> NumberP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
+  hence "EX  T1' eff'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" 
+    using `T1 = BoolTy` NumberP bool_sub_boolty
+  proof (cases bb)
+    case True
+    hence "u = Bool True" using veq NumberP by auto
+    hence "\<Gamma> \<turnstile> u : ty.TT; TT" using `valid \<Gamma>` by auto
+    thus ?thesis using `T1 = BoolTy` bool_sub_boolty by auto
+  next
+    case False
+    hence "u = Bool False" using veq NumberP by auto
+    hence "\<Gamma> \<turnstile> u : ty.FF; FF" using `valid \<Gamma>` by auto
+    thus ?thesis using `T1 = BoolTy` bool_sub_boolty by auto
+  qed
+  then obtain T1a eff' where a:"\<Gamma> \<turnstile> u : T1a ; eff'" and a':"\<turnstile> T1a <: T1" by auto
   have c:"simple_eff eff'" using delta_closed[of NumberP v u] closed_eff prems by auto  
   have b:"simple_eff eff" using NumberP numberp_eff_simple by auto
   hence "\<turnstile> eff' <e: eff" using b prems
   proof (induct rule: simple_eff_cases)
-    case NE thus ?case using c simple_eff_below_ne by auto
+    case NE thus ?case using simple_eff_below_ne c by auto
   next
     case FF
     hence "u = Bool False" 
@@ -2588,17 +2680,31 @@ next
     hence "eff'= TT" using a true_ty_elim by auto
     thus ?case using TT by auto
   qed
-  thus ?case using a by auto
+  thus ?case using a a' by auto
 next
   case ProcP
-  have "T1 = ty.Bool" using ProcP by (simp add: ty.inject)
-  then obtain bb where "\<Delta> ProcP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
-  then obtain eff' where a:"\<Gamma> \<turnstile> u : T1 ; eff'" using `T1 = ty.Bool` ProcP by (cases bb) (auto simp add: trm.inject)
+  have "valid \<Gamma>" using typing_valid prems by auto
+  have "T1 = BoolTy" using ProcP by (simp add: ty.inject)
+  then obtain bb where veq:"\<Delta> ProcP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
+  hence "EX  T1' eff'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" 
+    using `T1 = BoolTy` ProcP bool_sub_boolty
+  proof (cases bb)
+    case True
+    hence "u = Bool True" using veq ProcP by auto
+    hence "\<Gamma> \<turnstile> u : ty.TT; TT" using `valid \<Gamma>` by auto
+    thus ?thesis using `T1 = BoolTy` bool_sub_boolty by auto
+  next
+    case False
+    hence "u = Bool False" using veq ProcP by auto
+    hence "\<Gamma> \<turnstile> u : ty.FF; FF" using `valid \<Gamma>` by auto
+    thus ?thesis using `T1 = BoolTy` bool_sub_boolty by auto
+  qed
+  then obtain T1a eff' where a:"\<Gamma> \<turnstile> u : T1a ; eff'" and a':"\<turnstile> T1a <: T1" by auto
   have c:"simple_eff eff'" using delta_closed[of ProcP v u] closed_eff prems by auto  
   have b:"simple_eff eff" using ProcP procp_eff_simple by auto
   hence "\<turnstile> eff' <e: eff" using b prems
   proof (induct rule: simple_eff_cases)
-    case NE thus ?case using c simple_eff_below_ne by auto
+    case NE thus ?case using simple_eff_below_ne c by auto
   next
     case FF
     hence "u = Bool False" 
@@ -2612,7 +2718,7 @@ next
     hence "eff'= TT" using a true_ty_elim by auto
     thus ?case using TT by auto
   qed
-  thus ?case using a by auto
+  thus ?case using a a' by auto
 qed
 
 lemma simple_eff_below_ve:
@@ -2975,29 +3081,19 @@ next
   thus ?case using Num B by auto
 next
   case (Bool b)
+  have v:"valid \<Gamma>" using prems typing_valid by auto
   have A:"(Bool b)[x::=e'] = Bool b" by auto
-  have "T = ty.Bool" using true_ty_elim false_ty_elim Bool by (cases b) auto
-  hence "EX Fn. \<Gamma> \<turnstile> (Bool b)[x::=e'] : T ; Fn" using Bool A valid_elim[of x T0 \<Gamma>] by (cases b) auto
-  then obtain Fn where B:"\<Gamma> \<turnstile> (Bool b)[x::=e'] : T ; Fn" by auto
-  hence "Fn = F" using true_ty_elim false_ty_elim Bool A 
+  thus ?case 
   proof (cases b)
     case True
-    have "\<Gamma> \<turnstile> (Bool True)[x::=e'] : T ; Fn" using True B by auto
-    hence "\<Gamma> \<turnstile> (Bool True) : T ; Fn" using A by auto
-    hence "Fn = TT" using true_ty_elim by auto
-    have  " (x, T0) # \<Gamma> \<turnstile> (Bool True) : T ; F" using A True Bool by auto
-    hence "F = TT" using true_ty_elim by auto
-    thus ?thesis using `Fn = TT` by simp
+    hence B:"T = ty.TT" and "F = TT" using Bool true_ty_elim by auto
+    thus ?thesis using A v True by auto
   next
     case False
-    have "\<Gamma> \<turnstile> (Bool False)[x::=e'] : T ; Fn" using False B by auto
-    hence "\<Gamma> \<turnstile> (Bool False) : T ; Fn" using A by auto
-    hence "Fn = FF" using false_ty_elim by auto
-    have  " (x, T0) # \<Gamma> \<turnstile> (Bool False) : T ; F" using A False Bool by auto
-    hence "F = FF" using false_ty_elim by auto
-    thus ?thesis using `Fn = FF` by simp
+    hence B:"T = ty.FF" and "F = FF" using Bool false_ty_elim by auto
+    thus ?thesis using A v False by auto
   qed
-  thus ?case using Bool B by auto
+next
 next
   case (BI b)
   have A:"(BI b)[x::=e'] = (BI b)" by auto
@@ -3385,7 +3481,7 @@ lemma preserve_red:
     have C2:"\<turnstile> T0' <: A0" and C3:"\<turnstile> A1 <: T " using B A3 A4 by auto
     have C4:"valid \<Gamma>" .
     note delta_soundness[OF `\<Delta>\<^isub>\<tau> p = A0 \<rightarrow> A1 : LA` `v' : values` `\<Gamma> \<turnstile> v' : T0' ; eff''` C2 e_delta(3) C3 `\<Delta> p v' = Some v` C4]
-    then obtain eff' where "\<Gamma> \<turnstile> v : A1 ; eff' "" \<turnstile> eff' <e: eff" by auto
+    then obtain A1' eff' where "\<Gamma> \<turnstile> v : A1' ; eff' "" \<turnstile> eff' <e: eff" "\<turnstile> A1' <: A1" by auto
     thus ?case using C3 by auto
   next
     case (e_if_false thn els \<Gamma>' t') 
@@ -3780,8 +3876,8 @@ where
   T2_Var[intro]:   "\<lbrakk>valid \<Gamma>; (v,T)\<in>set \<Gamma>\<rbrakk>\<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Var v : T ; VE v" 
 | T2_Const[intro]: "valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (BI b) : T ; NE"
 | T2_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Num n) : ty.Int ; NE"
-| T2_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Bool True) : ty.Bool ; TT"
-| T2_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Bool False) : ty.Bool ; FF"
+| T2_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Bool True) : ty.TT ; TT"
+| T2_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Bool False) : ty.FF ; FF"
 | T2_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile>\<^isub>2 b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; NE"
 | T2_App[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U ; eff1 ; \<turnstile> U <: (T0 \<rightarrow> T1 : le); \<Gamma> \<turnstile>\<^isub>2 e2 : T; eff2 ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; NE"
 | T2_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile>\<^isub>2 e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; TE S x"
@@ -3802,18 +3898,17 @@ lemma typing2_soundness1:
 
 lemma typing2_soundness_int:
   assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : ty.Int ; F" and E:"closed e" 
-  shows "reduce_forever e \<or> (EX v F'. (v : values \<and> \<Gamma> \<turnstile>\<^isub>2 v : ty.Int ; F' \<and> \<turnstile> F' <e: F))"
+  shows "reduce_forever e \<or> (EX v F'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> \<Gamma> \<turnstile>\<^isub>2 v : ty.Int ; F' \<and> \<turnstile> F' <e: F))"
 proof -
-  from A E typing2_soundness1
-  have B:"reduce_forever e \<or> (EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F))"
-    by auto
+  from typing2_soundness1[OF A E]
+  have B:"reduce_forever e \<or> (EX v T' F'. (v : values  \<and> (e  \<longrightarrow>\<^sup>* v) \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F))" by auto
   thus ?thesis
   proof 
-    assume "EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F)"
+    assume "EX v T' F'. (v : values  \<and> (e  \<longrightarrow>\<^sup>* v) \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F)"
     then guess v T' F' by auto
     then obtain n where "v = Num n" using int_value by blast
     hence "\<Gamma> \<turnstile>\<^isub>2 v : ty.Int ; F'" using num_ty_elim[of \<Gamma> _ T' F'] `\<Gamma> \<turnstile> v : T' ; F'` by auto
-    thus ?thesis  using `\<turnstile> F' <e: F` `v : values` by auto
+    thus ?thesis  using `\<turnstile> F' <e: F` `v : values` `(e  \<longrightarrow>\<^sup>* v)` by auto
   qed (auto)
 qed
 
@@ -3825,27 +3920,27 @@ lemma typing2_soundness_help:
   using A B E typing2_soundness1 by blast
 
 lemma typing2_soundness_bool:
-  assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : ty.Bool ; F" and E:"closed e" 
-  shows "reduce_forever e \<or> (EX v F'. (v : values \<and> \<Gamma> \<turnstile>\<^isub>2 v : ty.Bool ; F' \<and> \<turnstile> F' <e: F))"
+  assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : T ; F" and E:"closed e" and sub:"\<turnstile> T <: BoolTy"
+  shows "reduce_forever e \<or> (EX v F' T'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> \<Gamma> \<turnstile>\<^isub>2 v : T' ; F' \<and> \<turnstile> F' <e: F \<and> \<turnstile> T' <: T))"
 proof -
-  from A E typing2_soundness1
-  have B:"reduce_forever e \<or> (EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Bool \<and> \<turnstile> F' <e: F))"
+  from typing2_soundness1[OF A E]
+  have B:"reduce_forever e \<or> (EX v T' F'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
     by blast
   thus ?thesis
   proof
-    assume "EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Bool \<and> \<turnstile> F' <e: F)"
+    assume "EX v T' F'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F)"
     then guess v T' F' by auto
-    then obtain b where "v = Bool b" using bool_value by blast
-    hence "\<Gamma> \<turnstile>\<^isub>2 Bool b : ty.Bool ; F'" using `\<Gamma> \<turnstile> v : T' ; F'`
+    then obtain b where "v = Bool b" using bool_value[OF `v : values` `\<Gamma> \<turnstile> v : T' ; F'`] sub by auto
+    hence "\<Gamma> \<turnstile>\<^isub>2 Bool b : T' ; F'" using `\<Gamma> \<turnstile> v : T' ; F'`
       true_ty_elim[of \<Gamma> T' F'] false_ty_elim[of \<Gamma> T' F']
       by (cases b) auto
-    thus ?thesis using `v = Bool b`  `v : values` `\<turnstile> F' <e: F` by blast
+    thus ?thesis using `v = Bool b`  `e  \<longrightarrow>\<^sup>* v` `v : values` `\<turnstile> F' <e: F` `\<turnstile> T' <: T` by blast
   qed (auto)
 qed
 
 constdefs
   ground_type :: "ty \<Rightarrow> bool"
-  "ground_type t == t = ty.Int \<or> t = ty.Bool"
+  "ground_type t == t = ty.Int \<or> t = BoolTy \<or> t = ty.TT \<or> t = ty.FF"
 
 
 lemma supp_env:
@@ -3919,20 +4014,21 @@ lemma empty_env_typing2_closed:
 
 theorem ground_type_soundness:
   assumes A:"[] \<turnstile>\<^isub>2 e : T ; F" and B:"ground_type T"
-  shows "reduce_forever e \<or> (EX v T' F'. (v : values \<and> [] \<turnstile>\<^isub>2 v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
+  shows "reduce_forever e \<or> (EX v T' F'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> [] \<turnstile>\<^isub>2 v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
 proof -
   have E:"closed e" using empty_env_typing2_closed[OF A] by simp
   {
     assume "T = ty.Int"
-    hence "reduce_forever e \<or> (EX v F'. (v : values \<and> [] \<turnstile>\<^isub>2 v : ty.Int ; F' \<and> \<turnstile> F' <e: F))"
+    hence "reduce_forever e \<or> (EX v F'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> [] \<turnstile>\<^isub>2 v : ty.Int ; F' \<and> \<turnstile> F' <e: F))"
       using A E typing2_soundness_int by auto
     hence ?thesis using prems by auto
   }
   moreover
   {
-    assume "T = ty.Bool"
-    hence "reduce_forever e \<or> (EX v F'. (v : values \<and> [] \<turnstile>\<^isub>2 v : ty.Bool ; F' \<and> \<turnstile> F' <e: F))"
-      using A E typing2_soundness_bool by auto
+    assume "T ~= ty.Int"
+    hence "\<turnstile> T <: BoolTy" using B by (auto simp add: ground_type_def)
+    hence "reduce_forever e \<or> (EX v F' T'. (v : values \<and> (e  \<longrightarrow>\<^sup>* v) \<and> [] \<turnstile>\<^isub>2 v : T' ; F' \<and> \<turnstile> F' <e: F \<and> \<turnstile> T' <: T))"
+      using typing2_soundness_bool[OF A E] by auto
     hence ?thesis using prems by auto
   }
   ultimately show ?thesis using B ground_type_def by auto
