@@ -1,7 +1,7 @@
 (* This file requires:
 
- - The Nominal Isabelle Package, version 0.09
- - An Isabelle Snapshot from no earlier than March, 2007
+ - The Nominal Isabelle Package, version 0.11
+ - An Isabelle Snapshot from no earlier than April 27, 2007
 
 *)
 
@@ -1135,24 +1135,16 @@ constdefs
 less_ty :: "((ty * ty) * ty * ty) set"
 "less_ty == {((a,b),c,d) . (size_ty b) < (size_ty d)}"
 
-function
+function (sequential)
   restrict :: "ty \<Rightarrow> ty \<Rightarrow> ty"
 where
   restrict_union: "restrict r (Union (ls :: ty list)) = 
   (if (\<turnstile> r <: Union ls) then r else (if (\<turnstile> Union ls <: r) then (Union ls) else Union (map (restrict r) ls)))"
 | restrict_top:"restrict r Top = r"
-| restrict_arr:"restrict r (A \<rightarrow> B : L) = (if (\<turnstile> r <: A \<rightarrow> B : L) then r else (A \<rightarrow> B : L))"
-| restrict_int:"restrict r ty.Int = (if (\<turnstile> r <: ty.Int) then r else ty.Int)"
-| restrict_bool:"restrict r ty.Bool = (if (\<turnstile> r <: ty.Bool) then r else ty.Bool)"
+| restrict_other:"restrict r T = (if (\<turnstile> r <: T) then r else T)"
   by pat_completeness auto
-termination
-proof 
-  let ?R = "measure (% (a,b). size_ty b)"
-  show A:"wf ?R" .. 
-  fix r::ty and ls::"ty list" and xa::ty
-  assume "xa : set ls"
-  thus "((r,xa),r,Union ls) : ?R" using union_size_ty by auto
-qed
+termination using union_size_ty
+  by (relation "measure (% (a,b). size_ty b)") auto
 
 lemma restrict_eqvt[eqvt]:
   fixes pi::"name prm"
@@ -1242,25 +1234,16 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
   qed
 qed
 
-function
+function (sequential)
   remove :: "ty \<Rightarrow> ty \<Rightarrow> ty"
 where
   remove_union: "remove r (Union (ls :: ty list)) = (if (\<turnstile> Union ls <: r) then (Union []) else Union (map (remove r) ls))"
-| remove_top:"remove r Top = (if (\<turnstile> Top <: r) then (Union []) else Top)"
-| remove_arr:"remove r (A \<rightarrow> B : L) = (if (\<turnstile> (A\<rightarrow>B:L) <: r) then (Union []) else (A\<rightarrow>B:L))"
-| remove_int:"remove r ty.Int = (if (\<turnstile> ty.Int <: r) then (Union []) else ty.Int)"
-| remove_bool:"remove r ty.Bool = (if (\<turnstile> ty.Bool <: r) then (Union []) else ty.Bool)"
+| remove_other:"remove r T = (if (\<turnstile> T <: r) then (Union []) else T)"
   by pat_completeness auto
-termination
-proof 
-  let ?R = "measure (% (a,b). size_ty b)"
-  show A:"wf ?R" .. 
-  fix r::ty and ls::"ty list" and xa::ty
-  assume "xa : set ls"
-  thus "((r,xa),r,Union ls) : ?R" using union_size_ty by auto
-qed
+termination using union_size_ty
+  by (relation "measure (% (a,b). size_ty b)") auto
 
-lemma restrict_eqvt[eqvt]:
+lemma remove_eqvt[eqvt]:
   fixes pi::"name prm"
   shows "pi\<bullet>(remove T1 T2) = remove (pi\<bullet>T1) (pi\<bullet>T2)"
 by (induct T2) (auto)
@@ -1273,14 +1256,6 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
   case (less T S T0)
   thus ?case
   proof (induct T==T rule: ty_cases)
-    case Top thus ?case by auto
-  next
-    case Int thus ?case by auto
-  next
-    case Bool thus ?case by auto
-  next
-    case Arr thus ?case by auto
-  next
     case (Union Ts)
     have r:"remove S T = (if (\<turnstile> T <:S) then (Union []) else  Union (map (remove S) Ts))" 
       using prems remove_union[of S Ts] by auto
@@ -1318,7 +1293,7 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
       }
       ultimately show ?thesis by auto
     qed
-  qed
+  qed (auto)
 qed
 
 lemma restrict_remove_soundness:
@@ -1379,20 +1354,15 @@ lemma map_eqvt[eqvt]:
   fixes pi::"name prm"
   and   l::"('a::pt_name) list"
   shows "pi\<bullet>(map f l) = map (pi\<bullet>f) (pi\<bullet>l)"
-apply(induct l)
-apply(perm_simp)+
-done
+  by (induct l) perm_simp+
 
 lemma env_plus_eqvt[eqvt]:
   fixes pi::"name prm"
   shows "pi\<bullet>(env_plus X G ) = env_plus (pi\<bullet>X) (pi\<bullet>G)"
-apply(nominal_induct X rule: eff.induct)
-apply(simp_all)
-apply(perm_simp add: map_eqvt perm_fun_def split_def)
-apply(perm_simp only: eqvts)
-apply(auto)
-apply(perm_simp)
-done
+proof (nominal_induct X rule: eff.induct)
+  case (TE T x) thus ?case
+    by (perm_simp add: eqvts perm_fun_def split_def) auto
+qed(auto)
 
 nominal_primrec
   "env_minus (NE) G = G"
@@ -1405,13 +1375,10 @@ nominal_primrec
 lemma env_minus_eqvt[eqvt]:
   fixes pi::"name prm"
   shows "pi\<bullet>(env_minus X G) = env_minus (pi\<bullet>X) (pi\<bullet>G)"
-apply(nominal_induct X rule: eff.induct)
-apply(simp_all)
-apply(perm_simp add: map_eqvt perm_fun_def split_def)
-apply(perm_simp add: eqvts)
-apply(auto)
-apply(perm_simp)
-done
+proof (nominal_induct X rule: eff.induct)
+  case (TE T x) thus ?case
+    by (perm_simp add: eqvts perm_fun_def split_def) auto
+qed(auto)
 
 abbreviation   env_plus_syn :: "varEnv \<Rightarrow> eff \<Rightarrow> varEnv" ("_ |+ _"  [70,70] 70)
 where
@@ -1420,12 +1387,6 @@ where
 abbreviation env_minus_syn :: "varEnv \<Rightarrow> eff \<Rightarrow> varEnv" ("_ |- _"  [70,70] 70)
 where
   "(G |- eff) == env_minus eff G"
-
-lemma ty_eqvt:
-  fixes pi::"name prm"
-  and T :: ty
-  shows "(pi \<bullet> T) = T"
-  by auto
 
 --"Induction principle for type envs"
 lemma env_induct[case_names Nil Cons]:
@@ -1492,9 +1453,6 @@ where
 | T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
 
 equivariance typing
-
-
-(* general lemmas about typing *)
 
 nominal_inductive typing 
   by (auto simp add: abs_fresh)
@@ -1717,7 +1675,6 @@ lemma bi_ty_elim[rule_format]:
 apply (ind_cases2 "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
-
 
 inductive_cases2 bool_sub_int: "\<turnstile> ty.Bool <: ty.Int"
 inductive_cases2 arr_sub_int: "\<turnstile> A\<rightarrow>B:L <: ty.Int"
