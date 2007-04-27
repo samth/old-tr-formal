@@ -3756,7 +3756,7 @@ text
 
 theorem soundness:
   assumes A:"\<Gamma> \<turnstile> e : T ; F" and E:"closed e" 
-  shows "reduce_forever e \<or> (EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
+  shows "reduce_forever e \<or> (EX v T' F'. (v : values \<and> e \<longrightarrow>\<^sup>* v \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
 proof -
   {
     assume "~(reduce_forever e)"
@@ -3796,7 +3796,7 @@ lemma typing2_typing:
 
 lemma typing2_soundness1:
   assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : T ; F" and E:"closed e" 
-  shows "reduce_forever e \<or> (EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
+  shows "reduce_forever e \<or> (EX v T' F'. (v : values \<and> e \<longrightarrow>\<^sup>* v \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F))"
   using A E soundness typing2_typing
   by auto
 
@@ -3808,25 +3808,21 @@ proof -
   have B:"reduce_forever e \<or> (EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F))"
     by auto
   thus ?thesis
-    proof -
-      {
-	assume "reduce_forever e" hence ?thesis by simp
-      }
-      moreover
-      {
-	assume "EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F)"
-	then guess v T' F' by auto
-	hence "EX n. v = Num n" using int_value by auto
-	then obtain n where "v = Num n" by auto
-	hence "F' = NE" "valid \<Gamma>" using  `\<Gamma> \<turnstile> v : T' ; F'` num_ty_elim by auto
-	hence "\<turnstile> NE <e: F" using `\<turnstile> F' <e: F` by auto
-	have "simple_eff F" using A E closed_eff typing2_typing[OF A] by auto
-	have "\<Gamma> \<turnstile>\<^isub>2 v : ty.Int ; NE" using `v = Num n` `valid \<Gamma>` by auto
-	hence ?thesis  using `\<turnstile> NE <e: F` `v : values` by auto
-      }
-      ultimately show ?thesis using B by auto
-    qed
-  qed
+  proof 
+    assume "EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Int \<and> \<turnstile> F' <e: F)"
+    then guess v T' F' by auto
+    then obtain n where "v = Num n" using int_value by blast
+    hence "\<Gamma> \<turnstile>\<^isub>2 v : ty.Int ; F'" using num_ty_elim[of \<Gamma> _ T' F'] `\<Gamma> \<turnstile> v : T' ; F'` by auto
+    thus ?thesis  using `\<turnstile> F' <e: F` `v : values` by auto
+  qed (auto)
+qed
+
+lemma typing2_soundness_help:
+  assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : \<sigma> ; F" and E:"closed e" 
+  and B: "((\<exists>v T' F'. v \<in> values \<and>  \<Gamma> \<turnstile> v : T' ; F'  \<and> \<turnstile> T' <: \<sigma> \<and> \<turnstile> F' <e: F)) \<Longrightarrow>  
+  (reduce_forever e \<or> (\<exists>v F'. v \<in> values \<and>  \<Gamma> \<turnstile>\<^isub>2 v : \<sigma> ; F'  \<and> \<turnstile> F' <e: F))"
+  shows "(reduce_forever e \<or> (\<exists>v F'. v \<in> values \<and>  \<Gamma> \<turnstile>\<^isub>2 v : \<sigma> ; F'  \<and> \<turnstile> F' <e: F))"
+  using A B E typing2_soundness1 by blast
 
 lemma typing2_soundness_bool:
   assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : ty.Bool ; F" and E:"closed e" 
@@ -3834,39 +3830,19 @@ lemma typing2_soundness_bool:
 proof -
   from A E typing2_soundness1
   have B:"reduce_forever e \<or> (EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Bool \<and> \<turnstile> F' <e: F))"
-    by auto
+    by blast
   thus ?thesis
-    proof -
-      {
-	assume "reduce_forever e" hence ?thesis by simp
-      }
-      moreover
-      {
-	assume "EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Bool \<and> \<turnstile> F' <e: F)"
-	then guess v T' F' by auto
-	hence "EX b. v = Bool b" using bool_value by auto
-	then obtain b where "v = Bool b" by auto
-	hence "valid \<Gamma>" using  `\<Gamma> \<turnstile> v : T' ; F'` bool_ty_elim by auto
-	have "\<Gamma> \<turnstile>\<^isub>2 Bool b : ty.Bool ; F'"
-	proof (cases b)
-	  case True 
-	  hence "\<Gamma> \<turnstile> trm.Bool True : T' ; F'"  using  `\<Gamma> \<turnstile> v : T' ; F'` `v = Bool b` by auto
-	  hence "F' = TT" using true_ty_elim by auto
-	  hence "\<Gamma> \<turnstile>\<^isub>2 trm.Bool True : ty.Bool ; F'" using `valid \<Gamma>` by auto
-	  thus ?thesis using True by auto
-	next
-	  case False 
-	  hence "\<Gamma> \<turnstile> trm.Bool False : T' ; F'"  using  `\<Gamma> \<turnstile> v : T' ; F'` `v = Bool b` by auto
-	  hence "F' = FF" using false_ty_elim by auto
-	  hence "\<Gamma> \<turnstile>\<^isub>2 trm.Bool False : ty.Bool ; F'" using `valid \<Gamma>` by auto
-	  thus ?thesis using False by auto
-	qed
-	hence ?thesis using `v = Bool b`  `v : values` `\<turnstile> F' <e: F` by blast
-      }
-      ultimately show ?thesis using B by auto
-    qed
-  qed
-	
+  proof
+    assume "EX v T' F'. (v : values \<and> \<Gamma> \<turnstile> v : T' ; F' \<and> \<turnstile> T' <: ty.Bool \<and> \<turnstile> F' <e: F)"
+    then guess v T' F' by auto
+    then obtain b where "v = Bool b" using bool_value by blast
+    hence "\<Gamma> \<turnstile>\<^isub>2 Bool b : ty.Bool ; F'" using `\<Gamma> \<turnstile> v : T' ; F'`
+      true_ty_elim[of \<Gamma> T' F'] false_ty_elim[of \<Gamma> T' F']
+      by (cases b) auto
+    thus ?thesis using `v = Bool b`  `v : values` `\<turnstile> F' <e: F` by blast
+  qed (auto)
+qed
+
 constdefs
   ground_type :: "ty \<Rightarrow> bool"
   "ground_type t == t = ty.Int \<or> t = ty.Bool"
