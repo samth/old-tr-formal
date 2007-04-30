@@ -10,6 +10,9 @@ imports Nominal
 
 begin
 
+(* ML {* ThmDeps.enable() *} *) 
+
+
 (* datatype definitions *)
 atom_decl name
 
@@ -4033,6 +4036,7 @@ proof -
   }
   ultimately show ?thesis using B ground_type_def by auto
 qed
+
 
 end
 
