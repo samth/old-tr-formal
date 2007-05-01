@@ -1466,11 +1466,11 @@ inductive2
   typing :: "varEnv \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> eff \<Rightarrow> bool" (" _ \<turnstile> _ : _ ; _ " [60,60,60,60] 60) 
 where
   T_Var[intro]:   "\<lbrakk>valid \<Gamma>; (v,T)\<in>set \<Gamma>\<rbrakk>\<Longrightarrow> \<Gamma> \<turnstile> Var v : T ; VE v" 
-| T_Const[intro]: "valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> \<Gamma> \<turnstile> (BI b) : T ; NE"
-| T_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Num n) : ty.Int ; NE"
+| T_Const[intro]: "valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> \<Gamma> \<turnstile> (BI b) : T ; TT"
+| T_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Num n) : ty.Int ; TT"
 | T_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Bool True) : ty.TT ; TT"
 | T_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> (Bool False) : ty.FF ; FF"
-| T_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile> b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; NE"
+| T_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile> b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; TT"
 | T_App[intro]: "\<lbrakk>(\<Gamma> \<turnstile> e1 : U ; eff1) ; \<turnstile> U <: (T0 \<rightarrow> T1 : le); (\<Gamma> \<turnstile> e2 : T; eff2) ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; NE"
 | T_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile> e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; TE S x"
 | T_If[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1; eff1; (\<Gamma> |+ eff1) \<turnstile> e2 : T2; eff2; (\<Gamma> |- eff1) \<turnstile> e3 : T3; eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE"
@@ -1654,7 +1654,7 @@ qed (auto | atomize)+
 (* need weakening lemmas about env+/- *)
 
 
-lemma "[] \<turnstile> (Lam[x:Top]. (Iff (App (BI NumberP) (Var x)) (App (BI Add1) (Var x)) (Num 12))) : (Top \<rightarrow> ty.Int : latent_eff.NE) ; NE"
+lemma "[] \<turnstile> (Lam[x:Top]. (Iff (App (BI NumberP) (Var x)) (App (BI Add1) (Var x)) (Num 12))) : (Top \<rightarrow> ty.Int : latent_eff.NE) ; TT"
   apply (rule T_Abs)
   apply (auto simp add: fresh_def   supp_def perm_fun_def)
 
@@ -1701,16 +1701,13 @@ apply (auto simp add: trm.inject)
 done
 
 lemma num_ty_elim[rule_format]: 
-  "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.Int \<and> eff = NE \<and> valid \<Gamma>"
-apply (ind_cases2 "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff")
-apply (auto simp add: trm.inject)
-done
+  "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.Int \<and> eff = TT \<and> valid \<Gamma>"
+by (ind_cases2 "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff") auto
 
 lemma true_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.TT \<and> eff = TT \<and> valid \<Gamma> "
-apply (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff")
-apply (auto simp add: trm.inject)
-done
+by (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff") 
+ (auto simp add: trm.inject)
 
 lemma bool_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff \<Longrightarrow>  (\<sigma> = ty.TT \<or> \<sigma> = ty.FF) \<and> valid \<Gamma> "
@@ -1719,7 +1716,7 @@ apply (auto simp add: trm.inject)
 done
 
 lemma bi_ty_elim[rule_format]: 
-  "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff \<Longrightarrow> eff = NE \<and> \<sigma> = \<Delta>\<^isub>\<tau> b \<and> valid \<Gamma>"
+  "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff \<Longrightarrow> eff = TT \<and> \<sigma> = \<Delta>\<^isub>\<tau> b \<and> valid \<Gamma>"
 apply (ind_cases2 "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
@@ -1998,14 +1995,14 @@ lemma app_ty_elim[rule_format]:
 
 
 lemma abs_ty_elim_eff[rule_format]: 
-  "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff\<rbrakk> \<Longrightarrow> eff = eff.NE"
+  "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff\<rbrakk> \<Longrightarrow> eff = eff.TT"
   by (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff")
      (auto simp add: trm.inject)
 
 
 lemma abs_ty_elim[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff ; a \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> 
-  \<exists> T1 eff'. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : latent_eff.NE) \<and> eff = eff.NE)"
+  \<exists> T1 eff'. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : latent_eff.NE) \<and> eff = eff.TT)"
 apply (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
 apply(auto simp add: trm.distinct trm.inject alpha) 
 apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
@@ -3192,9 +3189,9 @@ proof (nominal_induct e avoiding: \<Gamma> x e' T T1 T0 F G rule: trm_comp_induc
 next
   case (Num n)
   have A:"(Num n)[x::=e'] = Num n" by auto
-  have B:"F = eff.NE" using Num num_ty_elim by auto
+  have B:"F = eff.TT" using Num num_ty_elim by auto
   have "T = ty.Int" using num_ty_elim Num by auto
-  hence "\<Gamma> \<turnstile> (Num n)[x::=e'] : T ; eff.NE" using Num A valid_elim[of x T0 \<Gamma>] by auto
+  hence "\<Gamma> \<turnstile> (Num n)[x::=e'] : T ; eff.TT" using Num A valid_elim[of x T0 \<Gamma>] by auto
   thus ?case using Num B by auto
 next
   case (Bool b)
@@ -3213,9 +3210,9 @@ next
 next
   case (BI b)
   have A:"(BI b)[x::=e'] = (BI b)" by auto
-  have B:"F = eff.NE" using BI bi_ty_elim by auto
+  have B:"F = eff.TT" using BI bi_ty_elim by auto
   have "T = \<Delta>\<^isub>\<tau> b" using bi_ty_elim BI by auto
-  hence "\<Gamma> \<turnstile> (BI b)[x::=e'] : T ; eff.NE" using BI A valid_elim[of x T0 \<Gamma>] by  auto
+  hence "\<Gamma> \<turnstile> (BI b)[x::=e'] : T ; eff.TT" using BI A valid_elim[of x T0 \<Gamma>] by  auto
   thus ?case using BI B by auto
 next
   case (App s1 s2 \<Gamma>' x' e'' T' T1' T0' F' G')
@@ -3296,8 +3293,8 @@ next
   hence f1: "a\<sharp>\<Gamma>'" and f2: "a\<noteq>x'" and f2': "x'\<sharp>a" and f3: "a\<sharp>e''" and f4: "a\<sharp>((x',T0')#\<Gamma>')"
     by (auto simp add: fresh_atm fresh_prod fresh_list_cons)
   have c1: "((x',T0')#\<Gamma>')\<turnstile>Lam [a:ty].body : T' ; F'" by fact
-  hence "\<exists>\<tau>2 eff. ((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff \<and> T'=ty\<rightarrow>\<tau>2:latent_eff.NE  \<and> F' = NE" using f4 abs_ty_elim by auto
-  then obtain \<tau>2 eff where c11: "T'=ty\<rightarrow>\<tau>2:latent_eff.NE" and c12: "((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff" "F' = NE" by auto
+  hence "\<exists>\<tau>2 eff. ((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff \<and> T'=ty\<rightarrow>\<tau>2:latent_eff.NE  \<and> F' = TT" using f4 abs_ty_elim by auto
+  then obtain \<tau>2 eff where c11: "T'=ty\<rightarrow>\<tau>2:latent_eff.NE" and c12: "((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff" "F' = TT" by auto
   from c12 have "valid ((a,ty)#(x',T0')#\<Gamma>')" using Lam by auto
   hence ca: "valid \<Gamma>'" and cb: "a\<sharp>\<Gamma>'" and cc: "x'\<sharp>\<Gamma>'" 
     by (auto dest: valid_elim simp add: fresh_list_cons)
@@ -3316,10 +3313,10 @@ next
     `e'' : values`
     by auto
   then obtain TA0 FA0 where "?inner\<Gamma> \<turnstile> body[x'::=e''] : TA0 ; FA0 "" \<turnstile> TA0 <: \<tau>2" by auto
-  hence L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.NE" using `a \<sharp> \<Gamma>'` by auto
+  hence L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.TT" using `a \<sharp> \<Gamma>'` by auto
   have L2:"\<turnstile> ty \<rightarrow> TA0 : latent_eff.NE <: T'" using c11 ` \<turnstile> TA0 <: \<tau>2` by auto
   have L3:"(Lam[a:ty].body)[x'::=e''] = (Lam[a:ty].(body[x'::=e'']))" using Lam by auto
-  have L4:"\<turnstile> eff.NE <e: F'" using `F' = NE` by auto
+  have L4:"\<turnstile> eff.TT <e: F'" using `F' = TT` by auto
   from L1 L2 L3 L4 show  "EX TA FA. \<Gamma>' \<turnstile> (Lam [a:ty].body)[x'::=e''] : TA ; FA \<and> \<turnstile> TA <: T' \<and> \<turnstile> FA <e: F'" by auto
 next
   case (Iff t1 t2 t3 \<Gamma>' x' e'' T' T0' T1' F' G')
@@ -3417,7 +3414,12 @@ next
           hence "(x', T1') : set ?\<Gamma>" using A True by auto
           have "?\<Gamma> \<turnstile> (Var x') : T1' ; VE x'" using `valid ?\<Gamma>` by auto
 	  have "simple_ty T0'" using `\<Gamma>' \<turnstile> e'' : T0' ; G'` `e'' : values` value_simple_type by auto
-	  thus ?thesis sorry
+	  show ?thesis 
+	  proof (cases "e'' = Bool False")
+	    case True thus ?thesis sorry
+	  next
+	    case False thus ?thesis sorry
+	  qed
 	next
 	  case False
 	  from A False have "(Var z)[x'::=e''] = (Var z)" by auto
@@ -4043,11 +4045,11 @@ inductive2
   typing2 :: "varEnv \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> eff \<Rightarrow> bool" (" _ \<turnstile>\<^isub>2 _ : _ ; _ " [60,60,60,60] 60) 
 where
   T2_Var[intro]:   "\<lbrakk>valid \<Gamma>; (v,T)\<in>set \<Gamma>\<rbrakk>\<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Var v : T ; VE v" 
-| T2_Const[intro]: "valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (BI b) : T ; NE"
-| T2_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Num n) : ty.Int ; NE"
+| T2_Const[intro]: "valid \<Gamma> \<Longrightarrow> \<Delta>\<^isub>\<tau> b = T \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (BI b) : T ; TT"
+| T2_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Num n) : ty.Int ; TT"
 | T2_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Bool True) : ty.TT ; TT"
 | T2_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 (Bool False) : ty.FF ; FF"
-| T2_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile>\<^isub>2 b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; NE"
+| T2_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile>\<^isub>2 b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; TT"
 | T2_App[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U ; eff1 ; \<turnstile> U <: (T0 \<rightarrow> T1 : le); \<Gamma> \<turnstile>\<^isub>2 e2 : T; eff2 ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; NE"
 | T2_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile>\<^isub>2 e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; TE S x"
 | T2_If[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : T1; eff1; (\<Gamma> |+ eff1) \<turnstile>\<^isub>2 e2 : T2; eff2; (\<Gamma> |- eff1) \<turnstile>\<^isub>2 e3 : T3; eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow>
