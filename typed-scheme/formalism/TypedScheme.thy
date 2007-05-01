@@ -1372,7 +1372,7 @@ lemma envop_forget:
 nominal_primrec 
   "env_plus (NE) G = G"
   "env_plus (TE T x) G = envop restrict x T G"
-  "env_plus (VE x) G = G"
+  "env_plus (VE x) G = envop remove x (ty.FF) G"
   "env_plus (TT) G = G"
   "env_plus (FF) G = G"
   by auto
@@ -1387,14 +1387,15 @@ lemma env_plus_eqvt[eqvt]:
   fixes pi::"name prm"
   shows "pi\<bullet>(env_plus X G ) = env_plus (pi\<bullet>X) (pi\<bullet>G)"
 proof (nominal_induct X rule: eff.induct)
-  case (TE T x) thus ?case
-    by (perm_simp add: eqvts perm_fun_def split_def) auto
+  case (TE T x) thus ?case by (perm_simp add: eqvts split_def) auto
+next
+  case (VE x) thus ?case by (perm_simp add: eqvts split_def) auto
 qed(auto)
 
 nominal_primrec
   "env_minus (NE) G = G"
   "env_minus (TE T x) G = envop remove x T G"
-  "env_minus (VE x) G = G"
+  "env_minus (VE x) G = envop restrict x ty.FF G"
   "env_minus (TT) G = G"
   "env_minus (FF) G = G"
   by auto
@@ -1404,6 +1405,8 @@ lemma env_minus_eqvt[eqvt]:
   shows "pi\<bullet>(env_minus X G) = env_minus (pi\<bullet>X) (pi\<bullet>G)"
 proof (nominal_induct X rule: eff.induct)
   case (TE T x) thus ?case
+    by (perm_simp add: eqvts perm_fun_def split_def) auto
+  case (VE x) thus ?case
     by (perm_simp add: eqvts perm_fun_def split_def) auto
 qed(auto)
 
@@ -1497,43 +1500,31 @@ lemma envminus_empty:
   shows "env_minus eff [] = []"
   by (nominal_induct rule: eff.induct) auto
 
-lemma weakening_envplus: 
+lemma w_lem1:
+  fixes \<Gamma> \<Gamma>'
   assumes "\<Gamma> \<lless> \<Gamma>'" and a:"valid \<Gamma>'"
+  shows "map f \<Gamma> \<lless> map f \<Gamma>'"
+proof -
+  let ?mapfun = f
+  from prems have "set \<Gamma> <= set \<Gamma>'" by auto
+  hence "set (map ?mapfun \<Gamma>) <= set (map ?mapfun \<Gamma>')" by auto
+  hence "(map ?mapfun \<Gamma>) \<lless> (map ?mapfun \<Gamma>')" by blast
+  thus ?thesis .
+qed
+  
+  
+
+lemma weakening_envplus: 
+  assumes b:"\<Gamma> \<lless> \<Gamma>'" and a:"valid \<Gamma>'"
   shows "env_plus eff \<Gamma> \<lless> env_plus eff \<Gamma>'"
-  using a prems
-  proof (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.induct)
-    case (TE S x \<Gamma>1 \<Gamma>2)
-    let ?op = "restrict"
-    let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op S ty) else (v,ty)))"
-    have "env_plus (TE S x) \<Gamma>1 = envop ?op x S \<Gamma>1" by auto
-    hence A:"env_plus (TE S x) \<Gamma>1 = map ?mapfun \<Gamma>1" by auto
-    have "env_plus (TE S x) \<Gamma>2 = envop ?op x S \<Gamma>2" by auto
-    hence B:"env_plus (TE S x) \<Gamma>2 = map ?mapfun \<Gamma>2" by auto
-    have "set \<Gamma>1 <= set \<Gamma>2" using TE by auto
-    hence "?mapfun ` (set \<Gamma>1) <= ?mapfun ` (set \<Gamma>2)" by blast
-    hence "set (map ?mapfun \<Gamma>1) <= set (map ?mapfun \<Gamma>2)" by auto
-    hence "(map ?mapfun \<Gamma>1) \<lless> (map ?mapfun \<Gamma>2)" by blast
-    thus ?case using A B by auto
-  qed (auto)
+  using a prems w_lem1[of \<Gamma> \<Gamma>']
+  by (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.induct) auto
 
 lemma weakening_envminus: 
   assumes "\<Gamma> \<lless> \<Gamma>'" and a:"valid \<Gamma>'" and b:"valid \<Gamma>"
   shows "env_minus eff \<Gamma> \<lless> env_minus eff \<Gamma>'"
-  using a prems
-  proof (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.induct)
-    case (TE S x \<Gamma>1 \<Gamma>2)
-    let ?op = "remove"
-    let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op S ty) else (v,ty)))"
-    have "env_minus (TE S x) \<Gamma>1 = envop ?op x S \<Gamma>1" by auto
-    hence A:"env_minus (TE S x) \<Gamma>1 = map ?mapfun \<Gamma>1" by auto
-    have "env_minus (TE S x) \<Gamma>2 = envop ?op x S \<Gamma>2" by auto
-    hence B:"env_minus (TE S x) \<Gamma>2 = map ?mapfun \<Gamma>2" by auto
-    have "set \<Gamma>1 <= set \<Gamma>2" using TE by auto
-    hence "?mapfun ` (set \<Gamma>1) <= ?mapfun ` (set \<Gamma>2)" by blast
-    hence "set (map ?mapfun \<Gamma>1) <= set (map ?mapfun \<Gamma>2)" by auto
-    hence "(map ?mapfun \<Gamma>1) \<lless> (map ?mapfun \<Gamma>2)" by blast
-    thus ?case using A B by auto
-  qed (auto)
+  using a prems w_lem1[of \<Gamma> \<Gamma>']
+  by (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.induct) auto
 
 lemma envplus_valid:
   assumes "valid \<Gamma>"
@@ -1542,36 +1533,52 @@ lemma envplus_valid:
 proof (induct rule: valid.induct)
   case v1 thus ?case using envplus_empty by auto
 next
-  case (v2 \<Gamma>' a T) thus ?case
-    proof (nominal_induct rule: eff.induct)
-      case (TE S x)
-        let ?op = "restrict"
-        let ?G = "((a, T) # \<Gamma>')"
-        let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op S ty) else (v,ty)))"
-        have "?G |+ TE S x = envop ?op x S ?G" by auto
-        hence A:"?G |+ TE S x = map ?mapfun ?G" by auto
-        thus ?case using TE v2
-          proof (cases "a = x")
-            case False
-            hence B:"?G |+ TE S x = ((a,T)# (map ?mapfun \<Gamma>'))" by auto
-            have C:"valid (map ?mapfun \<Gamma>')" using v2 TE A by auto
-            have "map ?mapfun \<Gamma>' = \<Gamma>' |+ TE S x" by auto
-            hence "map ?mapfun \<Gamma>' = envop ?op x S \<Gamma>'" by auto
-            hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using C TE v2 envop_fresh by auto
-            hence E:"valid ((a,T)# (map ?mapfun \<Gamma>'))" using C by auto
-            thus ?thesis using B by auto
-          next
-            case True
-            hence B:"?G |+ TE S x = ((a,?op S T)# (map ?mapfun \<Gamma>'))" by auto
-            have C:"valid (map ?mapfun \<Gamma>')" using v2 TE A by auto
-            have "map ?mapfun \<Gamma>' = \<Gamma>' |+ TE S x" by auto
-            hence "map ?mapfun \<Gamma>' = envop ?op x S \<Gamma>'" by auto
-            hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using C TE v2 envop_fresh by auto
-            hence E:"valid ((a,?op S T)# (map ?mapfun \<Gamma>'))" using C by auto
-            thus ?thesis using B by auto
-          qed
-        qed (auto)
+  case (v2 \<Gamma>' a T) 
+
+  from v2 show ?case
+  proof (nominal_induct rule: eff.induct)
+    case (TE S x)
+    let ?op = "restrict"
+    let ?G = "((a, T) # \<Gamma>')"
+    let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op S ty) else (v,ty)))"
+    have C:"valid (map ?mapfun \<Gamma>')" using v2 `valid (\<Gamma>' |+ TE S x)` by auto
+    hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using v2 envop_fresh `valid (\<Gamma>' |+ TE S x)` by auto
+    thus ?case
+    proof (cases "a = x")
+      case False
+      from D have E:"valid ((a,T)# (map ?mapfun \<Gamma>'))" using C by auto
+      from False have B:"?G |+ TE S x = ((a,T)# (map ?mapfun \<Gamma>'))" by auto
+      thus ?thesis using E by auto
+    next
+      case True
+      hence B:"?G |+ TE S x = ((a,?op S T)# (map ?mapfun \<Gamma>'))" by auto
+      from D have E:"valid ((a,?op S T)# (map ?mapfun \<Gamma>'))" using C by auto
+      thus ?thesis using B by auto
+    qed
+  next
+    case (VE x) 
+    thus ?case 
+    proof -
+      let ?op = "remove"
+      let ?G = "((a, T) # \<Gamma>')"
+      let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op ty.FF ty) else (v,ty)))"
+      have C:"valid (map ?mapfun \<Gamma>')" using v2 `valid (\<Gamma>' |+ VE x)` by auto
+      hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using v2 envop_fresh `valid (\<Gamma>' |+ VE x)` by auto
+      thus ?case
+      proof (cases "a = x")
+	case False
+	from D have E:"valid ((a,T)# (map ?mapfun \<Gamma>'))" using C by auto
+	from False have B:"?G |+ VE x = ((a,T)# (map ?mapfun \<Gamma>'))" by auto
+	thus ?thesis using E by auto
+      next
+	case True
+	hence B:"?G |+ VE x = ((a,?op ty.FF T)# (map ?mapfun \<Gamma>'))" by auto
+	from D have E:"valid ((a,?op ty.FF T)# (map ?mapfun \<Gamma>'))" using C by auto
+	thus ?thesis using B by auto
       qed
+    qed
+  qed (auto)
+qed
 
 lemma envminus_valid:
   assumes "valid \<Gamma>"
@@ -1581,35 +1588,49 @@ proof (induct rule: valid.induct)
   case v1 thus ?case using envminus_empty by auto
 next
   case (v2 \<Gamma>' a T) thus ?case
-    proof (nominal_induct rule: eff.induct)
-      case (TE S x)
-        let ?op = "remove"
-        let ?G = "((a, T) # \<Gamma>')"
-        let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op S ty) else (v,ty)))"
-        have "?G |- TE S x = envop ?op x S ?G" by auto
-        hence A:"?G |- TE S x = map ?mapfun ?G" by auto
-        thus ?case using TE v2
-          proof (cases "a = x")
-            case False
-            hence B:"?G |- TE S x = ((a,T)# (map ?mapfun \<Gamma>'))" by auto
-            have C:"valid (map ?mapfun \<Gamma>')" using v2 TE A by auto
-            have "map ?mapfun \<Gamma>' = \<Gamma>' |- TE S x" by auto
-            hence "map ?mapfun \<Gamma>' = envop ?op x S \<Gamma>'" by auto
-            hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using C TE v2 envop_fresh by auto
-            hence E:"valid ((a,T)# (map ?mapfun \<Gamma>'))" using C by auto
-            thus ?thesis using B by auto
-          next
-            case True
-            hence B:"?G |- TE S x = ((a,?op S T)# (map ?mapfun \<Gamma>'))" by auto
-            have C:"valid (map ?mapfun \<Gamma>')" using v2 TE A by auto
-            have "map ?mapfun \<Gamma>' = \<Gamma>' |- TE S x" by auto
-            hence "map ?mapfun \<Gamma>' = envop ?op x S \<Gamma>'" by auto
-            hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using C TE v2 envop_fresh by auto
-            hence E:"valid ((a,?op S T)# (map ?mapfun \<Gamma>'))" using C by auto
-            thus ?thesis using B by auto
-          qed
-        qed (auto)
+  proof (nominal_induct rule: eff.induct)
+    case (TE S x)
+    let ?op = "remove"
+    let ?G = "((a, T) # \<Gamma>')"
+    let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op S ty) else (v,ty)))"
+    have C:"valid (map ?mapfun \<Gamma>')" using v2 `valid (\<Gamma>' |- TE S x)` by auto
+    hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using v2 envop_fresh `valid (\<Gamma>' |- TE S x)` by auto
+    thus ?case
+    proof (cases "a = x")
+      case False
+      from D have E:"valid ((a,T)# (map ?mapfun \<Gamma>'))" using C by auto
+      from False have B:"?G |- TE S x = ((a,T)# (map ?mapfun \<Gamma>'))" by auto
+      thus ?thesis using E by auto
+    next
+      case True
+      hence B:"?G |- TE S x = ((a,?op S T)# (map ?mapfun \<Gamma>'))" by auto
+      from D have E:"valid ((a,?op S T)# (map ?mapfun \<Gamma>'))" using C by auto
+      thus ?thesis using B by auto
+    qed
+  next
+    case (VE x) 
+    thus ?case 
+    proof -
+      let ?op = "restrict"
+      let ?G = "((a, T) # \<Gamma>')"
+      let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op ty.FF ty) else (v,ty)))"
+      have C:"valid (map ?mapfun \<Gamma>')" using v2 `valid (\<Gamma>' |- VE x)` by auto
+      hence D:"a \<sharp> (map ?mapfun \<Gamma>')" using v2 envop_fresh `valid (\<Gamma>' |- VE x)` by auto
+      thus ?case
+      proof (cases "a = x")
+	case False
+	from D have E:"valid ((a,T)# (map ?mapfun \<Gamma>'))" using C by auto
+	from False have B:"?G |- VE x = ((a,T)# (map ?mapfun \<Gamma>'))" by auto
+	thus ?thesis using E by auto
+      next
+	case True
+	hence B:"?G |- VE x = ((a,?op ty.FF T)# (map ?mapfun \<Gamma>'))" by auto
+	from D have E:"valid ((a,?op ty.FF T)# (map ?mapfun \<Gamma>'))" using C by auto
+	thus ?thesis using B by auto
       qed
+    qed
+  qed (auto)
+qed
 
 lemma weakening: 
   assumes a: "\<Gamma>1 \<turnstile> t : \<sigma> ; F" 
@@ -2800,6 +2821,31 @@ proof -
   ultimately show ?thesis by auto
 qed
 
+
+
+lemma envplus_set_ve:
+  shows "set (\<Gamma> |+ VE x) = (mapfun remove ty.FF x) ` set \<Gamma>"
+proof -
+  have A:"!! a b. a = b \<Longrightarrow> set a = set b" by auto
+  have "\<Gamma> |+ VE x = map (mapfun remove ty.FF x) \<Gamma>" by auto
+  hence "set (\<Gamma> |+ VE x) = set (map (mapfun remove ty.FF x) \<Gamma>)" 
+    using A[of "(\<Gamma> |+ VE x)" "map (mapfun remove ty.FF x) \<Gamma>"] by auto
+  also have "\<dots> = (mapfun remove ty.FF x) ` set \<Gamma>" by auto
+  ultimately show ?thesis by auto
+qed
+
+lemma envminus_set_ve:
+  shows "set (\<Gamma> |- VE x) = (mapfun restrict ty.FF x) ` set \<Gamma>"
+proof -
+  have A:"!! a b. a = b \<Longrightarrow> set a = set b" by auto
+  have "\<Gamma> |- VE x = map (mapfun restrict ty.FF x) \<Gamma>" by auto
+  hence "set (\<Gamma> |- VE x) = set (map (mapfun restrict ty.FF x) \<Gamma>)" 
+    using A[of "(\<Gamma> |- VE x)" "map (mapfun restrict ty.FF x) \<Gamma>"] by auto
+  also have "\<dots> = (mapfun restrict ty.FF x) ` set \<Gamma>" by auto
+  ultimately show ?thesis by auto
+qed
+
+
 lemma fresh_weakening:
   assumes a:"x\<sharp>e" and b:"\<Gamma> \<turnstile> e : T ; F" and c: "valid \<Gamma>" 
   shows "(\<Gamma> - (x,T')) \<turnstile> e : T ; F"
@@ -2870,9 +2916,77 @@ next
     next
       case (VE z)
       from VE have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; VE z" by auto
-      from VE have 2:"(\<Gamma>' - (x, T') |+ eff.VE z) \<turnstile> e2 : T2 ; F2" by auto
-      from VE have 3:"(\<Gamma>' - (x, T') |- eff.VE z) \<turnstile> e3 : T3 ; F3" by auto
-      from 1 2 3 show ?case using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` by auto
+      have val1:"valid (\<Gamma>' |+ VE z)" using VE envplus_valid[of \<Gamma>' "VE z"] by auto
+      have val2:"valid (\<Gamma>' |- VE z)" using VE envminus_valid[of \<Gamma>' "VE z"] by auto
+      have "valid (\<Gamma>' |- VE z)" using VE envminus_valid[of \<Gamma>' "VE z"] by auto
+      have A0:"!!T0 . (\<Gamma>' |- VE z) - (x, T0) \<turnstile> e3 : T3 ; F3" using VE(7) A `valid (\<Gamma>' |- VE z)` by auto
+
+      have A:"!!T0 . (\<Gamma>' |+ VE z) - (x, T0) \<turnstile> e2 : T2 ; F2" using VE(5) A `valid (\<Gamma>' |+ VE z)` by auto
+      let ?op = "restrict"
+      let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op ty.FF ty) else (v,ty)))"
+      have B:"!! p. set ((\<Gamma>' |+ VE z) - p) = ((mapfun remove ty.FF z) ` (set \<Gamma>')) - {p}" 
+	using envplus_set_ve set_remove_comm[of "(\<Gamma>' |+ VE z)"] by auto
+      have image_lem:"!! f S v. (f ` S) - {(f v)} <= (f ` (S - {v}))" by auto
+      note image_lem[of "mapfun remove ty.FF z" "set \<Gamma>'" "(x,T0)"]
+      
+      have eq1:"!! p. mapfun remove ty.FF z ` set \<Gamma>' - {mapfun remove ty.FF z p} = set ((\<Gamma>' |+ VE z) - (mapfun remove ty.FF z p))" using envplus_set_ve set_remove_comm[of "(\<Gamma>' |+ VE z)"] by auto
+
+      have eq2:"!! p. mapfun remove ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |+ VE z)"
+      proof -
+	fix p
+	show "mapfun remove ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |+ VE z)"
+	  using envplus_set_ve[of _ "\<Gamma>' - p"]  set_remove_comm[of \<Gamma>'] by auto
+      qed
+      have eq3:"!! x T0. mapfun remove ty.FF z (x,T0) = (x, (if (x = z) then (remove ty.FF T0) else (T0)))" by auto
+      let ?removeT' = "(if (x = z) then (remove ty.FF T') else (T'))"
+      have goal:"((\<Gamma>' |+ VE z) - (x,?removeT')) \<lless> ((\<Gamma>' - (x,T')) |+ VE z)"
+      proof -
+	have " mapfun remove ty.FF z ` set \<Gamma>' - {mapfun remove ty.FF z (x,T')} <= 
+	  mapfun remove ty.FF z ` (set \<Gamma>' - {(x,T')})" using  image_lem[of "mapfun remove ty.FF z" "set \<Gamma>'" "(x,T')"] by auto
+	hence " mapfun remove ty.FF z ` set \<Gamma>' - {mapfun remove ty.FF z (x,T')} <= 
+	  set ((\<Gamma>' - ((x,T'))) |+ VE z)" using eq2[of " (x, T')"] by auto
+	hence "set ((\<Gamma>' |+ VE z) - (mapfun remove ty.FF z (x,T'))) <= 
+	  set ((\<Gamma>' - ((x,T'))) |+ VE z)" 
+	  using eq1[of "(x,T')"] by auto
+	hence "set ((\<Gamma>' |+ VE z) - (x,?removeT')) <= set ((\<Gamma>' - (x,T')) |+ VE z)" using eq3 by auto
+	thus ?thesis by auto
+      qed
+      have val3:"valid ((\<Gamma>' |+ VE z) - (x,?removeT'))" using val1 valid_remove by auto
+      have "valid ((\<Gamma>' - (x, T')))" using `valid \<Gamma>'` valid_remove envplus_valid by auto
+      hence val4:"valid ((\<Gamma>' - (x, T')) |+ VE z)" using  envplus_valid[of "\<Gamma>' - (x, T')" "VE z"] by auto
+      from  A have "(\<Gamma>' |+ VE z) - (x,?removeT') \<turnstile>  e2 : T2 ; F2" by auto
+      hence 2:"(\<Gamma>' - (x, T')) |+ VE z \<turnstile> e2 : T2 ; F2" using goal val3 val4
+	weakening[of  "(\<Gamma>' |+ VE z) - (x,?removeT')" e2 T2 F2 "\<Gamma>' - (x,T') |+ VE z"] by auto
+
+      have eq4:"!! p. mapfun restrict ty.FF z ` set \<Gamma>' - {mapfun restrict ty.FF z p} = set ((\<Gamma>' |- VE z) - (mapfun restrict ty.FF z p))" using envminus_set_ve[of _ \<Gamma>'] set_remove_comm[of "(\<Gamma>' |- VE z)"] by auto
+
+      have eq5:"!! p. mapfun restrict ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |- VE z)"
+      proof -
+	fix p
+	show "mapfun restrict ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |- VE z)"
+	  using envminus_set_ve[of _ "\<Gamma>' - p" ] set_remove_comm[of \<Gamma>'] by auto
+      qed
+      have eq6:"!! x T0. mapfun restrict ty.FF z (x,T0) = (x, (if (x = z) then (restrict ty.FF T0) else (T0)))" by auto
+      let ?restrictT' = "(if (x = z) then (restrict ty.FF T') else (T'))"
+      have goal':"((\<Gamma>' |- VE z) - (x,?restrictT')) \<lless> ((\<Gamma>' - (x,T')) |- VE z)"
+      proof -
+	have " mapfun restrict ty.FF z ` set \<Gamma>' - {mapfun restrict ty.FF z (x,T')} <= 
+	  mapfun restrict ty.FF z ` (set \<Gamma>' - {(x,T')})" using  image_lem[of "mapfun restrict ty.FF z" "set \<Gamma>'" "(x,T')"] by auto
+	hence " mapfun restrict ty.FF z ` set \<Gamma>' - {mapfun restrict ty.FF z (x,T')} <= 
+	  set ((\<Gamma>' - ((x,T'))) |- VE z)" using eq5[of " (x, T')"] by auto
+	hence "set ((\<Gamma>' |- VE z) - (mapfun restrict ty.FF z (x,T'))) <= 
+	  set ((\<Gamma>' - ((x,T'))) |- VE z)" 
+	  using eq4[of "(x,T')"] by auto
+	hence "set ((\<Gamma>' |- VE z) - (x,?restrictT')) <= set ((\<Gamma>' - (x,T')) |- VE z)" using eq6 by auto
+	thus ?thesis by auto
+      qed
+      have val5:"valid ((\<Gamma>' |- VE z) - (x,?restrictT'))" using val2 valid_remove by auto
+      have "valid ((\<Gamma>' - (x, T')))" using `valid \<Gamma>'` valid_remove envminus_valid by auto
+      hence val6:"valid ((\<Gamma>' - (x, T')) |- VE z)" using  envminus_valid[of "\<Gamma>' - (x, T')" "VE z"] by auto
+      from  A0 have "(\<Gamma>' |- VE z) - (x,?restrictT') \<turnstile>  e3 : T3 ; F3" by auto
+      hence 3:"(\<Gamma>' - (x, T')) |- VE z \<turnstile> e3 : T3 ; F3" using goal' val5 val6
+	weakening[of  "(\<Gamma>' |- VE z) - (x,?restrictT')" e3 T3 F3 "\<Gamma>' - (x,T') |- VE z"] by auto
+      from 1 2 3 show ?thesis using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` by auto
     next
       case (TE U z)
       from TE have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; TE U z" by auto
@@ -3097,7 +3211,6 @@ next
     thus ?thesis using A v False by auto
   qed
 next
-next
   case (BI b)
   have A:"(BI b)[x::=e'] = (BI b)" by auto
   have B:"F = eff.NE" using BI bi_ty_elim by auto
@@ -3279,21 +3392,74 @@ next
 	thus ?case using `F' = NE` by auto
       next
 	case (VE z)
-	from VE have "\<exists>S1 G1.  \<Gamma>' \<turnstile> t1[x'::=e''] : S1 ; G1  \<and> \<turnstile> S1 <: T1 \<and> \<turnstile> G1 <e: VE z" using Iff by auto
-	then obtain S1 G1 where  A:"\<Gamma>' \<turnstile> t1[x'::=e''] : S1 ; G1  "" \<turnstile> S1 <: T1 "" \<turnstile> G1 <e: VE z" by auto
-	have simple:"G1 = VE z \<or> simple_eff G1" using A below_ve_simple by blast
-	have p1:"(?\<Gamma> \<turnstile> t2 : T2 ; F2)" using prems by auto
-	have p2:"(?\<Gamma> \<turnstile> t3 : T3 ; F3)" using prems by auto
-	from p1 have "\<exists>S2 G2.  \<Gamma>' \<turnstile> t2[x'::=e''] : S2 ; G2  \<and> \<turnstile> S2 <: T2 \<and> \<turnstile> G2 <e: F2" using Iff by auto
-	then obtain S2 G2 where  B:"\<Gamma>' \<turnstile> t2[x'::=e''] : S2 ; G2  "" \<turnstile> S2 <: T2 "" \<turnstile> G2 <e: F2" by auto
-	from p2 have "\<exists>S3 G3.  \<Gamma>' \<turnstile> t3[x'::=e''] : S3 ; G3  \<and> \<turnstile> S3 <: T3 \<and> \<turnstile> G3 <e: F3" using Iff by auto
-	then obtain S3 G3 where  C:"\<Gamma>' \<turnstile> t3[x'::=e''] : S3 ; G3  "" \<turnstile> S3 <: T3 "" \<turnstile> G3 <e: F3" by auto
-	have B':"\<Gamma>' |+ G1 \<turnstile> t2[x'::=e''] : S2 ; G2" using B simple by auto
-	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
-	have D:"\<turnstile> S2 <: T'" using prems B by auto
-	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; eff.NE"  by auto
-	thus ?case using `F' = NE` by auto
+	hence  A:"t1 = (Var z) " "?\<Gamma> \<turnstile> Var z : T1 ; VE z"
+	  using ve_ty_elim[OF `?\<Gamma> \<turnstile> t1 :  T1;  VE z`] using eff.inject by auto
+	have size1:"(Var z\<guillemotleft>Iff t1 t2 t3)" using A by simp
+	note Iff(1)[of "Var z"]
+        hence ih_f:"!! c \<sigma> \<Gamma> T F e' T0 F0 . 
+          (c,\<sigma>)#\<Gamma> \<turnstile> (Var z) : T ; F \<Longrightarrow> \<Gamma> \<turnstile> e' : T0 ; F0 \<Longrightarrow> \<turnstile> T0 <: \<sigma> \<Longrightarrow> valid ((c,\<sigma>)#\<Gamma>) \<Longrightarrow> closed e' \<Longrightarrow> e' : values
+          \<Longrightarrow> EX T' F' . \<Gamma> \<turnstile> (Var z)[c::=e'] : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F" using size1 by auto
+        have "EX A' Fn' . \<Gamma>' \<turnstile> (Var z)[x'::=e''] : A' ; Fn' \<and> \<turnstile> A' <: T1 \<and> \<turnstile> Fn' <e: VE z" 
+           using ih_f A Iff by auto
+	then obtain A' Fn' where  B:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : A' ; Fn' \<and> \<turnstile> A' <:T1" by auto
+	let ?mapfun = "(%f. (% (v,ty). (if (z = v) then (v,f ty.FF ty) else (v,ty))))"
+        let ?\<Gamma>1 = "(map (?mapfun remove) \<Gamma>')"
+        let ?\<Gamma>2 = "(map (?mapfun restrict) \<Gamma>')"          
+        have "valid \<Gamma>'" using `valid ?\<Gamma>` using valid_elim[of x' T1' \<Gamma>'] by auto
+	show ?case 
+	proof (cases "x' = z")
+	  case True
+          from A True have  "(Var z)[x'::=e''] = e''" by auto
+          hence D:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : T0' ; G'" "closed ((Var z)[x'::=e''])" "((Var z)[x'::=e'']) : values"
+	    using Iff by auto
+          have "\<turnstile> T0' <: T1'" .
+          note var_ty_elim[of ?\<Gamma> z _ "VE z"]
+          hence "(x', T1') : set ?\<Gamma>" using A True by auto
+          have "?\<Gamma> \<turnstile> (Var x') : T1' ; VE x'" using `valid ?\<Gamma>` by auto
+	  have "simple_ty T0'" using `\<Gamma>' \<turnstile> e'' : T0' ; G'` `e'' : values` value_simple_type by auto
+	  thus ?thesis sorry
+	next
+	  case False
+	  from A False have "(Var z)[x'::=e''] = (Var z)" by auto
+	  hence D:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : T1 ; VE z" using False A 
+          proof -
+            have q1:"?\<Gamma> \<turnstile> Var z : T1 ; VE z" using A by auto
+            have "x' \<sharp> Var z" using trm.fresh False fresh_atm by auto
+            hence "\<Gamma>' \<turnstile> Var z : T1 ; VE z" using q1 fresh_weakening_cons `valid ((x',T1')# \<Gamma>')` by auto
+            thus ?thesis using `(Var z)[x'::=e''] = Var z` by auto
+          qed
+          hence typetst: "\<Gamma>' \<turnstile> t1[x'::=e''] : T1 ; VE z" using A by auto
+	  have F:"?\<Gamma> |+ VE z = (x',T1') # ?\<Gamma>1" using False by auto
+          hence H:"(x',T1') # ?\<Gamma>1 \<turnstile> t2 : T2 ; F2" using `?\<Gamma> |+ VE z \<turnstile> t2 : T2 ; F2` by auto
+          hence K:"valid ?\<Gamma>1" using envop_valid `valid \<Gamma>'` by auto
+          have J:"?\<Gamma>1 \<turnstile> e'' : T0' ; G'" using K `valid \<Gamma>'` closed_any_env `closed e''` Iff by blast
+          have "x' \<sharp> ?\<Gamma>1" using Iff valid_elim[of x' T1' \<Gamma>'] envop_fresh[of x' \<Gamma>' remove] `valid \<Gamma>'` by auto
+          hence "valid ((x',T1')#?\<Gamma>1)" using `valid ?\<Gamma>1` by auto
+          hence ex1:"\<exists>S2 G2. ?\<Gamma>1  \<turnstile> t2[x'::=e''] : S2 ; G2  \<and> \<turnstile> S2 <: T2 \<and> \<turnstile> G2 <e: F2"
+            using H J K Iff by auto 
+
+	  have G:"?\<Gamma> |- VE z = (x',T1') # ?\<Gamma>2" using False by auto
+          hence H:"(x',T1') # ?\<Gamma>2 \<turnstile> t3 : T3 ; F3" using `?\<Gamma> |- VE z \<turnstile> t3 : T3 ; F3` by auto
+          hence K:"valid ?\<Gamma>2" using envop_valid `valid \<Gamma>'` by auto
+          have J:"?\<Gamma>2 \<turnstile> e'' : T0' ; G'" using K `valid \<Gamma>'` closed_any_env `closed e''` Iff by blast
+          have "x' \<sharp> ?\<Gamma>2" using Iff valid_elim[of x' T1' \<Gamma>'] envop_fresh[of x' \<Gamma>' _ z _] `valid \<Gamma>'` by auto
+          hence "valid ((x',T1')#?\<Gamma>2)" using `valid ?\<Gamma>2` by auto
+          hence ex2:"\<exists>S3 G3. ?\<Gamma>2  \<turnstile> t3[x'::=e''] : S3 ; G3  \<and> \<turnstile> S3 <: T3 \<and> \<turnstile> G3 <e: F3"
+            using H J K Iff by auto
+
+          from ex1 obtain S2 G2 where 1:"?\<Gamma>1  \<turnstile> t2[x'::=e''] : S2 ; G2"" \<turnstile> S2 <: T'" using `\<turnstile> T2 <: T'` by auto
+          from ex2 obtain S3 G3 where 2:"?\<Gamma>2  \<turnstile> t3[x'::=e''] : S3 ; G3"" \<turnstile> S3 <: T'" using `\<turnstile> T3 <: T'`  by auto
+          have 4:"?\<Gamma>1 = \<Gamma>' |+ (VE z)" by auto
+          have 5:"?\<Gamma>2 = \<Gamma>' |- (VE z)" by auto
+          have X:"!! G G' e T F. G = G' \<Longrightarrow> G \<turnstile> e : T ; F \<Longrightarrow> G' \<turnstile> e : T ; F" by auto
+          from 1 4 have 6:"\<Gamma>' |+ (VE z) \<turnstile> t2[x'::=e''] : S2 ; G2" using X[of ?\<Gamma>1 "\<Gamma>' |+ (VE z)" " t2[x'::=e'']" S2 G2]
+            by blast
+          from 2 5 have 7:"\<Gamma>' |- (VE z) \<turnstile> t3[x'::=e''] : S3 ; G3" using X[of ?\<Gamma>2 "\<Gamma>' |- (VE z)" " t3[x'::=e'']" S3 G3]
+            by blast
+          
+          from typetst 1 2 6 7 have "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; eff.NE" by auto
+	  thus ?thesis  using `F' = NE` by auto
+	qed
       next
 	case (TE U z)
 	have "EX f A A1 Fn B. t1 = (App f (Var z)) \<and> (x', T1') # \<Gamma>' \<turnstile> f : B ; Fn \<and> \<turnstile> B <: A1 \<rightarrow> T1 : Latent U \<and>
