@@ -1330,6 +1330,10 @@ lemma restrict_remove_soundness:
 using restrict_soundness[OF A _ B] remove_soundness[OF A _ B]
 by auto
 
+fun replace :: "ty \<Rightarrow> ty \<Rightarrow> ty"
+where
+  "replace t u = t"
+
 fun mapfun :: "(ty \<Rightarrow> ty \<Rightarrow> ty) \<Rightarrow> ty \<Rightarrow> name \<Rightarrow> (name*ty) \<Rightarrow> (name * ty)"
 where
 mapfun_def: "mapfun f T x (v,S) =  (if (x = v) then (v, f T S) else (v,S))" 
@@ -1395,7 +1399,7 @@ qed(auto)
 nominal_primrec
   "env_minus (NE) G = G"
   "env_minus (TE T x) G = envop remove x T G"
-  "env_minus (VE x) G = envop restrict x ty.FF G"
+  "env_minus (VE x) G = envop replace x ty.FF G"
   "env_minus (TT) G = G"
   "env_minus (FF) G = G"
   by auto
@@ -1407,7 +1411,7 @@ proof (nominal_induct X rule: eff.induct)
   case (TE T x) thus ?case
     by (perm_simp add: eqvts perm_fun_def split_def) auto
   case (VE x) thus ?case
-    by (perm_simp add: eqvts perm_fun_def split_def) auto
+    by (perm_simp add: eqvts perm_fun_def split_def) 
 qed(auto)
 
 abbreviation   env_plus_syn :: "varEnv \<Rightarrow> eff \<Rightarrow> varEnv" ("_ |+ _"  [70,70] 70)
@@ -1611,7 +1615,7 @@ next
     case (VE x) 
     thus ?case 
     proof -
-      let ?op = "restrict"
+      let ?op = "replace"
       let ?G = "((a, T) # \<Gamma>')"
       let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op ty.FF ty) else (v,ty)))"
       have C:"valid (map ?mapfun \<Gamma>')" using v2 `valid (\<Gamma>' |- VE x)` by auto
@@ -2832,13 +2836,13 @@ proof -
 qed
 
 lemma envminus_set_ve:
-  shows "set (\<Gamma> |- VE x) = (mapfun restrict ty.FF x) ` set \<Gamma>"
+  shows "set (\<Gamma> |- VE x) = (mapfun replace ty.FF x) ` set \<Gamma>"
 proof -
   have A:"!! a b. a = b \<Longrightarrow> set a = set b" by auto
-  have "\<Gamma> |- VE x = map (mapfun restrict ty.FF x) \<Gamma>" by auto
-  hence "set (\<Gamma> |- VE x) = set (map (mapfun restrict ty.FF x) \<Gamma>)" 
-    using A[of "(\<Gamma> |- VE x)" "map (mapfun restrict ty.FF x) \<Gamma>"] by auto
-  also have "\<dots> = (mapfun restrict ty.FF x) ` set \<Gamma>" by auto
+  have "\<Gamma> |- VE x = map (mapfun replace ty.FF x) \<Gamma>" by auto
+  hence "set (\<Gamma> |- VE x) = set (map (mapfun replace ty.FF x) \<Gamma>)" 
+    using A[of "(\<Gamma> |- VE x)" "map (mapfun replace ty.FF x) \<Gamma>"] by auto
+  also have "\<dots> = (mapfun replace ty.FF x) ` set \<Gamma>" by auto
   ultimately show ?thesis by auto
 qed
 
@@ -2919,7 +2923,7 @@ next
       have A0:"!!T0 . (\<Gamma>' |- VE z) - (x, T0) \<turnstile> e3 : T3 ; F3" using VE(7) A `valid (\<Gamma>' |- VE z)` by auto
 
       have A:"!!T0 . (\<Gamma>' |+ VE z) - (x, T0) \<turnstile> e2 : T2 ; F2" using VE(5) A `valid (\<Gamma>' |+ VE z)` by auto
-      let ?op = "restrict"
+      let ?op = "replace"
       let ?mapfun = "(% (v,ty). (if (x = v) then (v,?op ty.FF ty) else (v,ty)))"
       have B:"!! p. set ((\<Gamma>' |+ VE z) - p) = ((mapfun remove ty.FF z) ` (set \<Gamma>')) - {p}" 
 	using envplus_set_ve set_remove_comm[of "(\<Gamma>' |+ VE z)"] by auto
@@ -2955,34 +2959,34 @@ next
       hence 2:"(\<Gamma>' - (x, T')) |+ VE z \<turnstile> e2 : T2 ; F2" using goal val3 val4
 	weakening[of  "(\<Gamma>' |+ VE z) - (x,?removeT')" e2 T2 F2 "\<Gamma>' - (x,T') |+ VE z"] by auto
 
-      have eq4:"!! p. mapfun restrict ty.FF z ` set \<Gamma>' - {mapfun restrict ty.FF z p} = set ((\<Gamma>' |- VE z) - (mapfun restrict ty.FF z p))" using envminus_set_ve[of _ \<Gamma>'] set_remove_comm[of "(\<Gamma>' |- VE z)"] by auto
+      have eq4:"!! p. mapfun replace ty.FF z ` set \<Gamma>' - {mapfun replace ty.FF z p} = set ((\<Gamma>' |- VE z) - (mapfun replace ty.FF z p))" using envminus_set_ve[of _ \<Gamma>'] set_remove_comm[of "(\<Gamma>' |- VE z)"] by auto
 
-      have eq5:"!! p. mapfun restrict ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |- VE z)"
+      have eq5:"!! p. mapfun replace ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |- VE z)"
       proof -
 	fix p
-	show "mapfun restrict ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |- VE z)"
+	show "mapfun replace ty.FF z ` (set \<Gamma>' - {p}) = set (\<Gamma>' - p |- VE z)"
 	  using envminus_set_ve[of _ "\<Gamma>' - p" ] set_remove_comm[of \<Gamma>'] by auto
       qed
-      have eq6:"!! x T0. mapfun restrict ty.FF z (x,T0) = (x, (if (x = z) then (restrict ty.FF T0) else (T0)))" by auto
-      let ?restrictT' = "(if (x = z) then (restrict ty.FF T') else (T'))"
-      have goal':"((\<Gamma>' |- VE z) - (x,?restrictT')) \<lless> ((\<Gamma>' - (x,T')) |- VE z)"
+      have eq6:"!! x T0. mapfun replace ty.FF z (x,T0) = (x, (if (x = z) then (replace ty.FF T0) else (T0)))" by auto
+      let ?replaceT' = "(if (x = z) then (replace ty.FF T') else (T'))"
+      have goal':"((\<Gamma>' |- VE z) - (x,?replaceT')) \<lless> ((\<Gamma>' - (x,T')) |- VE z)"
       proof -
-	have " mapfun restrict ty.FF z ` set \<Gamma>' - {mapfun restrict ty.FF z (x,T')} <= 
-	  mapfun restrict ty.FF z ` (set \<Gamma>' - {(x,T')})" using  image_lem[of "mapfun restrict ty.FF z" "set \<Gamma>'" "(x,T')"] by auto
-	hence " mapfun restrict ty.FF z ` set \<Gamma>' - {mapfun restrict ty.FF z (x,T')} <= 
+	have " mapfun replace ty.FF z ` set \<Gamma>' - {mapfun replace ty.FF z (x,T')} <= 
+	  mapfun replace ty.FF z ` (set \<Gamma>' - {(x,T')})" using  image_lem[of "mapfun replace ty.FF z" "set \<Gamma>'" "(x,T')"] by auto
+	hence " mapfun replace ty.FF z ` set \<Gamma>' - {mapfun replace ty.FF z (x,T')} <= 
 	  set ((\<Gamma>' - ((x,T'))) |- VE z)" using eq5[of " (x, T')"] by auto
-	hence "set ((\<Gamma>' |- VE z) - (mapfun restrict ty.FF z (x,T'))) <= 
+	hence "set ((\<Gamma>' |- VE z) - (mapfun replace ty.FF z (x,T'))) <= 
 	  set ((\<Gamma>' - ((x,T'))) |- VE z)" 
 	  using eq4[of "(x,T')"] by auto
-	hence "set ((\<Gamma>' |- VE z) - (x,?restrictT')) <= set ((\<Gamma>' - (x,T')) |- VE z)" using eq6 by auto
+	hence "set ((\<Gamma>' |- VE z) - (x,?replaceT')) <= set ((\<Gamma>' - (x,T')) |- VE z)" using eq6 by auto
 	thus ?thesis by auto
       qed
-      have val5:"valid ((\<Gamma>' |- VE z) - (x,?restrictT'))" using val2 valid_remove by auto
+      have val5:"valid ((\<Gamma>' |- VE z) - (x,?replaceT'))" using val2 valid_remove by auto
       have "valid ((\<Gamma>' - (x, T')))" using `valid \<Gamma>'` valid_remove envminus_valid by auto
       hence val6:"valid ((\<Gamma>' - (x, T')) |- VE z)" using  envminus_valid[of "\<Gamma>' - (x, T')" "VE z"] by auto
-      from  A0 have "(\<Gamma>' |- VE z) - (x,?restrictT') \<turnstile>  e3 : T3 ; F3" by auto
+      from  A0 have "(\<Gamma>' |- VE z) - (x,?replaceT') \<turnstile>  e3 : T3 ; F3" by auto
       hence 3:"(\<Gamma>' - (x, T')) |- VE z \<turnstile> e3 : T3 ; F3" using goal' val5 val6
-	weakening[of  "(\<Gamma>' |- VE z) - (x,?restrictT')" e3 T3 F3 "\<Gamma>' - (x,T') |- VE z"] by auto
+	weakening[of  "(\<Gamma>' |- VE z) - (x,?replaceT')" e3 T3 F3 "\<Gamma>' - (x,T') |- VE z"] by auto
       from 1 2 3 show ?thesis using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` by auto
     next
       case (TE U z)
@@ -3148,8 +3152,23 @@ lemma unique_var_typing:
     thus False using `x \<sharp> \<Gamma>` by auto
   qed
 
-        
-    
+inductive_cases2 tt_sub_ff:"\<turnstile> ty.TT <: ty.FF"
+inductive_cases2 ff_sub_tt:"\<turnstile> ty.FF <: ty.TT"
+
+lemma value_effect_tt_or_ff:
+  assumes "v : values" and "\<Gamma> \<turnstile> v : T ; F"
+  shows "F = FF \<and> v = Bool False \<or> F = TT \<and> v ~= Bool False"
+  using prems
+proof (nominal_induct v avoiding: \<Gamma> rule: values.strong_induct)
+  case num_value thus ?case using num_ty_elim by auto
+next
+  case bi_value thus ?case using bi_ty_elim by auto
+next
+  case abs_value thus ?case using abs_ty_elim[of \<Gamma> _ _ _ T F] by auto
+next
+  case (bool_value b)
+  thus ?case using true_ty_elim false_ty_elim by (cases b) auto
+qed
 
 lemma preserve_subst:
   assumes "(x,T0)#\<Gamma> \<turnstile> e : T ; F" and "\<Gamma> \<turnstile> e' : T1 ; G" and "\<turnstile> T1 <: T0" and "valid ((x,T0)#\<Gamma>)" 
@@ -3401,7 +3420,7 @@ next
 	then obtain A' Fn' where  B:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : A' ; Fn' \<and> \<turnstile> A' <:T1" by auto
 	let ?mapfun = "(%f. (% (v,ty). (if (z = v) then (v,f ty.FF ty) else (v,ty))))"
         let ?\<Gamma>1 = "(map (?mapfun remove) \<Gamma>')"
-        let ?\<Gamma>2 = "(map (?mapfun restrict) \<Gamma>')"          
+        let ?\<Gamma>2 = "(map (?mapfun replace) \<Gamma>')"          
         have "valid \<Gamma>'" using `valid ?\<Gamma>` using valid_elim[of x' T1' \<Gamma>'] by auto
 	show ?case 
 	proof (cases "x' = z")
@@ -3414,11 +3433,85 @@ next
           hence "(x', T1') : set ?\<Gamma>" using A True by auto
           have "?\<Gamma> \<turnstile> (Var x') : T1' ; VE x'" using `valid ?\<Gamma>` by auto
 	  have "simple_ty T0'" using `\<Gamma>' \<turnstile> e'' : T0' ; G'` `e'' : values` value_simple_type by auto
+	  let ?mapfun = "(%f. (% (v,ty). (if (z = v) then (v,f ty.FF ty) else (v,ty))))"
+          let ?\<Gamma>1 = "(map (?mapfun remove) \<Gamma>')"
+          let ?\<Gamma>2 = "(map (?mapfun replace) \<Gamma>')"  
+
+          have "?\<Gamma>1 = envop remove z ty.FF \<Gamma>'" by auto
+          have "?\<Gamma>2 = envop replace z ty.FF \<Gamma>'" by auto
+          have "x' \<sharp> \<Gamma>'" using Iff valid_elim[of x' T1' \<Gamma>'] by auto
+          hence "?\<Gamma>1 = \<Gamma>'" using True envop_forget `valid \<Gamma>'` by auto
+          hence GA:"?\<Gamma> |+ VE z = (x',remove ty.FF T1') # \<Gamma>'" using True by auto
+          hence G1:"\<dots> \<turnstile> t2 : T2; F2" using `(?\<Gamma> |+ VE z)\<turnstile> t2 : T2 ; F2` by auto
+          have "?\<Gamma>2 = \<Gamma>'" using `x' \<sharp> \<Gamma>'` True envop_forget `valid \<Gamma>'` by auto
+          hence "?\<Gamma> |- VE z = (x',replace ty.FF T1') # \<Gamma>'" using True by auto
+	  hence GB:"?\<Gamma> |- VE z = (x',ty.FF) # \<Gamma>'" by auto
+          hence G2:"\<dots> \<turnstile> t3 : T3; F3" using `(?\<Gamma> |- VE z)\<turnstile> t3 : T3 ; F3` by auto
+          have "valid (?\<Gamma> |+ VE z)" using `valid ?\<Gamma>` envplus_valid[of ?\<Gamma> "VE z"] by auto
+          hence G3:"valid ((x',remove ty.FF T1') # \<Gamma>')" using GA by auto
+          have "valid (?\<Gamma> |- VE z)" using `valid ?\<Gamma>` envminus_valid[of ?\<Gamma> "VE z"] by auto
+          hence G4:"valid ((x',ty.FF) # \<Gamma>')" using GB by auto        
 	  show ?thesis 
 	  proof (cases "e'' = Bool False")
-	    case True thus ?thesis sorry
+	    case True
+	    hence "(Var z)[x'::=e''] = Bool False" using `x' = z` by auto
+	    hence "t1[x'::=e''] = Bool False" using `t1 = Var z` by auto
+	    hence X1:"?\<Gamma> \<turnstile> t1[x'::=e''] : ty.FF ; FF" using `valid ?\<Gamma>` by auto
+	    have "\<Gamma>' \<turnstile> e'' : ty.FF ; FF" using True `valid \<Gamma>'` by auto
+	    note `?\<Gamma> |- VE z = (x', ty.FF) # \<Gamma>'`
+	    hence "valid  ((x', ty.FF) # \<Gamma>')" using G4 by auto
+	    have X2:"(x', ty.FF) # \<Gamma>' \<turnstile> t3 : T3 ; F3" using VE  `?\<Gamma> |- VE z = (x', ty.FF) # \<Gamma>'` by auto
+	    note Iff(4)[ OF X2 `\<Gamma>' \<turnstile> e'' : ty.FF ; FF ` _ `valid ((x', ty.FF) # \<Gamma>')`]
+	    then obtain T'' F'' where X3:"\<Gamma>' \<turnstile> t3[x'::=e''] : T'' ; F''  " and X4:" \<turnstile> T'' <: T3 "" \<turnstile> F'' <e: F3"
+	      using `closed e''` `e'' : values` by auto
+	    hence "\<turnstile> T'' <: T'" using `\<turnstile> T3 <: T'` by auto
+	    hence "\<Gamma>' \<turnstile> Iff (Bool False) (t2[x'::=e'']) (t3[x'::=e'']) : T'' ; NE" using `valid \<Gamma>'` X3 by auto
+	    hence "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T'' ; NE" using ` t1[x'::=e''] = Bool False` by auto
+	    thus ?thesis  using `\<turnstile> T'' <: T'` `F' = NE` by auto
 	  next
-	    case False thus ?thesis sorry
+	    case False
+	    hence "(Var z)[x'::=e''] = e''" using `x' = z` by auto
+	    hence "t1[x'::=e''] = e''" using `t1 = Var z` by auto
+	    hence X1:"\<Gamma>' \<turnstile> t1[x'::=e''] : T0' ; G'" by auto
+	    have "\<Gamma>' \<turnstile> e'' : T0' ; G'" .
+	    hence "G' = TT" using value_effect_tt_or_ff[OF `e'' : values` `\<Gamma>' \<turnstile> e'' : T0' ; G'`] False by auto
+	    hence X2:"\<Gamma>' \<turnstile> t1[x'::=e''] : T0' ; TT" using X1 by auto
+	    have "\<turnstile> T0' <: T1'" .
+
+	    have X3:"\<not> \<turnstile> T0' <: ty.FF"
+	    proof (rule ccontr)
+	      assume "\<not>\<not> \<turnstile> T0' <: ty.FF"
+	      hence "\<turnstile> T0' <: ty.FF" by simp
+	      hence "\<turnstile> T0' <: BoolTy" using BoolTy_def by auto
+	      hence "EX b. e'' = Bool b" using bool_value `e'' : values ` `\<Gamma>' \<turnstile> e'' : T0' ; G'` by auto
+	      then obtain b where A:"e'' = Bool b" by auto
+	      thus False
+	      proof (cases b)
+		case False
+		thus ?thesis using A `e'' ~= Bool False` by auto
+	      next
+		case True
+		hence "T0' = ty.TT" using  `\<Gamma>' \<turnstile> e'' : T0' ; G'` A true_ty_elim by auto
+		thus ?thesis using `\<turnstile> T0' <: ty.FF` tt_sub_ff by auto
+	      qed
+	    qed
+
+
+	    
+	    let ?rty = "remove ty.FF T1'"
+
+	    note `?\<Gamma> |+ VE z = (x', ?rty) # \<Gamma>'`
+	    hence "valid  ((x',  ?rty) # \<Gamma>')" using G3 by auto
+	    have X2:"(x', ?rty) # \<Gamma>' \<turnstile> t2 : T2 ; F2" using VE  `?\<Gamma> |+ VE z = (x', ?rty) # \<Gamma>'` by auto
+	    note Iff(3)[ OF X2 `\<Gamma>' \<turnstile> e'' : T0'  ; G' ` _ `valid ((x', ?rty) # \<Gamma>')`]
+	    then obtain T'' F'' where X3:"\<Gamma>' \<turnstile> t2[x'::=e''] : T'' ; F''  " and X4:" \<turnstile> T'' <: T2 "" \<turnstile> F'' <e: F2"
+	      using `closed e''` `e'' : values` remove_soundness[OF `\<turnstile> T0' <: T1'` X3 `simple_ty T0'`] by auto
+	    hence "\<turnstile> T'' <: T'" using `\<turnstile> T2 <: T'` by auto
+	    hence "\<Gamma>' \<turnstile> Iff e'' (t2[x'::=e'']) (t3[x'::=e'']) : T'' ; NE" using `valid \<Gamma>'` X3  `\<Gamma>' \<turnstile> e'' : T0'  ; G' ` 
+	      `G' = TT` by auto
+	    hence "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T'' ; NE" using ` t1[x'::=e''] = e''` by auto
+	    thus ?thesis  using `\<turnstile> T'' <: T'` `F' = NE` by auto
+	    
 	  qed
 	next
 	  case False
