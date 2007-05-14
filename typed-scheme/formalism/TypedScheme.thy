@@ -1465,6 +1465,15 @@ lemma env_minus_simple_eff:
   using prems
   by (induct eff rule: simple_eff_cases) auto
 
+fun comb_eff :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
+where
+  "comb_eff F1 F2 F3 = eff.NE"
+
+lemma comb_eff_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "(pi\<bullet> (comb_eff F1 F2 F3)) = comb_eff (pi\<bullet>F1) (pi\<bullet>F2) (pi\<bullet>F3) "
+  using comb_eff.simps by auto
+
 text {* type judgments *}
 inductive2
   typing :: "varEnv \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> eff \<Rightarrow> bool" (" _ \<turnstile> _ : _ ; _ " [60,60,60,60] 60) 
@@ -1477,7 +1486,7 @@ where
 | T_Abs[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile> b : T2; eff\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Lam [x:T1].b : (T1\<rightarrow>T2 : latent_eff.NE) ; TT"
 | T_App[intro]: "\<lbrakk>(\<Gamma> \<turnstile> e1 : U ; eff1) ; \<turnstile> U <: (T0 \<rightarrow> T1 : le); (\<Gamma> \<turnstile> e2 : T; eff2) ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; NE"
 | T_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile> e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; TE S x"
-| T_If[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1; eff1; (\<Gamma> |+ eff1) \<turnstile> e2 : T2; eff2; (\<Gamma> |- eff1) \<turnstile> e3 : T3; eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE"
+| T_If[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1; eff1; (\<Gamma> |+ eff1) \<turnstile> e2 : T2; eff2; (\<Gamma> |- eff1) \<turnstile> e3 : T3; eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; comb_eff eff1 eff2 eff3"
 | T_AppPredTrue[intro]: 
   "\<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S); \<Gamma> \<turnstile> e2 : T; eff2 ;  \<turnstile> T <: T0; \<turnstile> T <: S\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; TT"
 | T_AppPredFalse[intro]:
@@ -2898,12 +2907,12 @@ next
   have A:"x \<sharp> e1" "x \<sharp> e2" "x \<sharp> e3" using T_If by auto
   have "\<Gamma>' - (x,T') \<turnstile> e1 : T1 ; F1" using T_If A by auto
   thus ?case using T_If
-    proof (nominal_induct F1 rule: eff.induct)
+    proof (nominal_induct "F1" rule: eff.induct)
       case NE
       from NE have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; eff.NE" by auto
       from NE have 2:"(\<Gamma>' - (x, T') |+ eff.NE) \<turnstile> e2 : T2 ; F2" by auto
       from NE have 3:"(\<Gamma>' - (x, T') |- eff.NE) \<turnstile> e3 : T3 ; F3" by auto
-      from 1 2 3 show ?case using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` by auto
+      from 1 2 3 show ?case using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` ..
     next
       case TT
       from TT have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; eff.TT" by auto
@@ -2913,7 +2922,7 @@ next
       case FF
       from FF have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; eff.FF" by auto
       from FF have 3:"(\<Gamma>' - (x, T') |+ eff.FF) \<turnstile> e3 : T3 ; F3" by auto
-      from 1 3 show ?case using `\<turnstile> T3 <: T` by auto
+      from 1 3 show ?case using `\<turnstile> T3 <: T` by auto 
     next
       case (VE z)
       from VE have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; VE z" by auto
@@ -2987,7 +2996,7 @@ next
       from  A0 have "(\<Gamma>' |- VE z) - (x,?replaceT') \<turnstile>  e3 : T3 ; F3" by auto
       hence 3:"(\<Gamma>' - (x, T')) |- VE z \<turnstile> e3 : T3 ; F3" using goal' val5 val6
 	weakening[of  "(\<Gamma>' |- VE z) - (x,?replaceT')" e3 T3 F3 "\<Gamma>' - (x,T') |- VE z"] by auto
-      from 1 2 3 show ?thesis using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` by auto
+      from 1 2 3 show ?case using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` ..
     next
       case (TE U z)
       from TE have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; TE U z" by auto
@@ -3061,7 +3070,7 @@ next
       from  A0 have "(\<Gamma>' |- TE U z) - (x,?removeT') \<turnstile>  e3 : T3 ; F3" by auto
       hence 3:"(\<Gamma>' - (x, T')) |- TE U z \<turnstile> e3 : T3 ; F3" using goal' val5 val6
 	weakening[of  "(\<Gamma>' |- TE U z) - (x,?removeT')" e3 T3 F3 "\<Gamma>' - (x,T') |- TE U z"] by auto
-      from 1 2 3 show ?thesis using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` by auto
+      from 1 2 3 show ?case using `\<turnstile> T2 <: T` `\<turnstile> T3 <: T` ..
     qed
   qed
 
@@ -3370,7 +3379,7 @@ next
 	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
 	have D:"\<turnstile> S2 <: T'" using prems B by auto
 	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; eff.NE"  by auto
+	from A B'  C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
 	thus ?case using `F' = NE` by auto
       next
 	case TT
@@ -3387,7 +3396,7 @@ next
 	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
 	have D:"\<turnstile> S2 <: T'" using prems B by auto
 	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; eff.NE"  by auto
+	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
 	thus ?case using `F' = NE` by auto
       next
 	case FF
@@ -3404,7 +3413,7 @@ next
 	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
 	have D:"\<turnstile> S2 <: T'" using prems B by auto
 	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; eff.NE"  by auto
+	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
 	thus ?case using `F' = NE` by auto
       next
 	case (VE z)
@@ -3552,7 +3561,7 @@ next
           from 2 5 have 7:"\<Gamma>' |- (VE z) \<turnstile> t3[x'::=e''] : S3 ; G3" using X[of ?\<Gamma>2 "\<Gamma>' |- (VE z)" " t3[x'::=e'']" S3 G3]
             by blast
           
-          from typetst 1 2 6 7 have "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; eff.NE" by auto
+          from typetst 1 2 6 7 have "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; comb_eff (VE z) G2 G3" by (auto simp del: comb_eff.simps)
 	  thus ?thesis  using `F' = NE` by auto
 	qed
       next
@@ -3683,7 +3692,7 @@ next
           from 2 5 have 7:"\<Gamma>' |- (TE U z) \<turnstile> t3[x'::=e''] : S3 ; G3" using X[of ?\<Gamma>2 "\<Gamma>' |- (TE U z)" " t3[x'::=e'']" S3 G3]
             by blast
           
-          from typetst 1 2 6 7 have "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; eff.NE" by auto
+          from typetst 1 2 6 7 have "\<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; comb_eff (TE U z) G2 G3" by (auto simp del: comb_eff.simps)
 	  thus ?thesis  using `F' = NE` by auto
 	qed
       qed
@@ -3942,7 +3951,8 @@ lemma subst_in_ctxt_preserves_type:
 	    have "simple_eff F1'" and "simple_eff F1" using `closed (E t)` `closed (E t')` P Q closed_eff by auto
 	    hence "\<Gamma> |+ F1 = \<Gamma>" "\<Gamma> |- F1 = \<Gamma>" "\<Gamma> |+ F1' = \<Gamma>" "\<Gamma> |- F1' = \<Gamma>" by (auto simp add: env_plus_simple_eff)
 	    hence "\<Gamma> |+ F1' \<turnstile> thn : T2 ; F2 " "\<Gamma> |- F1' \<turnstile> els : T3 ; F3" using P by auto
-	    hence "\<Gamma> \<turnstile> Iff (E t') thn els : T'; NE" using `\<Gamma> \<turnstile> E t' : T1' ; F1'` ` \<turnstile> T2 <: T' `` \<turnstile> T3 <: T'` by auto
+	    hence "\<Gamma> \<turnstile> Iff (E t') thn els : T'; comb_eff F1' F2 F3" using `\<Gamma> \<turnstile> E t' : T1' ; F1'` ` \<turnstile> T2 <: T' `` \<turnstile> T3 <: T'`
+	      by (auto simp del: comb_eff.simps)
 	    hence ?thesis using `F' = NE` by auto
 	  }
 	  moreover
@@ -4146,13 +4156,13 @@ where
 | T2_App[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U ; eff1 ; \<turnstile> U <: (T0 \<rightarrow> T1 : le); \<Gamma> \<turnstile>\<^isub>2 e2 : T; eff2 ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; NE"
 | T2_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile>\<^isub>2 e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; TE S x"
 | T2_If[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : T1; eff1; (\<Gamma> |+ eff1) \<turnstile>\<^isub>2 e2 : T2; eff2; (\<Gamma> |- eff1) \<turnstile>\<^isub>2 e3 : T3; eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow>
-  \<Gamma> \<turnstile>\<^isub>2 (Iff e1 e2 e3) : T ; NE"
+  \<Gamma> \<turnstile>\<^isub>2 (Iff e1 e2 e3) : T ; comb_eff eff1 eff2 eff3"
 
 lemma typing2_typing:
   assumes "\<Gamma> \<turnstile>\<^isub>2 e : T ; F"
   shows "\<Gamma> \<turnstile> e : T ; F"
   using prems
-  by induct auto
+  by induct (auto simp del: comb_eff.simps)
 
 lemma typing2_soundness1:
   assumes A:"\<Gamma> \<turnstile>\<^isub>2 e : T ; F" and E:"closed e" 
