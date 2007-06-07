@@ -1493,7 +1493,8 @@ where
   "\<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S); \<Gamma> \<turnstile> e2 : T; eff2 ;  \<turnstile> T <: T0; ~(\<turnstile> T <: S) ; e2 : values ; closed e2\<rbrakk>
   \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; FF"
 | T_IfTrue[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; TT ; \<Gamma> \<turnstile> e2 : T2 ; eff;  \<turnstile> T2 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
-| T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
+| T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE"
+| T_AbsPred[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile> b : T2; TE S x\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Lam [x:T1].b : (T1\<rightarrow>T2 : Latent S) ; TT"
 
 equivariance typing
 
@@ -2015,7 +2016,7 @@ lemma abs_ty_elim_eff[rule_format]:
 
 lemma abs_ty_elim[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff ; a \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> 
-  \<exists> T1 eff'. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : latent_eff.NE) \<and> eff = eff.TT)"
+  \<exists> T1 eff' L. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : L) \<and> eff = eff.TT)"
 apply (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
 apply(auto simp add: trm.distinct trm.inject alpha) 
 apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
@@ -2024,17 +2025,25 @@ apply(subgoal_tac "([(a,x)]::name prm)\<bullet>\<Gamma> = \<Gamma>")(*A*)
 apply(force simp add: calc_atm)
 (*A*)
 apply(force intro!: pt_fresh_fresh[OF pt_name_inst, OF at_name_inst])
+
+apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
+apply(auto)
+apply(subgoal_tac "([(a,x)]::name prm)\<bullet>\<Gamma> = \<Gamma>")(*A*)
+apply(force simp add: calc_atm)
+(*A*)
+apply(force intro!: pt_fresh_fresh[OF pt_name_inst, OF at_name_inst])
 done
 
-inductive_cases2 abs_ty_cases[consumes 1, case_names 1]:"\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff"
+inductive_cases2 abs_ty_cases[consumes 1, case_names 1 2]:"\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff"
 thm abs_ty_cases
 
+(*
 lemma app_abs_ty_elim_eff[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> App (Abs x b T) t2 : \<sigma> ; eff ; x \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> eff = eff.NE"
   proof (ind_cases2 "\<Gamma> \<turnstile> App (Abs x b T) t2 : \<sigma> ; eff", auto simp add: trm.inject abs_ty_elim)
     fix T0 S eff1 U 
     assume "\<Gamma> \<turnstile> Lam [x:T].b : U ; eff1 "" \<turnstile> U <: T0 \<rightarrow> \<sigma> : Latent S" "x \<sharp> \<Gamma>"
-    then obtain T1 where "U = T \<rightarrow> T1 : latent_eff.NE" using abs_ty_elim[of \<Gamma> x b T "U"] by auto
+    then obtain T1 L where "U = T \<rightarrow> T1 : L" using abs_ty_elim[of \<Gamma> x b T "U" L] by auto
     thus False using prems arr_sub_arr_cases[of T _ latent_eff.NE T0 \<sigma> "Latent S"] by (auto simp add: ty.inject)
   next
     fix T0 S eff1 U
@@ -2048,7 +2057,7 @@ lemma app_abs_ty_elim_eff[rule_format]:
     thus False using prems arr_sub_arr_cases[of T _ latent_eff.NE T0 \<sigma> "Latent S"] by (auto simp add: ty.inject)
   qed
 
-
+*)
 lemma if_ty_elim_weak[rule_format]: 
   "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff \<Longrightarrow> \<exists> T0 eff'. (\<Gamma> \<turnstile> t1 : T0 ; eff') \<and> eff = NE"
 by (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
@@ -2376,6 +2385,8 @@ lemma typing_valid:
 using prems 
 proof (induct)
   case (T_Abs a \<Gamma> T b T' F') thus ?case using valid_elim[of a T \<Gamma>] by auto
+next
+  case (T_AbsPred a \<Gamma> T b T' F') thus ?case using valid_elim[of a T \<Gamma>] by auto
 qed (auto)
 
 
@@ -2508,8 +2519,8 @@ lemma procp_FF_preserved:
         from prems have b:"\<Gamma> \<turnstile> Lam[x:t].b : T ; eff2" using trm.inject by auto
 	have "U = Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE)" using a bi_ty_elim[of \<Gamma> ProcP "U"] by auto
 	hence c:"S = Union [] \<rightarrow> Top : latent_eff.NE" using prems arr_sub_arr_cases[of Top _ _ T0 T1 "Latent S"] latent_eff.inject by auto
-        have "EX A1 A2. T = A1 \<rightarrow> A2 : latent_eff.NE" using abs_ty_elim[OF b `x \<sharp> \<Gamma>`] by auto
-	then obtain A1 A2 where d:"T = A1 \<rightarrow> A2 : latent_eff.NE" by auto
+        have "EX A1 A2 L. T = A1 \<rightarrow> A2 : L" using abs_ty_elim[OF b `x \<sharp> \<Gamma>`] by auto
+	then obtain A1 A2 L where d:"T = A1 \<rightarrow> A2 : L" by auto
         from c d have "\<turnstile> T <: S" using all_fun_ty_below by auto
         thus ?thesis using prems by auto
       qed
@@ -2868,6 +2879,9 @@ next
     by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)
 next
   case T_Abs thus ?case
+    by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)+
+next
+  case T_AbsPred thus ?case
     by(force simp add: fresh_atm abs_fresh set_remove valid_remove fresh_remove)+
 next
   case T_AppPred thus ?case
