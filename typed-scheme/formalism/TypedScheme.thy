@@ -1698,9 +1698,9 @@ inductive_cases2 type_bi_case: "\<Gamma> \<turnstile> ((BI b)) : t ; eff"
 inductive_cases2 type_add1_case: "\<Gamma> \<turnstile> ((BI Add1)) : t ; eff"
 inductive_cases2 bi_typing_cases: "\<Gamma> \<turnstile> (BI b) : t ; eff"
 inductive_cases2 abs_ty_int: "\<Gamma> \<turnstile> (Abs x body t) : ty.Int ; eff'"
-inductive_cases2 abs_ty_bool: "\<Gamma> \<turnstile> (Abs x body t) : ty.Bool ; eff'"
+inductive_cases2 abs_ty_bool: "\<Gamma> \<turnstile> (Abs x body t) : BoolTy ; eff'"
 inductive_cases2 const_ty_int: "\<Gamma> \<turnstile> e : ty.Int ; eff'"
-inductive_cases2 const_ty_bool: "\<Gamma> \<turnstile> e : ty.Bool ; eff'"
+inductive_cases2 const_ty_bool: "\<Gamma> \<turnstile> e : BoolTy ; eff'"
 inductive_cases2 iff_false_ty: "\<Gamma> \<turnstile> Iff (Bool False) thn els : t ; eff"
 inductive_cases2 app_bi_ty: "\<Gamma> \<turnstile> App (BI b) arg : t ; eff"
 
@@ -2240,7 +2240,7 @@ lemma closed_eff_below_NE:
 
 inductive_cases2 const_ty_int_case: "\<Gamma> \<turnstile> (Num n) : ty.Int ; eff"
 inductive_cases2 trm_ty_int_case: "\<Gamma> \<turnstile> e : ty.Int ; eff"
-inductive_cases2 const_ty_bool_case: "\<Gamma> \<turnstile> (Bool b) : ty.Bool ; eff"
+inductive_cases2 const_ty_bool_case: "\<Gamma> \<turnstile> (Bool b) : BoolTy ; eff"
 
 lemma add1_eff_ne:
   "\<Gamma> \<turnstile> (App (BI Add1) v) :  T1 ; eff1 \<Longrightarrow> eff1 = eff.NE"
@@ -4399,9 +4399,9 @@ lemma typing_induct_complete[consumes 1, case_names T_Var T_Const T_Num T_True T
   and a3:    "!! \<Gamma> n x.   (!! x t T \<Gamma> F. (t\<guillemotleft>Num n) \<Longrightarrow> \<Gamma> \<turnstile> t : T ; F \<Longrightarrow> P x \<Gamma> t T F) \<Longrightarrow> valid \<Gamma> \<Longrightarrow> 
   P x \<Gamma> (Num n) ty.Int NE"
   and a4:    "!! \<Gamma> x.   (!! x t T \<Gamma> F. (t\<guillemotleft>Bool True) \<Longrightarrow> \<Gamma> \<turnstile> t : T ; F \<Longrightarrow> P x \<Gamma> t T F) \<Longrightarrow> valid \<Gamma> \<Longrightarrow> 
-  P x \<Gamma> (Bool True) ty.Bool TT"
+  P x \<Gamma> (Bool True) BoolTy TT"
   and a5:    "!! \<Gamma> x. (!! x t T \<Gamma> F. (t\<guillemotleft>Bool False)  \<Longrightarrow> \<Gamma> \<turnstile> t : T ; F \<Longrightarrow> P x \<Gamma> t T F) \<Longrightarrow> valid \<Gamma> \<Longrightarrow> 
-  P x \<Gamma> (Bool False) ty.Bool FF"
+  P x \<Gamma> (Bool False) BoolTy FF"
   and a6:    "\<And>\<Gamma> \<tau> \<sigma> t1 t2 x F1 F2 le \<tau>0 U. (!! x t T \<Gamma> F. (t\<guillemotleft>App t1 t2) \<Longrightarrow> \<Gamma> \<turnstile> t : T ; F \<Longrightarrow> P x \<Gamma> t T F) \<Longrightarrow> 
               \<Gamma> \<turnstile> t1 : U ; F1 \<Longrightarrow> \<turnstile> U <: \<tau>\<rightarrow>\<sigma>:le \<Longrightarrow> (\<And>z. P z \<Gamma> t1 U F1) \<Longrightarrow> \<Gamma> \<turnstile> t2 : \<tau>0 ; F2 \<Longrightarrow> (\<And>z. P z \<Gamma> t2 \<tau>0 F2) \<Longrightarrow> \<turnstile> \<tau>0 <: \<tau>
               \<Longrightarrow> P x \<Gamma> (App t1 t2) \<sigma> NE"
