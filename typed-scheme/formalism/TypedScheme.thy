@@ -2016,7 +2016,7 @@ lemma abs_ty_elim_eff[rule_format]:
 
 lemma abs_ty_elim[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff ; a \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> 
-  \<exists> T1 eff' L. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : L) \<and> eff = eff.TT)"
+  \<exists> T1 eff' L S. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : L) \<and> eff = eff.TT \<and> (L = Latent S \<or> L = latent_eff.NE))"
 apply (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
 apply(auto simp add: trm.distinct trm.inject alpha) 
 apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
@@ -3335,8 +3335,9 @@ next
   hence f1: "a\<sharp>\<Gamma>'" and f2: "a\<noteq>x'" and f2': "x'\<sharp>a" and f3: "a\<sharp>e''" and f4: "a\<sharp>((x',T0')#\<Gamma>')"
     by (auto simp add: fresh_atm fresh_prod fresh_list_cons)
   have c1: "((x',T0')#\<Gamma>')\<turnstile>Lam [a:ty].body : T' ; F'" by fact
-  hence "\<exists>\<tau>2 eff. ((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff \<and> T'=ty\<rightarrow>\<tau>2:latent_eff.NE  \<and> F' = TT" using f4 abs_ty_elim by auto
-  then obtain \<tau>2 eff where c11: "T'=ty\<rightarrow>\<tau>2:latent_eff.NE" and c12: "((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff" "F' = TT" by auto
+(*  hence "\<exists>\<tau>2 eff L S. ((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff \<and> T'=ty\<rightarrow>\<tau>2:L  \<and> F' = TT" using f4 abs_ty_elim by auto *)
+  then obtain \<tau>2 eff L S where c11: "T'=ty\<rightarrow>\<tau>2:L" and c12: "((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff" "F' = TT"
+    and c13:"L = latent_eff.NE \<or> L = Latent S" using f4 abs_ty_elim by blast
   from c12 have "valid ((a,ty)#(x',T0')#\<Gamma>')" using Lam by auto
   hence ca: "valid \<Gamma>'" and cb: "a\<sharp>\<Gamma>'" and cc: "x'\<sharp>\<Gamma>'" 
     by (auto dest: valid_elim simp add: fresh_list_cons)
@@ -3355,8 +3356,10 @@ next
     `e'' : values`
     by auto
   then obtain TA0 FA0 where "?inner\<Gamma> \<turnstile> body[x'::=e''] : TA0 ; FA0 "" \<turnstile> TA0 <: \<tau>2" by auto
-  hence L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.TT" using `a \<sharp> \<Gamma>'` by auto
-  have L2:"\<turnstile> ty \<rightarrow> TA0 : latent_eff.NE <: T'" using c11 ` \<turnstile> TA0 <: \<tau>2` by auto
+  hence L11:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.TT" using `a \<sharp> \<Gamma>'` by auto
+  have L12:"L = Latent S \<Longrightarrow> \<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : Latent S; eff.TT" sorry
+  from L11 L12 have L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : L; eff.TT" using c13 by auto
+  have L2:"\<turnstile> ty \<rightarrow> TA0 : L <: T'" using c11 ` \<turnstile> TA0 <: \<tau>2` by auto
   have L3:"(Lam[a:ty].body)[x'::=e''] = (Lam[a:ty].(body[x'::=e'']))" using Lam by auto
   have L4:"\<turnstile> eff.TT <e: F'" using `F' = TT` by auto
   from L1 L2 L3 L4 show  "EX TA FA. \<Gamma>' \<turnstile> (Lam [a:ty].body)[x'::=e''] : TA ; FA \<and> \<turnstile> TA <: T' \<and> \<turnstile> FA <e: F'" by auto
@@ -3791,20 +3794,20 @@ lemma preserve_red:
   next
     case (e_beta v x b T \<Gamma>' T')
     thm app_ty_elim[of \<Gamma>' "(Lam[x:T].b)" v t eff]
-    hence "eff = NE" using app_abs_ty_elim_eff by auto
+    (* hence "eff = NE" using app_abs_ty_elim_eff by auto *)
     from e_beta have "\<exists>T0 T0' T1 le eff' eff'' U.  \<Gamma>' \<turnstile> Abs x b T : U ; eff'  \<and>  \<Gamma>' \<turnstile> v : T0' ; eff''  
       \<and> \<turnstile> T0' <: T0 \<and> T1 = T' \<and> \<turnstile> U <: T0 \<rightarrow> T1 : le"
       using app_ty_elim[of \<Gamma>' "Abs x b T" v T' eff] by blast
     then obtain T0 T0' T1 le eff' eff'' U where " \<Gamma>' \<turnstile> Lam[x:T].b :U; eff'" and "\<Gamma>' \<turnstile> v : T0' ; eff''" 
       and "\<turnstile> T0' <: T0" and "T1 = T'"  and usub:"\<turnstile> U <:  T0 \<rightarrow> T1 : le " by auto
-    hence "\<exists>T1a eff2.  (x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2  \<and> U = T \<rightarrow> T1a : latent_eff.NE"
+    hence "\<exists>T1a eff2 L.  (x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2  \<and> U = T \<rightarrow> T1a : L"
       using abs_ty_elim[of \<Gamma>' x b T "U" eff'] e_beta `x \<sharp> \<Gamma>'` by auto
-    then obtain T1a eff2 where  bty:"(x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2" and ueq:"U = T \<rightarrow> T1a : latent_eff.NE"
+    then obtain T1a eff2 L where  bty:"(x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2" and ueq:"U = T \<rightarrow> T1a : L"
       by auto
     have "closed v" using e_beta closed_def trm.supp by auto
     have "v : values" using e_beta beta_cases[of _ _ _ v _ "v : values"]  trm.inject by auto
-    have "\<turnstile> T0 <: T" using usub ueq arr_sub_arr_cases[of T T1a latent_eff.NE T0 T1 le] by auto
-    have "\<turnstile> T1a <: T1" using usub ueq arr_sub_arr_cases[of T T1a latent_eff.NE T0 T1 le] by auto
+    have "\<turnstile> T0 <: T" using usub ueq arr_sub_arr_cases[of T T1a L T0 T1 le] by auto
+    have "\<turnstile> T1a <: T1" using usub ueq arr_sub_arr_cases[of T T1a L T0 T1 le] by auto
     hence "\<turnstile> T1a <: T'" using `T1 = T'` by simp
     have "\<turnstile> T0' <: T" using ` \<turnstile> T0' <: T0` `\<turnstile>T0<:T` by auto
     have " \<exists>T'a F'.  \<Gamma>' \<turnstile> b[x::=v] : T'a ; F'  \<and> \<turnstile> T'a <: T1a"
@@ -3814,7 +3817,7 @@ lemma preserve_red:
     then obtain T'a F' where a:"\<Gamma>' \<turnstile> b[x::=v] : T'a ; F'" and b:"\<turnstile> T'a <: T1a" by auto
     have "closed (b[x::=v])" using e_beta reduce_closed by blast
     hence c:"simple_eff F'" using a closed_eff by auto
-    from a b c have "\<turnstile> F' <e: eff" using `eff = NE` simple_eff_below_ne by auto
+    from a b c have "\<turnstile> F' <e: eff" sorry (* using `eff = NE` simple_eff_below_ne by auto *)
     thus ?case using a b `\<turnstile> T1a <: T'` by auto
   qed
 
@@ -4171,6 +4174,7 @@ where
 | T2_AppPred[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S);  \<Gamma> \<turnstile>\<^isub>2 e2 : T; VE x ;  \<turnstile> T <: T0\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 App e1 e2 : T1 ; TE S x"
 | T2_If[intro]: "\<lbrakk>\<Gamma> \<turnstile>\<^isub>2 e1 : T1; eff1; (\<Gamma> |+ eff1) \<turnstile>\<^isub>2 e2 : T2; eff2; (\<Gamma> |- eff1) \<turnstile>\<^isub>2 e3 : T3; eff3; \<turnstile> T2 <: T; \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow>
   \<Gamma> \<turnstile>\<^isub>2 (Iff e1 e2 e3) : T ; comb_eff eff1 eff2 eff3"
+| T2_AbsPred[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile>\<^isub>2  b : T2; TE S x\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Lam [x:T1].b : (T1\<rightarrow>T2 : Latent S) ; TT"
 
 lemma typing2_typing:
   assumes "\<Gamma> \<turnstile>\<^isub>2 e : T ; F"
@@ -4287,6 +4291,9 @@ next
     by (auto simp add: trm.supp)
 next
   case T2_Abs thus ?case 
+    by (auto simp add: trm.supp fv_lam abs_supp supp_list_cons supp_prod supp_latent_eff_ty supp_atm)
+next
+  case T2_AbsPred thus ?case 
     by (auto simp add: trm.supp fv_lam abs_supp supp_list_cons supp_prod supp_latent_eff_ty supp_atm)
 next
   case (T2_Const \<Gamma> b) thus ?case
