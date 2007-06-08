@@ -3193,6 +3193,52 @@ next
   thus ?case using true_ty_elim false_ty_elim by (cases b) auto
 qed
 
+lemma remove_fresh_env:
+  assumes A:"y \<sharp> \<Gamma>" and B:"valid \<Gamma>"
+  shows "\<Gamma> - (y,T) = \<Gamma>"
+  using B A
+proof (induct \<Gamma> rule: valid.induct)
+  case v1 thus ?case by auto
+next
+  case (v2 \<Gamma>' a S)
+  have "y \<noteq> a" "y \<sharp> \<Gamma>'" using `y \<sharp> ((a, S) # \<Gamma>')` using fresh_atm[of y a] fresh_list_cons by auto
+  hence "((a, S) # \<Gamma>') - (y, T) = (a, S) # (\<Gamma>' - (y, T))" by auto
+  thus ?case using v2 `y \<sharp> \<Gamma>'` by auto
+qed
+
+
+lemma subst_preserve_TE:
+  assumes tapp:"(y,T0)#\<Gamma> \<turnstile> App e1 e2 : T ; TE S x"
+  and neq:"y \<noteq> x"
+  and val:"valid ((y,T0)#\<Gamma>)"
+  and ih: "!! t bc bf . \<lbrakk>t \<guillemotleft> App e1 e2;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
+  \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf"
+  shows "\<Gamma> \<turnstile> (App e1 e2)[y::=v] : T ; TE S x"
+proof -
+  note te_ty_elim[OF tapp]
+  then obtain f  A A1 Fn Sa B
+    where sz:"App e1 e2 = App f (Var x)"
+    and tf:"(y, T0) # \<Gamma> \<turnstile> f : B ; Fn  "" \<turnstile> B <: A1 \<rightarrow> T : Latent S" 
+    and tvx:"(y, T0) # \<Gamma> \<turnstile> Var x : A ; VE x" and sub:" \<turnstile> A <: A1"
+    by auto
+  hence "e1 = f" and "e2 = Var x" using trm.inject by auto
+  hence "e2[y::=v] = Var x" using `y \<noteq> x` forget by auto
+  hence tsub:" (y, T0)#\<Gamma> \<turnstile> e2[y::=v] : A ; VE x" using `e2=Var x` tvx by auto
+  have fr:"y \<sharp> e2[y::=v]" using `e2 = Var x``e2[y::=v] = Var x` `y \<noteq> x` using fresh_atm by auto
+  have "y \<sharp> \<Gamma>" "valid \<Gamma>" using valid_elim[OF val] by auto
+  hence "((y, T0) # \<Gamma>) - (y, T0) = \<Gamma>" using remove_fresh_env[OF `y \<sharp> \<Gamma>` `valid \<Gamma>`] by auto
+  hence te2:"\<Gamma> \<turnstile> e2[y::=v] : A ; VE x" using fresh_weakening[OF fr tsub `valid ((y,T0)#\<Gamma>)`, of T0]  by auto
+  have szf:"f \<guillemotleft> App e1 e2" using sz by auto
+  note ih[OF szf tf(1)]
+  then obtain T' F' where  tfsub:"\<Gamma> \<turnstile> f[y::=v] : T' ; F'  "" \<turnstile> T' <: B " "\<turnstile> F' <e: Fn" by auto
+  hence " \<turnstile> T' <: A1 \<rightarrow> T : Latent S " using  `\<turnstile> B <: A1 \<rightarrow> T : Latent S` by auto
+  hence "\<Gamma> \<turnstile> (App f e2)[y::=v] : T ; TE S x" using te2 tfsub `\<turnstile> A <: A1` by auto
+  thus ?thesis using sz using trm.inject by auto
+qed
+  
+inductive_cases2 lam_latent_eff_elim_auto: "\<Gamma> \<turnstile> Lam[x:T].b : S1 \<rightarrow> S2 : Latent U ; F"
+thm lam_latent_eff_elim_auto
+
 lemma preserve_subst:
   assumes "(x,T0)#\<Gamma> \<turnstile> e : T ; F" and "\<Gamma> \<turnstile> e' : T1 ; G" and "\<turnstile> T1 <: T0" and "valid ((x,T0)#\<Gamma>)" 
   and "closed e'" and "e' : values"
@@ -3206,7 +3252,7 @@ proof (nominal_induct e avoiding: \<Gamma> x e' T T1 T0 F G rule: trm_comp_induc
     using var_ty_elim[of "(x, T0) # \<Gamma>"] by auto
   from a22 have a23: "valid \<Gamma>" and a24: "x\<sharp>\<Gamma>" by (auto dest: valid_elim) 
   from a24 have a25: "\<not>(\<exists>\<tau>. (x,\<tau>)\<in>set \<Gamma>)" by (rule fresh_context)
-  show "EX T' F'. \<Gamma>\<turnstile>(Var v)[x::=e'] : T'; F' \<and>  \<turnstile> T' <: T \<and> \<turnstile> F' <e: F"
+  show ?case
   proof (cases "v=x")
     assume case1: "v=x"
     hence "(Var v)[x::=e'] = e'" by simp
@@ -3219,8 +3265,9 @@ proof (nominal_induct e avoiding: \<Gamma> x e' T T1 T0 F G rule: trm_comp_induc
       from a3 a21 have "(v,T)\<in>set \<Gamma>" by force
       with case1 a25 show False by force 
     qed
-    hence "\<turnstile> T1 <: T" using  `\<turnstile> T1 <: T0` by auto
-    thus "EX T' F'. \<Gamma> \<turnstile> (Var v)[x::=e'] : T'; F' \<and>  \<turnstile> T' <: T \<and> \<turnstile> F' <e: F" using A a22b C by blast
+    hence D:"\<turnstile> T1 <: T" using  `\<turnstile> T1 <: T0` by auto
+    have "~ (\<exists>S y. F = TE S y)" using a22b by auto
+    thus ?thesis using A a22b C D by blast
   next
     assume case2: "v\<noteq>x"
     with a21 have a26: "(v,T)\<in>set \<Gamma>" by force
@@ -3273,11 +3320,13 @@ next
     using app_ty_tt_elim[of "((x',T0')#\<Gamma>')" s1 s2 T'] by blast
   from elim1  obtain T0 T0'a T1 le eff' eff'' U where
     P:"(x',T0')#\<Gamma>' \<turnstile> s1 :U;eff'"" (x',T0')# \<Gamma>'\<turnstile> s2 : T0'a;eff''"" \<turnstile> T0'a <: T0 "" T1 = T'" "\<turnstile> U <: T0\<rightarrow>T1:le" by auto
-  hence "EX S1 G1. \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 \<and> \<turnstile> S1 <: U \<and> \<turnstile> G1 <e: eff'" using ih_s1 App by auto
+  hence "EX S1 G1. \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 \<and> \<turnstile> S1 <: U \<and> \<turnstile> G1 <e: eff'"
+    using ih_s1 App by auto
   then obtain S1 G1 where Q:" \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 "" \<turnstile> S1 <: U" "\<turnstile> G1 <e: eff'" by auto
   have sub1:"\<turnstile>S1 <: T0\<rightarrow>T1:le" using P Q by auto
     (* then apply ih_s2, get something about the substition of s2, and put it all back together. *)
-  from P have "EX S G. \<Gamma>' \<turnstile> s2[x'::=e'']:S ; G \<and> \<turnstile> S <: T0'a \<and> \<turnstile> G <e: eff''" using ih_s2[of x' T0' \<Gamma>' T0'a eff''] App by auto
+  from P have "EX S G. \<Gamma>' \<turnstile> s2[x'::=e'']:S ; G \<and> \<turnstile> S <: T0'a \<and> \<turnstile> G <e: eff''"
+    using ih_s2[of x' T0' \<Gamma>' T0'a eff''] App by auto
   then obtain S2 G2 where S:"\<Gamma>' \<turnstile> s2[x'::=e'']:S2 ; G2 "" \<turnstile> S2 <: T0'a" "\<turnstile> G2 <e: eff''" by auto
   let ?ns1 = "s1[x'::=e'']" and ?ns2 = "s2[x'::=e'']"
   have sub2:"\<turnstile> S2 <: T0" using P S by auto
@@ -3289,17 +3338,19 @@ next
   next
     case VE thus ?case using L1 L2 by auto
   next
-    case TE thus ?case using L1 L2 by auto
+    case (TE ty var) thus ?case using L1 L2 by auto
   next
     case TT
     from elim3 TT  obtain T0 T0'a T1 le leS eff' eff'' U where
       P:"(x',T0')#\<Gamma>' \<turnstile> s1 :U;eff'"" (x',T0')# \<Gamma>'\<turnstile> s2 : T0'a;eff''"" \<turnstile> T0'a <: T0 "" T1 = T'" "\<turnstile> U <: T0\<rightarrow>T1:le"
       "le = Latent leS" "\<turnstile> T0'a <: leS" by auto
-    hence "EX S1 G1. \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 \<and> \<turnstile> S1 <: U \<and> \<turnstile> G1 <e: eff'" using ih_s1 App by auto
+    hence "EX S1 G1. \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 \<and> \<turnstile> S1 <: U \<and> \<turnstile> G1 <e: eff'"
+      using ih_s1 App by blast
     then obtain S1 G1 where Q:" \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 "" \<turnstile> S1 <: U" "\<turnstile> G1 <e: eff'" by auto
     hence R:"\<turnstile> S1 <: T0\<rightarrow>T1:le" using P by auto
       (* then apply ih_s2, get something about the substition of s2, and put it all back together. *)
-    from P have "EX S G. \<Gamma>' \<turnstile> s2[x'::=e'']:S ; G \<and> \<turnstile> S <: T0'a \<and> \<turnstile> G <e: eff''" using ih_s2[of x' T0' \<Gamma>' T0'a eff''] App by auto
+    from P have "EX S G. \<Gamma>' \<turnstile> s2[x'::=e'']:S ; G \<and> \<turnstile> S <: T0'a \<and> \<turnstile> G <e: eff''"
+      using ih_s2[of x' T0' \<Gamma>' T0'a eff''] App by auto
     then obtain S2 G2 where S:"\<Gamma>' \<turnstile> s2[x'::=e'']:S2 ; G2 "" \<turnstile> S2 <: T0'a" "\<turnstile> G2 <e: eff''" by auto
     let ?ns1 = "s1[x'::=e'']" and ?ns2 = "s2[x'::=e'']"
     have noover: "\<turnstile> S2 <: leS" using `\<turnstile> S2 <: T0'a` `\<turnstile> T0'a <: leS` by auto
@@ -3311,11 +3362,13 @@ next
     from elim2 FF  obtain T0 T0'a T1 le leS eff' eff'' U where
       P:"(x',T0')#\<Gamma>' \<turnstile> s1 :U;eff'"" (x',T0')# \<Gamma>'\<turnstile> s2 : T0'a;eff''"" \<turnstile> T0'a <: T0 "" T1 = T'" "\<turnstile> U <: T0\<rightarrow>T1:le"
       "le = Latent leS" "~ (\<turnstile> T0'a <: leS)" "s2 :values" "closed s2" by auto
-    hence "EX S1 G1. \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 \<and> \<turnstile> S1 <: U \<and> \<turnstile> G1 <e: eff'" using ih_s1 App by auto
+    hence "EX S1 G1. \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 \<and> \<turnstile> S1 <: U \<and> \<turnstile> G1 <e: eff'"
+      using ih_s1 App by auto
     then obtain S1 G1 where Q:" \<Gamma>' \<turnstile> s1[x'::=e''] : S1 ; G1 "" \<turnstile> S1 <: U" "\<turnstile> G1 <e: eff'" by auto
     hence R:"\<turnstile> S1 <: T0\<rightarrow>T1:le" using P by auto
       (* then apply ih_s2, get something about the substition of s2, and put it all back together. *)
-    from P have "EX S G. \<Gamma>' \<turnstile> s2[x'::=e'']:S ; G \<and> \<turnstile> S <: T0'a \<and> \<turnstile> G <e: eff''" using ih_s2[of x' T0' \<Gamma>' T0'a eff''] App by auto
+    from P have "EX S G. \<Gamma>' \<turnstile> s2[x'::=e'']:S ; G \<and> \<turnstile> S <: T0'a \<and> \<turnstile> G <e: eff''"
+      using ih_s2[of x' T0' \<Gamma>' T0'a eff''] App by auto
     then obtain S2 G2 where S:"\<Gamma>' \<turnstile> s2[x'::=e'']:S2 ; G2 "" \<turnstile> S2 <: T0'a" "\<turnstile> G2 <e: eff''" by auto
     let ?ns1 = "s1[x'::=e'']" and ?ns2 = "s2[x'::=e'']"
     have "x' \<sharp> s2" using closed_def fresh_def[of x' s2] `closed s2` by auto
@@ -3355,14 +3408,34 @@ next
     using c16 Lam(10)[of x' T0' ?inner\<Gamma> \<tau>2 eff e'' T1' G'] ` \<turnstile> T1' <: T0'` `valid ((x', T0') # (a, ty) # \<Gamma>')` c14 `closed e''`
     `e'' : values`
     by auto
-  then obtain TA0 FA0 where "?inner\<Gamma> \<turnstile> body[x'::=e''] : TA0 ; FA0 "" \<turnstile> TA0 <: \<tau>2" by auto
-  hence L11:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.TT" using `a \<sharp> \<Gamma>'` by auto
-  have L12:"L = Latent S \<Longrightarrow> \<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : Latent S; eff.TT" sorry
+  then obtain TA0 FA0 where body_ty:"?inner\<Gamma> \<turnstile> body[x'::=e''] : TA0 ; FA0 "" \<turnstile> TA0 <: \<tau>2" by auto
+  hence L11:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.TT" using `a \<sharp> \<Gamma>'` by auto 
+  note Lam(9)[OF _ _ `\<Gamma>' \<turnstile> e'' : T1' ; G'` `\<turnstile> T1' <: T0'` `valid ((x', T0') # \<Gamma>')` `closed e''` `e'' : values`]
+  hence "!! t bc bf . \<lbrakk>t \<guillemotleft> Lam [a:ty].body;  (x', T0') # \<Gamma>' \<turnstile> t : bc ; bf \<rbrakk>
+\<Longrightarrow> \<exists>T' F'.  \<Gamma>' \<turnstile> t[x'::=e''] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" .
+  hence "!! t bc bf . \<lbrakk>t \<guillemotleft> body;  (x', T0') # \<Gamma>' \<turnstile> t : bc ; bf \<rbrakk>
+\<Longrightarrow> \<exists>T' F'.  \<Gamma>' \<turnstile> t[x'::=e''] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" by auto
+  have "L = Latent S \<Longrightarrow> FA0 = TE S a" sorry
+  hence L12:"L = Latent S \<Longrightarrow> \<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : Latent S; eff.TT" using body_ty `a \<sharp> \<Gamma>'`
+    by auto
   from L11 L12 have L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : L; eff.TT" using c13 by auto
   have L2:"\<turnstile> ty \<rightarrow> TA0 : L <: T'" using c11 ` \<turnstile> TA0 <: \<tau>2` by auto
   have L3:"(Lam[a:ty].body)[x'::=e''] = (Lam[a:ty].(body[x'::=e'']))" using Lam by auto
   have L4:"\<turnstile> eff.TT <e: F'" using `F' = TT` by auto
-  from L1 L2 L3 L4 show  "EX TA FA. \<Gamma>' \<turnstile> (Lam [a:ty].body)[x'::=e''] : TA ; FA \<and> \<turnstile> TA <: T' \<and> \<turnstile> FA <e: F'" by auto
+  thm Lam
+  
+  have L5:"!! Env a ty body T S x. Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x \<Longrightarrow> False"
+    proof -
+    fix Env a ty body T S x
+    assume  "Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x"
+    have  " Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x \<Longrightarrow> False"
+      by (ind_cases2 " Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x") 
+    thus False using prems by auto
+  qed
+
+  from L1 L2 L3 L4 L5[of \<Gamma>' a _ ty ]
+  
+  show  ?case by auto
 next
   case (Iff t1 t2 t3 \<Gamma>' x' e'' T' T0' T1' F' G')
   let ?\<Gamma> = "(x', T1') # \<Gamma>'"
