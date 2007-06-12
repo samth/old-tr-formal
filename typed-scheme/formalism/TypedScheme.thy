@@ -3849,7 +3849,25 @@ next
   qed
 qed
 
+lemma subst_produces_TT:
+  assumes "(x,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
+  and "\<Gamma> \<turnstile> v : T0' ; F"
+  and "\<turnstile> T0' <: T0"
+  and "valid ((x,T0)#\<Gamma>)" 
+  and "closed v" and "v : values"
+  and "\<turnstile> T0' <: S"
+  shows "EX T'. \<Gamma> \<turnstile> e[x::=v] : T' ; TT \<and> \<turnstile> T' <: T"
+sorry
 
+lemma subst_produces_FF:
+  assumes "(x,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
+  and "\<Gamma> \<turnstile> v : T0' ; F"
+  and "\<turnstile> T0' <: T0"
+  and "valid ((x,T0)#\<Gamma>)" 
+  and "closed v" and "v : values"
+  and "~ \<turnstile> T0' <: S"
+  shows "EX T'. \<Gamma> \<turnstile> e[x::=v] : T' ; FF \<and> \<turnstile> T' <: T"
+sorry
 
 inductive_cases2 beta_cases:"App (Abs x b T) v \<hookrightarrow> e "
 
@@ -3945,10 +3963,14 @@ lemma preserve_red:
 	" eff1 = eff.TT "
 	" (eff' = TE S' x \<and> L = Latent S' \<or> L = latent_eff.NE)" 
 	by auto
-      hence "eff' = TE S x" "\<turnstile> T1' <: T'"using `U = T \<rightarrow> T1' : L` X2 using arr_sub_arr_cases[of T T1' L T0 T' "Latent S"] 
+      hence "eff' = TE S x" "\<turnstile> T0 <: T" "\<turnstile> T1' <: T'"using `U = T \<rightarrow> T1' : L` X2 using arr_sub_arr_cases[of T T1' L T0 T' "Latent S"] 
 	by auto
-      hence "(x, T) # \<Gamma>' \<turnstile> b : T1' ; TE S x" using f by auto
-      hence "EX T2'. \<Gamma>' \<turnstile> b[x::=v] : T2' ; TT \<and> \<turnstile> T2' <: T1'" using X3 sorry
+      hence X4:"(x, T) # \<Gamma>' \<turnstile> b : T1' ; TE S x" using f by auto
+      have valcons:"valid ((x,T)#\<Gamma>')" using `valid \<Gamma>'` `x \<sharp> \<Gamma>'` by auto
+      have "\<turnstile> Ta <: T" using `\<turnstile> Ta <: T0``\<turnstile> T0 <: T`  by auto
+      have "EX T2'. \<Gamma>' \<turnstile> b[x::=v] : T2' ; TT \<and> \<turnstile> T2' <: T1'" using X3 
+	using subst_produces_TT[OF X4 `\<Gamma>' \<turnstile> v : Ta ; eff2` `\<turnstile> Ta <: T` valcons ` closed v`` v \<in> values` `\<turnstile> Ta <: S`] 
+	by auto
       
       thus ?case using `\<turnstile> T1' <: T'` by auto
     next
@@ -3964,11 +3986,15 @@ lemma preserve_red:
 	" eff1 = eff.TT "
 	" (eff' = TE S' x \<and> L = Latent S' \<or> L = latent_eff.NE)" 
 	by auto
-      hence "eff' = TE S x" "\<turnstile> T1' <: T'"using `U = T \<rightarrow> T1' : L` X2 using arr_sub_arr_cases[of T T1' L T0 T' "Latent S"] 
+      hence "eff' = TE S x"  "\<turnstile> T0 <: T" "\<turnstile> T1' <: T'" using `U = T \<rightarrow> T1' : L` X2 using arr_sub_arr_cases[of T T1' L T0 T' "Latent S"] 
 	by auto
-      hence "(x, T) # \<Gamma>' \<turnstile> b : T1' ; TE S x" using f by auto
-      hence "EX T2'. \<Gamma>' \<turnstile> b[x::=v] : T2' ; FF \<and> \<turnstile> T2' <: T1'" using X3 sorry
-      
+      hence X4:"(x, T) # \<Gamma>' \<turnstile> b : T1' ; TE S x" using f by auto
+      have valcons:"valid ((x,T)#\<Gamma>')" using `valid \<Gamma>'` `x \<sharp> \<Gamma>'` by auto
+      have "\<turnstile> Ta <: T" using `\<turnstile> Ta <: T0``\<turnstile> T0 <: T`  by auto
+
+      hence "EX T2'. \<Gamma>' \<turnstile> b[x::=v] : T2' ; FF \<and> \<turnstile> T2' <: T1'" using X3 
+	using subst_produces_FF[OF X4 `\<Gamma>' \<turnstile> v : Ta ; eff2` `\<turnstile> Ta <: T` valcons ` closed v`` v \<in> values` _] 
+	by auto     
       thus ?case using `\<turnstile> T1' <: T'` by auto
     qed
 
