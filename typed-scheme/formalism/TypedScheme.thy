@@ -3853,6 +3853,10 @@ qed
 
 inductive_cases2 beta_cases:"App (Abs x b T) v \<hookrightarrow> e "
 
+inductive_cases2 beta_TT_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; TT"
+inductive_cases2 beta_FF_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; FF"
+thm beta_FF_cases
+
 lemma preserve_red:
   assumes typed:"\<Gamma> \<turnstile> e : t ; eff" and cl:"closed e"
   and red:"e \<hookrightarrow> e'" and val:"valid \<Gamma>"
@@ -3898,6 +3902,7 @@ lemma preserve_red:
     thus ?case using f g  by auto
   next
     case (e_beta v x b T \<Gamma>' T')
+    hence "simple_eff eff" using closed_eff by auto
     thm app_ty_elim[of \<Gamma>' "(Lam[x:T].b)" v t eff]
     (* hence "eff = NE" using app_abs_ty_elim_eff by auto *)
     from e_beta have "\<exists>T0 T0' T1 le eff' eff'' U.  \<Gamma>' \<turnstile> Abs x b T : U ; eff'  \<and>  \<Gamma>' \<turnstile> v : T0' ; eff''  
@@ -3905,9 +3910,10 @@ lemma preserve_red:
       using app_ty_elim[of \<Gamma>' "Abs x b T" v T' eff] by blast
     then obtain T0 T0' T1 le eff' eff'' U where " \<Gamma>' \<turnstile> Lam[x:T].b :U; eff'" and "\<Gamma>' \<turnstile> v : T0' ; eff''" 
       and "\<turnstile> T0' <: T0" and "T1 = T'"  and usub:"\<turnstile> U <:  T0 \<rightarrow> T1 : le " by auto
-    hence "\<exists>T1a eff2 L.  (x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2  \<and> U = T \<rightarrow> T1a : L"
+    hence "\<exists>T1a eff2 L S.  (x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2 \<and> U = T \<rightarrow> T1a : L \<and> (L = Latent S \<and> eff2 = TE S x \<or> L = latent_eff.NE)"
       using abs_ty_elim[of \<Gamma>' x b T "U" eff'] e_beta `x \<sharp> \<Gamma>'` by auto
-    then obtain T1a eff2 L where  bty:"(x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2" and ueq:"U = T \<rightarrow> T1a : L"
+    then obtain T1a eff2 L S where  bty:"(x,T)#\<Gamma>' \<turnstile> b : T1a ; eff2" and ueq:"U = T \<rightarrow> T1a : L"
+      and "(L = Latent S \<and> eff2 = TE S x \<or> L = latent_eff.NE)"
       by auto
     have "closed v" using e_beta closed_def trm.supp by auto
     have "v : values" using e_beta beta_cases[of _ _ _ v _ "v : values"]  trm.inject by auto
@@ -3922,8 +3928,51 @@ lemma preserve_red:
     then obtain T'a F' where a:"\<Gamma>' \<turnstile> b[x::=v] : T'a ; F'" and b:"\<turnstile> T'a <: T1a" by auto
     have "closed (b[x::=v])" using e_beta reduce_closed by blast
     hence c:"simple_eff F'" using a closed_eff by auto
-    from a b c have "\<turnstile> F' <e: eff" sorry (* using `eff = NE` simple_eff_below_ne by auto *)
-    thus ?case using a b `\<turnstile> T1a <: T'` by auto
+    have ?case using `simple_eff eff` e_beta a b
+
+    proof (induct eff rule: simple_eff_cases)
+      case NE thus ?case using simple_eff_below_ne[of F'] c a b `\<turnstile> T1a <: T'` by auto
+    next
+      case TT
+      obtain U T0 Ta S eff1 eff2 where  X1:"\<Gamma>' \<turnstile> (Lam [x:T].b) : U ; eff1 " and X2:"\<turnstile> U <: T0 \<rightarrow> T' : Latent S" and
+	X3:" \<Gamma>' \<turnstile> v : Ta ; eff2 " "\<turnstile> Ta <: T0"" \<turnstile> Ta <: S"
+	using trm.inject  beta_TT_cases[OF TT(5), of thesis]
+	by auto
+      note abs_ty_elim[OF X1 `x \<sharp> \<Gamma>'`]
+      then obtain T1' eff' L S' where f:
+	"(x, T) # \<Gamma>' \<turnstile> b : T1' ; eff'  "
+	" U = T \<rightarrow> T1' : L "
+	" eff1 = eff.TT "
+	" (eff' = TE S' x \<and> L = Latent S' \<or> L = latent_eff.NE)" 
+	by auto
+      hence "eff' = TE S x" "\<turnstile> T1' <: T'"using `U = T \<rightarrow> T1' : L` X2 using arr_sub_arr_cases[of T T1' L T0 T' "Latent S"] 
+	by auto
+      hence "(x, T) # \<Gamma>' \<turnstile> b : T1' ; TE S x" using f by auto
+      hence "EX T2'. \<Gamma>' \<turnstile> b[x::=v] : T2' ; TT \<and> \<turnstile> T2' <: T1'" using X3 sorry
+      
+      thus ?case using `\<turnstile> T1' <: T'` by auto
+    next
+      case FF
+      obtain U T0 Ta S eff1 eff2 where  X1:"\<Gamma>' \<turnstile> (Lam [x:T].b) : U ; eff1 " and X2:"\<turnstile> U <: T0 \<rightarrow> T' : Latent S" and
+	X3:" \<Gamma>' \<turnstile> v : Ta ; eff2 " "\<turnstile> Ta <: T0""~ \<turnstile> Ta <: S"
+	using trm.inject  beta_FF_cases[OF FF(5), of thesis]
+	by auto
+      note abs_ty_elim[OF X1 `x \<sharp> \<Gamma>'`]
+      then obtain T1' eff' L S' where f:
+	"(x, T) # \<Gamma>' \<turnstile> b : T1' ; eff'  "
+	" U = T \<rightarrow> T1' : L "
+	" eff1 = eff.TT "
+	" (eff' = TE S' x \<and> L = Latent S' \<or> L = latent_eff.NE)" 
+	by auto
+      hence "eff' = TE S x" "\<turnstile> T1' <: T'"using `U = T \<rightarrow> T1' : L` X2 using arr_sub_arr_cases[of T T1' L T0 T' "Latent S"] 
+	by auto
+      hence "(x, T) # \<Gamma>' \<turnstile> b : T1' ; TE S x" using f by auto
+      hence "EX T2'. \<Gamma>' \<turnstile> b[x::=v] : T2' ; FF \<and> \<turnstile> T2' <: T1'" using X3 sorry
+      
+      thus ?case using `\<turnstile> T1' <: T'` by auto
+    qed
+
+    thus ?case .
   qed
 
 lemma value_no_ctxt:
