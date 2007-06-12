@@ -3465,7 +3465,7 @@ next
     thus False using prems by auto
   qed
 
-  from L1 L2 L3 L4 L5[of \<Gamma>' a _ ty ]
+  from L11 L12 L21 L22 L3 L4 L5[of \<Gamma>' a _ ty ] c13
   
   show  ?case by auto
 next
