@@ -2016,7 +2016,7 @@ lemma abs_ty_elim_eff[rule_format]:
 
 lemma abs_ty_elim[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff ; a \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> 
-  \<exists> T1 eff' L S. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : L) \<and> eff = eff.TT \<and> (L = Latent S \<or> L = latent_eff.NE))"
+  \<exists> T1 eff' L S. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : L) \<and> eff = eff.TT \<and> ((eff' = TE S a \<and> L = Latent S) \<or> L = latent_eff.NE))"
 apply (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
 apply(auto simp add: trm.distinct trm.inject alpha) 
 apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
@@ -3207,7 +3207,7 @@ next
 qed
 
 
-lemma subst_preserve_TE:
+lemma subst_preserve_TE_app:
   assumes tapp:"(y,T0)#\<Gamma> \<turnstile> App e1 e2 : T ; TE S x"
   and neq:"y \<noteq> x"
   and val:"valid ((y,T0)#\<Gamma>)"
@@ -3234,6 +3234,27 @@ proof -
   hence " \<turnstile> T' <: A1 \<rightarrow> T : Latent S " using  `\<turnstile> B <: A1 \<rightarrow> T : Latent S` by auto
   hence "\<Gamma> \<turnstile> (App f e2)[y::=v] : T ; TE S x" using te2 tfsub `\<turnstile> A <: A1` by auto
   thus ?thesis using sz using trm.inject by auto
+qed
+
+inductive_cases2 te_elim_auto: "\<Gamma> \<turnstile> e : T ; TE S x"
+thm te_elim_auto
+
+lemma subst_preserve_TE:
+  fixes v
+  assumes tapp:"(y,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
+  and neq:"y \<noteq> x"
+  and val:"valid ((y,T0)#\<Gamma>)"
+  and ih: "!! t bc bf . \<lbrakk>t \<guillemotleft> e;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
+  \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf"
+  shows "\<Gamma> \<turnstile> e[y::=v] : T ; TE S x"
+proof -
+  obtain e1 e2 where "e = App e1 e2" using te_elim_auto[OF tapp, of thesis] by auto
+  hence A:"(y,T0)#\<Gamma> \<turnstile> App e1 e2 : T ; TE S x" using tapp by auto
+  note subst_preserve_TE_app[OF A neq val , of v]
+  have "!! t bc bf . \<lbrakk>t \<guillemotleft> App e1 e2;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
+    \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" using ih `e = App e1 e2` by auto
+  hence "\<Gamma> \<turnstile> App e1 e2[y::=v] : T ; TE S x" using subst_preserve_TE_app[OF A neq val , of v] by auto
+  thus ?thesis using `e = App e1 e2` by auto
 qed
   
 inductive_cases2 lam_latent_eff_elim_auto: "\<Gamma> \<turnstile> Lam[x:T].b : S1 \<rightarrow> S2 : Latent U ; F"
@@ -3389,8 +3410,8 @@ next
     by (auto simp add: fresh_atm fresh_prod fresh_list_cons)
   have c1: "((x',T0')#\<Gamma>')\<turnstile>Lam [a:ty].body : T' ; F'" by fact
 (*  hence "\<exists>\<tau>2 eff L S. ((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff \<and> T'=ty\<rightarrow>\<tau>2:L  \<and> F' = TT" using f4 abs_ty_elim by auto *)
-  then obtain \<tau>2 eff L S where c11: "T'=ty\<rightarrow>\<tau>2:L" and c12: "((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff" "F' = TT"
-    and c13:"L = latent_eff.NE \<or> L = Latent S" using f4 abs_ty_elim by blast
+  then obtain \<tau>2 eff L S where c11: "T'=ty\<rightarrow>\<tau>2:L" and c12: "((a,ty)#(x',T0')#\<Gamma>') \<turnstile> body : \<tau>2 ; eff" and "F' = TT"
+    and c13:"L = latent_eff.NE \<or> (eff = TE S a \<and> L = Latent S)" using f4 abs_ty_elim by blast
   from c12 have "valid ((a,ty)#(x',T0')#\<Gamma>')" using Lam by auto
   hence ca: "valid \<Gamma>'" and cb: "a\<sharp>\<Gamma>'" and cc: "x'\<sharp>\<Gamma>'" 
     by (auto dest: valid_elim simp add: fresh_list_cons)
@@ -3410,16 +3431,27 @@ next
     by auto
   then obtain TA0 FA0 where body_ty:"?inner\<Gamma> \<turnstile> body[x'::=e''] : TA0 ; FA0 "" \<turnstile> TA0 <: \<tau>2" by auto
   hence L11:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : latent_eff.NE; eff.TT" using `a \<sharp> \<Gamma>'` by auto 
-  note Lam(9)[OF _ _ `\<Gamma>' \<turnstile> e'' : T1' ; G'` `\<turnstile> T1' <: T0'` `valid ((x', T0') # \<Gamma>')` `closed e''` `e'' : values`]
-  hence "!! t bc bf . \<lbrakk>t \<guillemotleft> Lam [a:ty].body;  (x', T0') # \<Gamma>' \<turnstile> t : bc ; bf \<rbrakk>
-\<Longrightarrow> \<exists>T' F'.  \<Gamma>' \<turnstile> t[x'::=e''] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" .
-  hence "!! t bc bf . \<lbrakk>t \<guillemotleft> body;  (x', T0') # \<Gamma>' \<turnstile> t : bc ; bf \<rbrakk>
-\<Longrightarrow> \<exists>T' F'.  \<Gamma>' \<turnstile> t[x'::=e''] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" by auto
-  have "L = Latent S \<Longrightarrow> FA0 = TE S a" sorry
-  hence L12:"L = Latent S \<Longrightarrow> \<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : Latent S; eff.TT" using body_ty `a \<sharp> \<Gamma>'`
-    by auto
-  from L11 L12 have L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : L; eff.TT" using c13 by auto
-  have L2:"\<turnstile> ty \<rightarrow> TA0 : L <: T'" using c11 ` \<turnstile> TA0 <: \<tau>2` by auto
+  note Lam(9)[OF _ _ `(a, ty)# \<Gamma>' \<turnstile> e'' : T1' ; G'` `\<turnstile> T1' <: T0'` `valid ((x', T0')# (a, ty) # \<Gamma>')` `closed e''` `e'' : values`]
+  hence "!! t bc bf . \<lbrakk>t \<guillemotleft> Lam [a:ty].body;  (x', T0') #(a, ty)# \<Gamma>' \<turnstile> t : bc ; bf \<rbrakk>
+\<Longrightarrow> \<exists>T' F'.  (a, ty)#\<Gamma>' \<turnstile> t[x'::=e''] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" .
+  hence ih_body:"!! t bc bf . \<lbrakk>t \<guillemotleft> body;  (x', T0') # (a, ty)#\<Gamma>' \<turnstile> t : bc ; bf \<rbrakk>
+\<Longrightarrow> \<exists>T' F'.  (a, ty)#\<Gamma>' \<turnstile> t[x'::=e''] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" by auto
+  hence L12:"L = Latent S \<Longrightarrow> \<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> \<tau>2 : Latent S; eff.TT" 
+  proof -
+    assume "L = Latent S"
+    hence "eff = TE S a" using c13 by auto
+    hence c12':"(a, ty) # (x', T0') # \<Gamma>' \<turnstile> body : \<tau>2 ; TE S a" using c12 by simp
+    have c12'':" (x', T0') # (a, ty) # \<Gamma>' \<turnstile> body : \<tau>2 ; TE S a" using weakening[OF c12' _ c2 ] 
+      using `valid ((x', T0') # (a, ty) # \<Gamma>')` `valid ((a, ty) # (x', T0') # \<Gamma>')` by auto
+    have f2':"x' \<noteq> a" using f2 by auto
+    note body_ty subst_preserve_TE[OF c12'' f2' `valid ((x', T0') # (a, ty) # \<Gamma>')` , of e'']
+    hence "(a, ty) # \<Gamma>' \<turnstile> body[x'::=e''] : \<tau>2 ; TE S a" using ih_body by auto
+    hence "?inner\<Gamma> \<turnstile> body[x'::=e''] : \<tau>2 ; TE S a " .
+    thus ?thesis using `a \<sharp> \<Gamma>'` by auto
+  qed
+  (* from L11 L12 have L1:"\<Gamma>' \<turnstile> (Lam[a:ty].(body[x'::=e''])) : ty \<rightarrow> TA0 : L; eff.TT" using c13 by auto *)
+  have L21:"\<turnstile> ty \<rightarrow> TA0 : L <: T'" using c11 ` \<turnstile> TA0 <: \<tau>2` by auto
+  have L22: "\<turnstile> ty \<rightarrow> \<tau>2 : L <: T'" using c11 by auto
   have L3:"(Lam[a:ty].body)[x'::=e''] = (Lam[a:ty].(body[x'::=e'']))" using Lam by auto
   have L4:"\<turnstile> eff.TT <e: F'" using `F' = TT` by auto
   thm Lam
