@@ -3850,30 +3850,68 @@ next
 qed
 
 lemma subst_produces_TT:
-  assumes "(x,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
-  and "\<Gamma> \<turnstile> v : T0' ; F"
-  and "\<turnstile> T0' <: T0"
-  and "valid ((x,T0)#\<Gamma>)" 
-  and "closed v" and "v : values"
-  and "\<turnstile> T0' <: S"
+  assumes ty:"(x,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
+  and vty:"\<Gamma> \<turnstile> v : T0' ; F"
+  and A:"\<turnstile> T0' <: T0"
+  and B:"valid ((x,T0)#\<Gamma>)" 
+  and C:"closed v" and D:"v : values"
+  and E:"\<turnstile> T0' <: S"
   shows "EX T'. \<Gamma> \<turnstile> e[x::=v] : T' ; TT \<and> \<turnstile> T' <: T"
-sorry
+proof -
+  obtain f A A1 Fn Sa B
+    where
+    eq:"e = App f (Var x)" and fty:"(x, T0) # \<Gamma> \<turnstile> f : B ; Fn  "
+    and bsub:" \<turnstile> B <: A1 \<rightarrow> T : Latent S " and xty:" (x, T0) # \<Gamma> \<turnstile> Var x : A ; VE x  "
+    and asub:" \<turnstile> A <: A1"
+    using te_ty_elim[OF ty] by auto
+  note preserve_subst[OF fty vty A B C D]
+  then obtain T' F' where
+    X1:"\<Gamma> \<turnstile> f[x::=v] : T' ; F'  " and " \<turnstile> T' <: B "" \<turnstile> F' <e: Fn"
+    by auto
+  hence X2:"\<turnstile> T' <: A1 \<rightarrow> T : Latent S" using bsub by auto
+  have "(Var x)[x::=v] = v" by simp
+  hence X3:"\<Gamma> \<turnstile> (Var x)[x::=v] : T0' ; F" using vty by auto
+  have "(x, T0) # \<Gamma> \<turnstile> Var x : T0 ; VE x" using `valid ((x, T0) # \<Gamma>)` by auto
+  hence "T0 = A" using xty unique_var_typing by auto
+  hence "\<turnstile> T0' <: A1" using A asub by auto
+  from X1 X2 X3 show ?thesis using T_AppPredTrue[OF X1 X2 X3 `\<turnstile> T0' <: A1` E] using  asub E eq 
+    by auto
+qed
+  
 
 lemma subst_produces_FF:
-  assumes "(x,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
-  and "\<Gamma> \<turnstile> v : T0' ; F"
-  and "\<turnstile> T0' <: T0"
-  and "valid ((x,T0)#\<Gamma>)" 
-  and "closed v" and "v : values"
-  and "~ \<turnstile> T0' <: S"
+  assumes ty:"(x,T0)#\<Gamma> \<turnstile> e : T ; TE S x"
+  and vty:"\<Gamma> \<turnstile> v : T0' ; F"
+  and A:"\<turnstile> T0' <: T0"
+  and B:"valid ((x,T0)#\<Gamma>)" 
+  and C:"closed v" and D:"v : values"
+  and E:"~ \<turnstile> T0' <: S"
   shows "EX T'. \<Gamma> \<turnstile> e[x::=v] : T' ; FF \<and> \<turnstile> T' <: T"
-sorry
+proof -
+  obtain f A A1 Fn Sa B
+    where
+    eq:"e = App f (Var x)" and fty:"(x, T0) # \<Gamma> \<turnstile> f : B ; Fn  "
+    and bsub:" \<turnstile> B <: A1 \<rightarrow> T : Latent S " and xty:" (x, T0) # \<Gamma> \<turnstile> Var x : A ; VE x  "
+    and asub:" \<turnstile> A <: A1"
+    using te_ty_elim[OF ty] by auto
+  note preserve_subst[OF fty vty A B C D]
+  then obtain T' F' where
+    X1:"\<Gamma> \<turnstile> f[x::=v] : T' ; F'  " and " \<turnstile> T' <: B "" \<turnstile> F' <e: Fn"
+    by auto
+  hence X2:"\<turnstile> T' <: A1 \<rightarrow> T : Latent S" using bsub by auto
+  have veq:"(Var x)[x::=v] = v" by simp
+  hence X3:"\<Gamma> \<turnstile> (Var x)[x::=v] : T0' ; F" using vty by auto
+  have "(x, T0) # \<Gamma> \<turnstile> Var x : T0 ; VE x" using `valid ((x, T0) # \<Gamma>)` by auto
+  hence "T0 = A" using xty unique_var_typing by auto
+  hence "\<turnstile> T0' <: A1" using A asub by auto
+  from X1 X2 X3 show ?thesis using T_AppPredFalse[OF X1 X2 X3 `\<turnstile> T0' <: A1` E] using  asub E eq C D veq
+    by auto
+qed
 
 inductive_cases2 beta_cases:"App (Abs x b T) v \<hookrightarrow> e "
 
 inductive_cases2 beta_TT_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; TT"
 inductive_cases2 beta_FF_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; FF"
-thm beta_FF_cases
 
 lemma preserve_red:
   assumes typed:"\<Gamma> \<turnstile> e : t ; eff" and cl:"closed e"
@@ -3997,7 +4035,6 @@ lemma preserve_red:
 	by auto     
       thus ?case using `\<turnstile> T1' <: T'` by auto
     qed
-
     thus ?case .
   qed
 
@@ -4285,7 +4322,6 @@ proof -
       `L \<notin> values`by auto
   thus ?thesis using `e' = C R` by auto
 qed
-
 
 text {* soundness *}
 
