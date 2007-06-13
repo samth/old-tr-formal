@@ -1467,12 +1467,13 @@ lemma env_minus_simple_eff:
 
 fun comb_eff :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
 where
-  "comb_eff F1 F2 F3 = eff.NE"
+  "comb_eff F1 F2 F3 = (if (F2 = F3) then F2 else eff.NE)"
 
 lemma comb_eff_eqvt[eqvt]:
   fixes pi :: "name prm"
   shows "(pi\<bullet> (comb_eff F1 F2 F3)) = comb_eff (pi\<bullet>F1) (pi\<bullet>F2) (pi\<bullet>F3) "
-  using comb_eff.simps by auto
+  using comb_eff.simps 
+  by (auto simp add: eqvts)
 
 text {* type judgments *}
 inductive2
@@ -2059,23 +2060,24 @@ lemma app_abs_ty_elim_eff[rule_format]:
 
 *)
 lemma if_ty_elim_weak[rule_format]: 
-  "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff \<Longrightarrow> \<exists> T0 eff'. (\<Gamma> \<turnstile> t1 : T0 ; eff') \<and> eff = NE"
+  "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff \<Longrightarrow> \<exists> T0 eff'. (\<Gamma> \<turnstile> t1 : T0 ; eff')"
 by (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
    (auto simp add: trm.inject)
 
 lemma if_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff \<Longrightarrow> 
-  (\<exists> T1 T2 T3 F1 F2 F3. (\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> \<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> \<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: \<sigma>  \<and> \<turnstile> T3 <: \<sigma> \<and> eff = NE)
+  (\<exists> T1 T2 T3 F1 F2 F3. (\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> \<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> \<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: \<sigma>  \<and> \<turnstile> T3 <: \<sigma> \<and> (eff = NE \<or> F2 = F3 \<and> F3 = eff))
   \<or>
   (\<exists> T1 T3 F3. (\<Gamma> \<turnstile> t1 : T1 ; FF) \<and> \<Gamma> \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T3 <: \<sigma> \<and> eff = NE)
   \<or>
   (\<exists> T1 T2 F2. (\<Gamma> \<turnstile> t1 : T1 ; TT) \<and> \<Gamma> \<turnstile> t2 : T2 ; F2 \<and> \<turnstile> T2 <: \<sigma>  \<and> eff = NE)"
 proof (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
   fix e1 T1 eff1 e2 T2 eff2 e3 T3 eff3
-  assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = eff.NE""  \<Gamma> \<turnstile> e1 : T1 ; eff1""  env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2 "
+  assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = (if eff2 = eff3 then eff2 else eff.NE)""  \<Gamma> \<turnstile> e1 : T1 ; eff1""  env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2 "
     "env_minus eff1 \<Gamma> \<turnstile> e3 : T3 ; eff3"" \<turnstile> T2 <: \<sigma>"" \<turnstile> T3 <: \<sigma>"
   hence A:"t1 = e1" "t2 = e2" "t3 = e3" using trm.inject by auto
-  thus ?thesis using prems by blast 
+  thus ?thesis using prems
+    by (auto, blast+)
 next
   fix e1 T1 e2 T2 effa e3
   assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = eff.NE""  \<Gamma> \<turnstile> e1 : T1 ; TT ""  \<Gamma> \<turnstile> e2 : T2 ; effa "" \<turnstile> T2 <: \<sigma>"
