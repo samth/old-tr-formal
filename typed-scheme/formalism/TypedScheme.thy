@@ -1465,9 +1465,45 @@ lemma env_minus_simple_eff:
   using prems
   by (induct eff rule: simple_eff_cases) auto
 
-fun comb_eff :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
+lemma eff_cases:
+  fixes F :: eff
+  shows "F = NE \<or> F = TT \<or> F = FF \<or> (EX T a. F = TE T a) \<or> (EX a. F = VE a)"
+by (induct F rule: eff.weak_induct) auto
+
+inductive2 comb_eff_rel :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> bool"
 where
-  "comb_eff F1 F2 F3 = (if (F2 = F3) then F2 else eff.NE)"
+[simp]:"comb_eff_rel TT F2 F3 F2"
+|[simp]: "comb_eff_rel FF F2 F3 F3"
+|[simp]: "comb_eff_rel (TE T x) TT (TE S x) (TE (Union [T,S]) x)"
+|[simp]: "comb_eff_rel F1 F2 F3 (if (F2 = F3) then F2 else eff.NE)"
+
+lemma comb_eff_rel_func:
+  assumes "comb_eff_rel F1 F2 F3 F"
+  and "comb_eff_rel F1 F2 F3 F'"
+  shows "F = F'"
+  using prems
+  
+  apply (induct F1 rule: eff.weak_induct)
+  apply auto
+
+function comb_eff  :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
+where
+  "comb_eff TT F2 F3 = F2"
+| "comb_eff FF F2 F3 = F3"
+| "comb_eff (TE T x) TT (TE S x) = TE (Union [T,S]) x"
+| "comb_eff F1 F2 F3 = (if (F2 = F3) then F2 else eff.NE)"
+using eff_cases
+
+
+apply(auto simp add: eff.inject)
+apply(rotate_tac 4)
+apply(drule_tac x="a" in meta_spec)
+apply(blast)
+apply(blast)
+apply auto
+done
+
+by pat_completeness auto
 
 lemma comb_eff_eqvt[eqvt]:
   fixes pi :: "name prm"
@@ -2096,7 +2132,7 @@ inductive_cases2 ne_eff_cases: "\<Gamma> \<turnstile> e : T; NE"
 
 lemma if_true_ty_elim[rule_format]: 
    "\<lbrakk>\<Gamma> \<turnstile> Iff v t2 t3: \<sigma> ; eff ; v : values; v ~= Bool False\<rbrakk> \<Longrightarrow>
-  \<exists> T0 eff'. ((\<Gamma> \<turnstile> t2 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = NE)"  
+  \<exists> T0 eff'. ((\<Gamma> \<turnstile> t2 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = eff')"  
 proof (ind_cases2 "\<Gamma> \<turnstile> Iff (v) t2 t3: \<sigma> ; eff")
   fix eff1 eff2 T1 T2 e1 e2 e3 
   assume "v : values" "env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2" "Iff v t2 t3 = Iff e1 e2 e3" "\<turnstile> T2 <: \<sigma>" 
