@@ -1470,28 +1470,23 @@ lemma eff_cases:
   shows "F = NE \<or> F = TT \<or> F = FF \<or> (EX T a. F = TE T a) \<or> (EX a. F = VE a)"
 by (induct F rule: eff.weak_induct) auto
 
-inductive2 comb_eff_rel :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> bool"
+fun comb_eff_default  :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
 where
-[simp]:"comb_eff_rel TT F2 F3 F2"
-|[simp]: "comb_eff_rel FF F2 F3 F3"
-|[simp]: "comb_eff_rel (TE T x) TT (TE S x) (TE (Union [T,S]) x)"
-|[simp]: "comb_eff_rel F1 F2 F3 (if (F2 = F3) then F2 else eff.NE)"
-
-lemma comb_eff_rel_func:
-  assumes "comb_eff_rel F1 F2 F3 F"
-  and "comb_eff_rel F1 F2 F3 F'"
-  shows "F = F'"
-  using prems
-  
-  apply (induct F1 rule: eff.weak_induct)
-  apply auto
+ "comb_eff_default F1 F2 F3 = 
+  (if (F2 = F3) 
+  then F2
+  else
+  (if (F2 = TT \<and> F3 = FF)
+  then F1
+  else
+  eff.NE))"
 
 function comb_eff  :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
 where
   "comb_eff TT F2 F3 = F2"
 | "comb_eff FF F2 F3 = F3"
-| "comb_eff (TE T x) TT (TE S x) = TE (Union [T,S]) x"
-| "comb_eff F1 F2 F3 = (if (F2 = F3) then F2 else eff.NE)"
+| "comb_eff (TE T x) TT (TE S y) = (if x = y then TE (Union [T,S]) x else eff.NE)"
+| "comb_eff F1 F2 F3 = comb_eff_default F1 F2 F3"
 using eff_cases
 
 
