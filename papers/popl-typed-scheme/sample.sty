@@ -28,8 +28,8 @@
 \newbfop\ifsym{if}
 \newcommand\noeffect{\ma{\bullet}}
 %\newbfop\usym{\ma{\bigcup}}
-\newcommand\usym{\bigcup}
-\newcommand\proctype[3]{(#1 \stackrel{#3}{\to} #2)}
+\newcommand\usym{\ma{\bigcup}}
+\newcommand\proctype[3]{\ma{(#1 \stackrel{#3}{\to} #2)}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -70,7 +70,7 @@
 \newcommand\remove[2]{\ma{\mathrm{remove}({#1},{#2})}}
 \newcommand\restrict[2]{\ma{\mathrm{restrict}({#1},{#2})}}
 
-\newcommand\dt[1]{\delta_{\tau}(#1)}
+\newcommand\dt[1]{\ma{\delta_{\tau}(#1)}}
 \newcommand\del[2]{\delta(#1,#2)}
 
 % from Dave
