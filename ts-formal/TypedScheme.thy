@@ -1560,7 +1560,7 @@ lemma comb_eff_eqvt[eqvt]:
 	  by (nominal_induct F3 rule: eff.induct) (auto simp add: eqvts)
       qed (auto simp add: eqvts)
   qed (auto simp add: eqvts)
-
+(*
 lemma comb_eff_mono_1:
   assumes "\<turnstile> F <e: F'"
   shows "\<turnstile> comb_eff F F2 F3 <e: comb_eff F' F2 F3"
@@ -1612,6 +1612,8 @@ next
       apply (auto simp add: comb_eff.simps)
       apply (auto simp add: SE_NE)
 oops
+
+*)
 (*
 case SE_TT
 case SE_VE
@@ -1639,8 +1641,8 @@ where
 | T_AppPredFalse[intro]:
   "\<lbrakk>\<Gamma> \<turnstile> e1 : U; eff1; \<turnstile> U <: (T0 \<rightarrow> T1 : Latent S); \<Gamma> \<turnstile> e2 : T; eff2 ;  \<turnstile> T <: T0; ~(\<turnstile> T <: S) ; e2 : values ; closed e2\<rbrakk>
   \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; FF"
-| T_IfTrue[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; TT ; \<Gamma> \<turnstile> e2 : T2 ; eff;  \<turnstile> T2 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
-| T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE"
+| T_IfTrue[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; TT ; \<Gamma> \<turnstile> e2 : T2 ; eff;  \<turnstile> T2 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; eff" 
+| T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; eff"
 | T_AbsPred[intro]:   "\<lbrakk>x \<sharp> \<Gamma>; ((x,T1)#\<Gamma>) \<turnstile> b : T2; TE S x\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Lam [x:T1].b : (T1\<rightarrow>T2 : Latent S) ; TT"
 
 equivariance typing
@@ -2212,25 +2214,25 @@ by (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
 
 lemma if_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff \<Longrightarrow> 
-  (\<exists> T1 T2 T3 F1 F2 F3. (\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> \<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> \<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: \<sigma>  \<and> \<turnstile> T3 <: \<sigma> \<and> (eff = NE \<or> F2 = F3 \<and> F3 = eff))
+  (\<exists> T1 T2 T3 F1 F2 F3. (\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> \<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> \<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: \<sigma>  \<and> \<turnstile> T3 <: \<sigma> \<and> (eff = comb_eff F1 F2 F3))
   \<or>
-  (\<exists> T1 T3 F3. (\<Gamma> \<turnstile> t1 : T1 ; FF) \<and> \<Gamma> \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T3 <: \<sigma> \<and> eff = NE)
+  (\<exists> T1 T3 F3. (\<Gamma> \<turnstile> t1 : T1 ; FF) \<and> \<Gamma> \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T3 <: \<sigma> \<and> eff = F3)
   \<or>
-  (\<exists> T1 T2 F2. (\<Gamma> \<turnstile> t1 : T1 ; TT) \<and> \<Gamma> \<turnstile> t2 : T2 ; F2 \<and> \<turnstile> T2 <: \<sigma>  \<and> eff = NE)"
+  (\<exists> T1 T2 F2. (\<Gamma> \<turnstile> t1 : T1 ; TT) \<and> \<Gamma> \<turnstile> t2 : T2 ; F2 \<and> \<turnstile> T2 <: \<sigma>  \<and> eff = F2)"
 proof (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
   fix e1 T1 eff1 e2 T2 eff2 e3 T3 eff3
-  assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = (if eff2 = eff3 then eff2 else eff.NE)""  \<Gamma> \<turnstile> e1 : T1 ; eff1""  env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2 "
+  assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = comb_eff eff1 eff2 eff3""  \<Gamma> \<turnstile> e1 : T1 ; eff1""  env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2 "
     "env_minus eff1 \<Gamma> \<turnstile> e3 : T3 ; eff3"" \<turnstile> T2 <: \<sigma>"" \<turnstile> T3 <: \<sigma>"
   hence A:"t1 = e1" "t2 = e2" "t3 = e3" using trm.inject by auto
   thus ?thesis using prems
     by (auto, blast+)
 next
-  fix e1 T1 e2 T2 effa e3
-  assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = eff.NE""  \<Gamma> \<turnstile> e1 : T1 ; TT ""  \<Gamma> \<turnstile> e2 : T2 ; effa "" \<turnstile> T2 <: \<sigma>"
+  fix e1 T1 e2 T2 e3
+  assume "Iff t1 t2 t3 = Iff e1 e2 e3""  \<Gamma> \<turnstile> e1 : T1 ; TT ""  \<Gamma> \<turnstile> e2 : T2 ; eff "" \<turnstile> T2 <: \<sigma>"
   thus ?thesis by (auto simp add: trm.inject)
 next
-  fix e1 T1 e2 T3 effa e3
-  assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = eff.NE""  \<Gamma> \<turnstile> e1 : T1 ; FF ""  \<Gamma> \<turnstile> e3 : T3 ; effa "" \<turnstile> T3 <: \<sigma>"
+  fix e1 T1 e2 T3 e3
+  assume "Iff t1 t2 t3 = Iff e1 e2 e3""  \<Gamma> \<turnstile> e1 : T1 ; FF ""  \<Gamma> \<turnstile> e3 : T3 ; eff "" \<turnstile> T3 <: \<sigma>"
   thus ?thesis by (auto simp add: trm.inject)
 qed
 
@@ -2239,14 +2241,33 @@ inductive_cases2 ff_eff_cases: "\<Gamma> \<turnstile> e : T; FF"
 inductive_cases2 tt_eff_cases: "\<Gamma> \<turnstile> e : T; TT"
 inductive_cases2 ne_eff_cases: "\<Gamma> \<turnstile> e : T; NE"
 
+lemma val_true_eff:
+  assumes "v : values"
+  and "v ~= Bool False"
+  and "\<Gamma> \<turnstile> v : T ; F"
+  shows "F = TT"
+using prems
+proof (nominal_induct v avoiding: \<Gamma> rule: values.strong_induct)
+  print_cases
+  case (bool_value b)
+  thus ?case using true_ty_elim trm.inject by auto
+next
+  case (num_value b)
+  thus ?case using num_ty_elim by auto
+next
+  case bi_value thus ?case using bi_ty_elim by auto
+next
+  case abs_value thus ?case using abs_ty_elim[OF abs_value(3)] by auto
+qed
 
 lemma if_true_ty_elim[rule_format]: 
    "\<lbrakk>\<Gamma> \<turnstile> Iff v t2 t3: \<sigma> ; eff ; v : values; v ~= Bool False\<rbrakk> \<Longrightarrow>
   \<exists> T0 eff'. ((\<Gamma> \<turnstile> t2 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = eff')"  
 proof (ind_cases2 "\<Gamma> \<turnstile> Iff (v) t2 t3: \<sigma> ; eff")
-  fix eff1 eff2 T1 T2 e1 e2 e3 
-  assume "v : values" "env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2" "Iff v t2 t3 = Iff e1 e2 e3" "\<turnstile> T2 <: \<sigma>" 
-    "\<Gamma> \<turnstile> e1 : T1 ; eff1" "eff = NE"
+  fix eff1 eff2 T1 T2 T3 e1 e2 e3 eff3
+  assume "v : values" "env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2" "env_minus eff1 \<Gamma> \<turnstile> e3 : T3 ; eff3"
+    "Iff v t2 t3 = Iff e1 e2 e3" "\<turnstile> T2 <: \<sigma>" "v ~= Bool False"
+    "\<Gamma> \<turnstile> e1 : T1 ; eff1" "eff = comb_eff eff1 eff2 eff3"
   have "\<Gamma> \<turnstile> v : T1 ; eff1" using prems by (simp add: trm.inject)
   have "eff1 = eff.NE \<or> eff1 = FF \<or> eff1 = TT" using `v : values` `\<Gamma> \<turnstile> v : T1 ; eff1`
   proof (induct rule: values.induct)
@@ -2259,15 +2280,17 @@ proof (ind_cases2 "\<Gamma> \<turnstile> Iff (v) t2 t3: \<sigma> ; eff")
     case bi_value thus ?case using bi_ty_elim by auto
   qed
   hence "env_plus eff1 \<Gamma> = \<Gamma>" by auto
-  hence "\<Gamma> \<turnstile> e2 : T2 ; eff2 \<and> \<turnstile> T2 <: \<sigma>" using prems by auto
-  thus ?thesis using prems by (auto simp add: trm.inject)
+  hence T:"\<Gamma> \<turnstile> e2 : T2 ; eff2 \<and> \<turnstile> T2 <: \<sigma>" using prems by auto
+  have "eff1 = TT" using `\<Gamma> \<turnstile> v : T1 ; eff1` val_true_eff prems by auto
+  thus ?thesis using T prems by (auto simp add: trm.inject)
 next
-  fix e1 T2 e2 e3 effa
-  assume "Iff v t2 t3 = Iff e1 e2 e3"  "\<Gamma> \<turnstile> e2 : T2 ; effa"  "\<turnstile> T2 <: \<sigma>" "eff = NE"
+  fix e1 T1 T2 e2 e3
+  assume "Iff v t2 t3 = Iff e1 e2 e3"  "\<Gamma> \<turnstile> e2 : T2 ; eff"  "\<turnstile> T2 <: \<sigma>"
+    "\<Gamma> \<turnstile> e1 : T1 ; eff.TT"
   thus ?thesis by (auto simp add: trm.inject)
 next
   fix e1 T1 e3 T3 effa e2
-  assume "v : values" "v \<noteq> trm.Bool False" "Iff v t2 t3 = Iff e1 e2 e3" "\<Gamma> \<turnstile> e1 : T1 ; FF" "eff = NE"
+  assume "v : values" "v \<noteq> trm.Bool False" "Iff v t2 t3 = Iff e1 e2 e3" "\<Gamma> \<turnstile> e1 : T1 ; FF" 
   have "v = e1" using prems trm.inject by auto
   hence tv:"\<Gamma> \<turnstile> v : T1 ; FF" by simp
   have "v = Bool False" using `v : values` tv
@@ -2286,7 +2309,7 @@ qed
 
 lemma if_false_ty_elim[rule_format]: 
    "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff \<Longrightarrow>
-  \<exists> T0 eff'. ((\<Gamma> \<turnstile> t3 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = eff.NE)"  
+  \<exists> T0 eff'. ((\<Gamma> \<turnstile> t3 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = eff')"  
 proof (ind_cases2 "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff")
   fix e1 e2 e3 T1
   assume "Iff (trm.Bool False) t2 t3 = Iff e1 e2 e3" and "\<Gamma> \<turnstile> e1 : T1 ; TT"
@@ -2295,17 +2318,17 @@ proof (ind_cases2 "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; 
   thus ?thesis by (simp)
 next
   fix e1 e2 e3 T1 T3 effa
-  assume "Iff (trm.Bool False) t2 t3 = Iff e1 e2 e3" and " eff = eff.NE"and" \<Gamma> \<turnstile> e1 : T1 ; FF" and "  \<Gamma> \<turnstile> e3 : T3 ; effa"and " \<turnstile> T3 <: \<sigma>"
+  assume "Iff (trm.Bool False) t2 t3 = Iff e1 e2 e3" and" \<Gamma> \<turnstile> e1 : T1 ; FF" and "  \<Gamma> \<turnstile> e3 : T3 ; eff"and " \<turnstile> T3 <: \<sigma>"
   thus ?thesis by (auto simp add: trm.inject)
 next
-  fix e1 e2 e3 T1 T3 eff1 eff3
-  assume "Iff (trm.Bool False) t2 t3 = Iff e1 e2 e3" and "eff = eff.NE" 
+  fix e1 e2 e3 T1 T3 eff1 eff2 eff3
+  assume "Iff (trm.Bool False) t2 t3 = Iff e1 e2 e3" and ce:"eff = comb_eff eff1 eff2 eff3"
     and f:"\<Gamma> \<turnstile> e1 : T1 ; eff1" and g:"env_minus eff1 \<Gamma> \<turnstile> e3 : T3 ; eff3" and "\<turnstile> T3 <: \<sigma>"
   hence "e1 = Bool False" and "t3 = e3" by (auto simp add: trm.inject)
   hence "eff1 = FF" using f false_ty_elim by auto
   hence "env_minus eff1 \<Gamma> = \<Gamma>" by simp
   hence "\<Gamma> \<turnstile> e3 : T3 ; eff3" using g by simp
-  thus ?thesis using `t3 = e3` `\<turnstile> T3 <: \<sigma>` `eff = eff.NE` by auto
+  thus ?thesis using `t3 = e3` `\<turnstile> T3 <: \<sigma>`  ce `eff1 = FF` by auto
 qed 
 
 lemma var_ty_elim:
@@ -2362,11 +2385,72 @@ qed
 
 text {* lemmas about the effects of closed terms *}
 
+lemma comb_eff_default_preserve:
+  assumes "comb_eff_default F1 F2 F3 = F"
+  shows "F = F1 \<or> F = F2 \<or> F = F3 \<or> F = NE"
+  using prems by auto
+
+lemma comb_eff_preserve:
+  assumes "comb_eff F1 F2 F3 = F"
+  shows "F = F1 \<or> F = F2 \<or> F = F3 \<or> F = NE \<or> (EX T S U x. F1 = TE T x \<and> F3 = TE S x \<and> F = TE U x)"
+  using prems
+proof (nominal_induct F1 rule: eff.induct)
+  case NE thus ?case by auto
+next
+  case TT thus ?case by auto
+next
+  case FF thus ?case by auto
+next
+  case VE thus ?case by auto
+next
+  case (TE T x) thus ?case
+  proof (nominal_induct F2 rule: eff.induct)
+    case NE hence "F = TE T x \<or> F = NE \<or> F = F3 \<or> F = NE" by auto thus ?case by auto
+  next
+    case FF thus ?case by auto
+  next
+    case VE thus ?case by auto
+  next
+    case TE thus ?case by auto
+  next
+    case TT thus ?case 
+    proof (nominal_induct F3 rule: eff.induct)
+      case NE thus ?case by auto
+    next
+      case FF thus ?case by auto
+    next
+      case VE thus ?case by auto
+    next
+      case TT thus ?case by auto
+    next
+      case (TE S y) thus ?case
+	proof (cases "x = y")
+	  case False thus ?thesis using TE by auto
+	next
+	  case True thus ?thesis using TE by auto
+	qed
+      qed
+    qed
+  qed
+	
 lemma ve_not_closed:
-  "\<Gamma> \<turnstile> e : T ; eff.VE x \<Longrightarrow>
-  x : supp e"
-  by (ind_cases2 "\<Gamma> \<turnstile> e : T ; eff.VE x")
-     (auto simp add: eff.inject trm.supp at_supp supp_atm)
+  assumes "\<Gamma> \<turnstile> e : T ; F" "F = eff.VE x"
+  shows "x : supp e"
+using prems
+proof (induct \<Gamma> e T F rule: typing.induct)
+  case T_Var thus ?case 
+    by (auto simp add: eff.inject trm.supp at_supp supp_atm)
+next
+  case T_If thus ?case 
+
+    thm comb_eff.simps comb_eff_default.simps
+
+sorry
+next
+  case T_IfTrue thus ?case sorry
+next
+  case T_IfFalse thus ?case sorry
+qed (auto simp add: eff.inject)
 
 lemma te_not_closed:
   "\<Gamma> \<turnstile> e : T ; eff.TE T' x \<Longrightarrow>
