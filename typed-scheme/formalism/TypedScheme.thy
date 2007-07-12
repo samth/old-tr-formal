@@ -836,8 +836,7 @@ where
   SE_Refl[intro]: "\<turnstile> F <e: F"
 | SE_FF[intro]: "F \<noteq> TT \<Longrightarrow> \<turnstile> FF <e: F"
 | SE_TT[intro]: "F \<noteq> FF \<Longrightarrow> \<turnstile> TT <e: F"
-| SE_VE[intro]: "\<turnstile> NE <e: VE x"
-| SE_TE[intro]: "\<turnstile> NE <e: TE S x"
+| SE_NE[intro]: "\<turnstile> F <e: NE"
 
 inductive_cases2 ne_case:"\<turnstile> F1 <e: eff.NE"
 inductive_cases2 ne_case_rev:"\<turnstile> eff.NE <e: F1"
@@ -1481,30 +1480,146 @@ where
   else
   eff.NE))"
 
+  
+
+
 function comb_eff  :: "eff \<Rightarrow> eff \<Rightarrow> eff \<Rightarrow> eff"
 where
   "comb_eff TT F2 F3 = F2"
 | "comb_eff FF F2 F3 = F3"
 | "comb_eff (TE T x) TT (TE S y) = (if x = y then TE (Union [T,S]) x else eff.NE)"
-| "comb_eff F1 F2 F3 = comb_eff_default F1 F2 F3"
-using eff_cases
+| "comb_eff (TE T x) TT (VE y) = comb_eff_default (TE T x) TT (VE y)"
+| "comb_eff (TE T x) TT TT = comb_eff_default (TE T x) TT TT"
+| "comb_eff (TE T x) TT FF = comb_eff_default (TE T x) TT FF"
+| "comb_eff (TE T x) TT NE = comb_eff_default (TE T x) TT NE"
+| "comb_eff (TE T x) FF F3 = comb_eff_default (TE T x) FF F3"
+| "comb_eff (TE T x) (TE S y) F3 = comb_eff_default (TE T x) (TE S y) F3"
+| "comb_eff (TE T x) (VE y) F3 = comb_eff_default (TE T x) (VE y) F3"
+| "comb_eff (TE T x) NE F3 = comb_eff_default (TE T x) FF F3"
+| "comb_eff (VE x) F2 F3 = comb_eff_default (VE x) F2 F3"
+| "comb_eff (NE) F2 F3 = comb_eff_default (NE) F2 F3"
+proof  (auto simp add: eff.inject)
+  fix P a aa b
+  assume 
+    asmTT:"\<And>F2 F3. a = eff.TT \<and> aa = F2 \<and> b = F3 \<Longrightarrow> P" and asmFF:"\<And>F2 F3. a = eff.FF \<and> aa = F2 \<and> b = F3 \<Longrightarrow> P" and
+    asmTETT:"\<And>T x S y. a = TE T x \<and> aa = eff.TT \<and> b = TE S y \<Longrightarrow> P"  "\<And>T x y. a = TE T x \<and> aa = eff.TT \<and> b = VE y \<Longrightarrow> P"
+    "\<And>T x. a = TE T x \<and> aa = eff.TT \<and> b = eff.TT \<Longrightarrow> P"  "\<And>T x. a = TE T x \<and> aa = eff.TT \<and> b = eff.FF \<Longrightarrow> P" 
+    "\<And>T x. a = TE T x \<and> aa = eff.TT \<and> b = eff.NE \<Longrightarrow> P" and
+    asmTEFF:"\<And>T x F3. a = TE T x \<and> aa = eff.FF \<and> b = F3 \<Longrightarrow> P" and
+    asmTETE:"\<And>T x S y F3. a = TE T x \<and> aa = TE S y \<and> b = F3 \<Longrightarrow> P" and
+    asmTEVE:"\<And>T x y F3. a = TE T x \<and> aa = VE y \<and> b = F3 \<Longrightarrow> P" and
+    asmTENE:"\<And>T x F3. a = TE T x \<and> aa = eff.NE \<and> b = F3 \<Longrightarrow> P" and 
+    asmVE:"\<And>x F2 F3. a = VE x \<and> aa = F2 \<and> b = F3 \<Longrightarrow> P" and
+    asmNE:"\<And>F2 F3. a = eff.NE \<and> aa = F2 \<and> b = F3 \<Longrightarrow> P"
+  show "P"
+  proof (nominal_induct a==a rule: eff.induct)
+    case NE thus ?case using asmNE by auto
+  next
+    case VE thus ?case using asmVE by auto
+  next
+    case TT thus ?case using asmTT by auto
+  next
+    case FF thus ?case using asmFF by auto
+  next
+    case (TE T v) thus ?case
+    proof (nominal_induct aa==aa rule: eff.induct)
+      case TT thus ?case using asmTETT
+      proof (nominal_induct b==b rule: eff.induct)
+	case (TE T' v') thus ?case using asmTETT(1)[of T v T' v'] by auto
+      next
+	case (VE v') thus ?case using asmTETT(2)[of T v v'] by auto
+      qed (auto)
+    next
+      case FF thus ?case using asmTEFF by auto
+    next
+      case NE thus ?case using asmTENE by auto
+    next
+      case (TE T' v') thus ?case using asmTETE[of T v T' v'] by auto
+    next
+      case (VE v') thus ?case using asmTEVE[of T v v'] by auto
+    qed 
+  qed
+qed
 
+termination using comb_eff.termination by auto
 
-apply(auto simp add: eff.inject)
-apply(rotate_tac 4)
-apply(drule_tac x="a" in meta_spec)
-apply(blast)
-apply(blast)
-apply auto
-done
-
-by pat_completeness auto
+lemma comb_eff_default_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "(pi\<bullet> (comb_eff_default F1 F2 F3)) = comb_eff_default (pi\<bullet>F1) (pi\<bullet>F2) (pi\<bullet>F3) "
+  using comb_eff_default.simps 
+  by (auto simp add: eqvts)
 
 lemma comb_eff_eqvt[eqvt]:
   fixes pi :: "name prm"
   shows "(pi\<bullet> (comb_eff F1 F2 F3)) = comb_eff (pi\<bullet>F1) (pi\<bullet>F2) (pi\<bullet>F3) "
-  using comb_eff.simps 
-  by (auto simp add: eqvts)
+  using comb_eff.simps
+  proof (nominal_induct F1 rule: eff.induct)
+    case TE thus ?case
+      proof (nominal_induct F2 rule: eff.induct)
+	case TT	thus ?case
+	  by (nominal_induct F3 rule: eff.induct) (auto simp add: eqvts)
+      qed (auto simp add: eqvts)
+  qed (auto simp add: eqvts)
+
+lemma comb_eff_mono_1:
+  assumes "\<turnstile> F <e: F'"
+  shows "\<turnstile> comb_eff F F2 F3 <e: comb_eff F' F2 F3"
+using prems
+proof (induct rule: subeff.induct)
+  print_cases
+  case SE_Refl thus ?case by auto
+next
+  case (SE_FF F0) thus ?case
+  proof (nominal_induct F0==F0 rule: eff.induct)
+    case NE thus ?case by (auto simp add: comb_eff.simps)
+  next
+    case TT thus ?case by (auto simp add: comb_eff.simps)
+  next
+    case FF thus ?case by (auto simp add: comb_eff.simps)
+  next
+    case VE thus ?case by (auto simp add: comb_eff.simps)+
+  next
+    case (TE T x) thus ?case
+    proof (nominal_induct F2==F2 rule: eff.induct)
+      case TT thus ?case
+	apply (nominal_induct F3==F3 rule: eff.induct)
+	apply clarify+
+	apply (simp add: SE_NE)+
+	apply clarify
+	
+
+    qed (auto simp add: comb_eff.simps)
+  qed
+next
+  case (SE_TT F0) thus ?case
+  proof (nominal_induct F0==F0 rule: eff.induct)
+    case NE thus ?case by (auto simp add: comb_eff.simps)
+  next
+    case TT thus ?case by (auto simp add: comb_eff.simps)
+  next
+    case FF thus ?case by (auto simp add: comb_eff.simps)
+  next
+    case VE thus ?case by (auto simp add: comb_eff.simps)+
+  next
+    case (TE T x) thus ?case
+    proof (nominal_induct F2==F2 rule: eff.induct)
+      case TT thus ?case sorry
+    qed (auto simp add: comb_eff.simps)
+  qed
+next
+
+      proof (nominal_induct F3==F3 rule: eff.induct)
+      apply (auto simp add: comb_eff.simps)
+      apply (auto simp add: SE_NE)
+oops
+(*
+case SE_TT
+case SE_VE
+case SE_TE
+next
+apply (auto simp add: comb_eff.simps)
+  *)
+  
 
 text {* type judgments *}
 inductive2

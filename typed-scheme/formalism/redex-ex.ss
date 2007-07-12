@@ -38,6 +38,12 @@
                        (if (boolean? x) 1 (add1 x))
                        12))
                     9)))
+  (define t10* (term ((lambda (x : top) 
+                      (if 
+                       (if (boolean? x) #t (number? x))
+                       (if (boolean? x) 1 (add1 x))
+                       12))
+                    #f)))
   
   
   
@@ -75,7 +81,7 @@
              (if v (add1 v) ((lambda (x : bool) 7) v)))
            42)))
   
-  (define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t11 t12 t13 t14 t15 t16 bad))
+  (define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 bad))
   
   
   )
