@@ -2433,6 +2433,19 @@ next
     qed
   qed
 	
+lemma comb_eff_ve:
+  assumes "comb_eff F1 F2 F3 = VE x"
+  shows "F1 = VE x \<or> F2 = VE x \<or> F3 = VE x"
+  using comb_eff_preserve[OF prems] eff.inject by auto
+  
+
+lemma comb_eff_te:
+  assumes "comb_eff F1 F2 F3 = TE T x"
+  shows "EX U. F1 = TE U x \<or> F2 = TE U x \<or> F3 = TE U x"
+  using comb_eff_preserve[OF prems]
+  by (auto simp add: eff.inject)
+
+
 lemma ve_not_closed:
   assumes "\<Gamma> \<turnstile> e : T ; F" "F = eff.VE x"
   shows "x : supp e"
@@ -2441,37 +2454,41 @@ proof (induct \<Gamma> e T F rule: typing.induct)
   case T_Var thus ?case 
     by (auto simp add: eff.inject trm.supp at_supp supp_atm)
 next
-  case T_If thus ?case 
-
-    thm comb_eff.simps comb_eff_default.simps
-
-sorry
+  case T_If thus ?case using comb_eff_ve[OF T_If(9)]
+    by (auto simp add: trm.supp)
 next
-  case T_IfTrue thus ?case sorry
+  case T_IfTrue thus ?case by (auto simp add: trm.supp)
 next
-  case T_IfFalse thus ?case sorry
+  case T_IfFalse thus ?case by (auto simp add: trm.supp)
 qed (auto simp add: eff.inject)
 
 lemma te_not_closed:
-  "\<Gamma> \<turnstile> e : T ; eff.TE T' x \<Longrightarrow>
-  x : supp e"
-  proof (ind_cases2 "\<Gamma> \<turnstile> e : T ; eff.TE T' x")
-    fix e1 T0 S eff1 e2 Ta xa
-    assume "e = App e1 e2" "TE T' x = TE S xa" "\<Gamma> \<turnstile> e2 : Ta ; VE xa"
-    have "x = xa" using prems eff.inject by auto
-    hence "\<Gamma> \<turnstile> e2 : Ta ; VE x" using prems eff.inject by auto
-    hence "x : supp e2" using ve_not_closed by auto
-    thus "x : supp e" using prems trm.supp by auto
-  qed
+  assumes "\<Gamma> \<turnstile> e : T ; F" "F = eff.TE T' x"
+  shows "x : supp e"
+using prems
+proof (induct \<Gamma> e T F arbitrary: T' rule: typing.induct)
+  case T_If thus ?case using comb_eff_te[OF T_If(9)]
+    by (auto simp add: trm.supp)
+next
+  case T_IfTrue thus ?case by (auto simp add: trm.supp)
+next
+  case T_IfFalse thus ?case by (auto simp add: trm.supp)
+next
+  case (T_AppPred \<Gamma> e1 _ _ T0 T1 S e2 Ta xa)
+  have "x = xa" using prems eff.inject by auto
+  hence "\<Gamma> \<turnstile> e2 : Ta ; VE x" using prems eff.inject by auto
+  hence "x : supp e2" using ve_not_closed by auto
+  thus ?case using prems trm.supp by auto
+qed (auto simp add: eff.inject)
 
 lemma closed_eff:
   assumes "closed e" and "\<Gamma> \<turnstile> e : T ; eff"
   shows "simple_eff eff"
 using prems
 proof (nominal_induct eff rule: eff.induct)
-  case (VE name) thus ?case using ve_not_closed[of _ e _ name] closed_def by auto
+  case (VE name) thus ?case using ve_not_closed[OF VE(2)] closed_def by auto
 next
-  case (TE _ name) thus ?case using te_not_closed[of _ e _ _ name] closed_def by auto
+  case (TE _ name) thus ?case using te_not_closed[OF TE(2)] closed_def by auto
 qed (auto)
 
 lemma closed_eff_below_NE:
@@ -2998,18 +3015,13 @@ next
   thus ?case using a a' by auto
 qed
 
-lemma simple_eff_below_ve:
-  assumes "simple_eff F"
-  shows "\<turnstile> F <e: VE x"
-  using prems
-  by (induct F rule: simple_eff_cases) auto
-
+(*
 lemma below_ne_simple:
   assumes "\<turnstile> F <e: G" and "G = NE"
   shows "simple_eff F"
   using prems no_sub_TT no_sub_FF
   by induct auto
-
+*)
 lemma below_ve_simple:
   assumes "\<turnstile> F <e: G" and "G = VE x"
   shows "simple_eff F \<or> F = VE x"
@@ -3361,6 +3373,10 @@ lemma closed_any_env:
 
 inductive_cases2 ve_ty_elim: "\<Gamma> \<turnstile> e : T ; VE x"  
 
+inductive_cases2 te_ty_elim_auto:  "\<Gamma> \<turnstile> e : T ; TE U z"
+thm te_ty_elim_auto
+
+(*
 lemma te_ty_elim: 
  "\<Gamma> \<turnstile> t1 : T ; TE U z \<Longrightarrow>
   EX f A A1 Fn S B. t1 = (App f (Var z)) \<and> \<Gamma> \<turnstile> f : B ; Fn \<and> \<turnstile> B <:  A1 \<rightarrow> T : Latent U \<and>
@@ -3377,7 +3393,7 @@ lemma te_ty_elim:
     have E:"\<turnstile> B <: T0 \<rightarrow> T : Latent U" using ty.inject latent_eff.inject prems eff.inject by auto
     from `\<turnstile> Ta <: T0` B C D E  show ?thesis by blast
   qed
-    
+  *)  
   
 
 lemma unique_var_typing:
@@ -3425,6 +3441,7 @@ next
   thus ?case using true_ty_elim false_ty_elim by (cases b) auto
 qed
 
+
 lemma remove_fresh_env:
   assumes A:"y \<sharp> \<Gamma>" and B:"valid \<Gamma>"
   shows "\<Gamma> - (y,T) = \<Gamma>"
@@ -3438,6 +3455,29 @@ next
   thus ?case using v2 `y \<sharp> \<Gamma>'` by auto
 qed
 
+lemma subst_preserve_VE:
+  assumes tapp:"(y,T0)#\<Gamma> \<turnstile> e : T ; VE x"
+  and neq:"y \<noteq> x"
+  and val:"valid ((y,T0)#\<Gamma>)"
+  and ih: "!! t bc bf . \<lbrakk>t \<guillemotleft> e;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
+  \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf"
+  shows "EX T'. \<Gamma> \<turnstile> e[y::=v] : T' ; VE x \<and> \<turnstile> T' <: T"
+using prems
+proof (induct rule: ve_ty_elim[OF tapp, case_names 1 2 3 4])
+  case (1 va)
+  have "y \<sharp> e" using 1 eff.inject trm.fresh fresh_atm[of y va] by auto
+  hence eq:"e = e[y::=v]" using forget[OF `y \<sharp> e`] using trm.inject 1 by auto
+  note fresh_weakening_cons[OF val tapp `y \<sharp> e`]
+  thus ?case using eq by auto
+next
+  case 2
+  thus ?case sorry
+next
+  case 3 thus ?case sorry
+next
+  case 4 thus ?case sorry
+qed  
+
 
 lemma subst_preserve_TE_app:
   assumes tapp:"(y,T0)#\<Gamma> \<turnstile> App e1 e2 : T ; TE S x"
@@ -3446,27 +3486,26 @@ lemma subst_preserve_TE_app:
   and ih: "!! t bc bf . \<lbrakk>t \<guillemotleft> App e1 e2;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
   \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf"
   shows "\<Gamma> \<turnstile> (App e1 e2)[y::=v] : T ; TE S x"
-proof -
-  note te_ty_elim[OF tapp]
-  then obtain f  A A1 Fn Sa B
-    where sz:"App e1 e2 = App f (Var x)"
-    and tf:"(y, T0) # \<Gamma> \<turnstile> f : B ; Fn  "" \<turnstile> B <: A1 \<rightarrow> T : Latent S" 
-    and tvx:"(y, T0) # \<Gamma> \<turnstile> Var x : A ; VE x" and sub:" \<turnstile> A <: A1"
-    by auto
-  hence "e1 = f" and "e2 = Var x" using trm.inject by auto
-  hence "e2[y::=v] = Var x" using `y \<noteq> x` forget by auto
-  hence tsub:" (y, T0)#\<Gamma> \<turnstile> e2[y::=v] : A ; VE x" using `e2=Var x` tvx by auto
-  have fr:"y \<sharp> e2[y::=v]" using `e2 = Var x``e2[y::=v] = Var x` `y \<noteq> x` using fresh_atm by auto
-  have "y \<sharp> \<Gamma>" "valid \<Gamma>" using valid_elim[OF val] by auto
-  hence "((y, T0) # \<Gamma>) - (y, T0) = \<Gamma>" using remove_fresh_env[OF `y \<sharp> \<Gamma>` `valid \<Gamma>`] by auto
-  hence te2:"\<Gamma> \<turnstile> e2[y::=v] : A ; VE x" using fresh_weakening[OF fr tsub `valid ((y,T0)#\<Gamma>)`, of T0]  by auto
-  have szf:"f \<guillemotleft> App e1 e2" using sz by auto
-  note ih[OF szf tf(1)]
-  then obtain T' F' where  tfsub:"\<Gamma> \<turnstile> f[y::=v] : T' ; F'  "" \<turnstile> T' <: B " "\<turnstile> F' <e: Fn" by auto
-  hence " \<turnstile> T' <: A1 \<rightarrow> T : Latent S " using  `\<turnstile> B <: A1 \<rightarrow> T : Latent S` by auto
-  hence "\<Gamma> \<turnstile> (App f e2)[y::=v] : T ; TE S x" using te2 tfsub `\<turnstile> A <: A1` by auto
-  thus ?thesis using sz using trm.inject by auto
-qed
+using prems
+proof (induct rule: te_ty_elim_auto[OF tapp, case_names 1])
+  case (1 e U F T0a S' e' Ta x')
+  have X1:"e2 \<guillemotleft> App e1 e2" by auto
+  have X2:"(y, T0) # \<Gamma> \<turnstile> e2 : Ta ; VE x" using 1 eff.inject trm.inject by auto
+  have ih':"!! t bc bf . \<lbrakk>t \<guillemotleft> e2;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
+  \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" using ih X1 by auto
+  note subst_preserve_VE[OF X2 neq val, of v, OF ih']
+  hence "\<exists>T'.  \<Gamma> \<turnstile> e2[y::=v] : T' ; VE x  \<and> \<turnstile> T' <: Ta" by auto
+  then obtain T' where te2:"\<Gamma> \<turnstile> e2[y::=v] : T'; VE x ""  \<turnstile> T' <: Ta"  by auto
+  have szf:"e1 \<guillemotleft> App e1 e2" by auto
+
+  have te1:"(y, T0) # \<Gamma> \<turnstile> e1 : U ; F" using 1 eff.inject trm.inject by auto
+  note ih[OF szf te1] 
+  then obtain T' F' where  tfsub:"\<Gamma> \<turnstile> e1[y::=v] : T' ; F'  "" \<turnstile> T' <: U " "\<turnstile> F' <e: F" by auto
+  hence sub2:" \<turnstile> T' <: T0a \<rightarrow> T : Latent S' " using  `\<turnstile> U <: T0a \<rightarrow> T : Latent S'` by auto
+  have "S' = S" using 1 eff.inject by auto
+  hence "\<Gamma> \<turnstile> (App e1 e2)[y::=v] : T ; TE S x" using T_AppPred[OF tfsub(1) sub2 te2(1)] te2(2)  `\<turnstile> Ta <: T0a` by auto
+  thus ?thesis .
+qed (simp_all add: trm.inject)
 
 inductive_cases2 te_elim_auto: "\<Gamma> \<turnstile> e : T ; TE S x"
 thm te_elim_auto
@@ -3479,6 +3518,8 @@ lemma subst_preserve_TE:
   and ih: "!! t bc bf . \<lbrakk>t \<guillemotleft> e;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
   \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf"
   shows "\<Gamma> \<turnstile> e[y::=v] : T ; TE S x"
+sorry
+(*
 proof -
   obtain e1 e2 where "e = App e1 e2" using te_elim_auto[OF tapp, of thesis] by auto
   hence A:"(y,T0)#\<Gamma> \<turnstile> App e1 e2 : T ; TE S x" using tapp by auto
@@ -3488,6 +3529,7 @@ proof -
   hence "\<Gamma> \<turnstile> App e1 e2[y::=v] : T ; TE S x" using subst_preserve_TE_app[OF A neq val , of v] by auto
   thus ?thesis using `e = App e1 e2` by auto
 qed
+*)
   
 inductive_cases2 lam_latent_eff_elim_auto: "\<Gamma> \<turnstile> Lam[x:T].b : S1 \<rightarrow> S2 : Latent U ; F"
 thm lam_latent_eff_elim_auto
@@ -3510,8 +3552,8 @@ proof (nominal_induct e avoiding: \<Gamma> x e' T T1 T0 F G rule: trm_comp_induc
     assume case1: "v=x"
     hence "(Var v)[x::=e'] = e'" by simp
     hence A:"\<Gamma> \<turnstile> (Var v)[x::=e'] : T1; G" using Var by auto
-    have "simple_eff G" using closed_eff `closed e'` prems by auto
-    hence C:"\<turnstile> G <e: F" using a22b simple_eff_below_ve by auto
+    hence A':"\<Gamma> \<turnstile> e' : T1; G" using `(Var v)[x::=e'] = e'` by auto
+    hence C:"\<turnstile> G <e: F" using a22b value_effect_tt_or_ff[OF `e' : values` A']  by auto
     have B:"T = T0"
     proof (rule ccontr)
       assume a3:"T ~= T0"
@@ -3589,9 +3631,27 @@ next
   proof (nominal_induct F' rule: eff.induct)
     case NE thus ?case using L1 L2 by auto
   next
-    case VE thus ?case using L1 L2 by auto
+    case VE thus ?case using L1 L2 ve_ty_elim[OF VE] by (auto simp add: trm.inject)
   next
-    case (TE ty var) thus ?case using L1 L2 by auto
+    case (TE ty var)
+    thus ?case
+      sorry
+(*
+    proof (induct rule: te_ty_elim_auto[OF TE, case_names 1])
+      case (1 e1 T1 F1 A  U e2 T2 x)
+      hence eq:"e1 = s1" "e2 = s2" "ty = U" "var = x" using eff.inject trm.inject by auto
+      hence ts1:"(x', T0') # \<Gamma>' \<turnstile> s1 : T1 ; F1" using 1 by auto
+      from eq have ts2:"(x', T0') # \<Gamma>' \<turnstile> s2 : T2 ; VE var" using 1 by auto
+      note ih_s1[OF ts1 App(8) App(9) App(7) App(5) App(6)]  App
+      then obtain S G where Xs1:"\<Gamma>' \<turnstile> s1[x'::=e''] : S ; G  "" \<turnstile> S <: T1 "" \<turnstile> G <e: F1" by auto
+      note subst_preserve_VE[OF ts2]
+      note ih_s2[OF ts2 App(8) App(9) App(7) App(5) App(6)]  App
+      then obtain S' G' where Xs1:"\<Gamma>' \<turnstile> s2[x'::=e''] : S' ; G'  "" \<turnstile> S <: T2 "" \<turnstile> G <e: VE var" by auto
+
+      thus ?case using 1
+
+ thus ?case using L1 L2 by auto
+*)
   next
     case TT
     from elim3 TT  obtain T0 T0'a T1 le leS eff' eff'' U where
@@ -3704,18 +3764,18 @@ next
   case (Iff t1 t2 t3 \<Gamma>' x' e'' T' T0' T1' F' G')
   let ?\<Gamma> = "(x', T1') # \<Gamma>'"
   have A:"(\<exists> T1 T2 T3 F1 F2 F3. 
-    (?\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: T'  \<and> \<turnstile> T3 <: T' \<and> F' = NE)
+    (?\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: T'  \<and> \<turnstile> T3 <: T' \<and> F' = comb_eff F1 F2 F3)
     \<or>
-    (\<exists> T1 T3 F3. (?\<Gamma> \<turnstile> t1 : T1 ; FF) \<and> ?\<Gamma> \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T3 <: T' \<and> F' = NE)
+    (\<exists> T1 T3 F3. (?\<Gamma> \<turnstile> t1 : T1 ; FF) \<and> ?\<Gamma> \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T3 <: T' \<and> F' = F3)
     \<or>
-    (\<exists> T1 T2 F2. (?\<Gamma> \<turnstile> t1 : T1 ; TT) \<and> ?\<Gamma> \<turnstile> t2 : T2 ; F2 \<and> \<turnstile> T2 <: T'  \<and> F' = NE)" using Iff if_ty_elim by auto
+    (\<exists> T1 T2 F2. (?\<Gamma> \<turnstile> t1 : T1 ; TT) \<and> ?\<Gamma> \<turnstile> t2 : T2 ; F2 \<and> \<turnstile> T2 <: T'  \<and> F' = F2)" using Iff if_ty_elim by auto
   thus ?case
   proof -
     {
       assume "(\<exists> T1 T2 T3 F1 F2 F3. 
-        (?\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: T'  \<and> \<turnstile> T3 <: T' \<and> F' = NE)"
+        (?\<Gamma> \<turnstile> t1 : T1 ; F1) \<and> ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 \<and> ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T2 <: T'  \<and> \<turnstile> T3 <: T' \<and> F' = comb_eff F1 F2 F3)"
       then obtain T1 T2 T3 F1 F2 F3 where
-	"?\<Gamma> \<turnstile> t1 : T1 ; F1 "" ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 "" ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 "" \<turnstile> T2 <: T'""\<turnstile> T3 <: T'""F' = NE"
+	"?\<Gamma> \<turnstile> t1 : T1 ; F1 "" ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 "" ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 "" \<turnstile> T2 <: T'""\<turnstile> T3 <: T'""F' = comb_eff F1 F2 F3"
 	by auto
       hence ?thesis
       proof (nominal_induct F1 rule: eff.induct)
