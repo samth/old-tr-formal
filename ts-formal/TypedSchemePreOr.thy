@@ -11,7 +11,7 @@
    - eta-expansion
 *)
 
-theory TypedScheme
+theory TypedSchemePreOr
 imports Nominal
 
 begin
