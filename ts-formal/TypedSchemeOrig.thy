@@ -52,13 +52,13 @@ lemma perm_ty_latent[simp]:
   and   le::"latent_eff"
   and   pi::"name prm"
   shows "pi\<bullet>le = le \<and> pi\<bullet>T = T"
-  by (induct rule: latent_eff_ty.induct_weak) (simp_all)
+  by (induct rule: latent_eff_ty.weak_induct) (simp_all)
 
 lemma perm_builtin[simp]: 
   fixes e::"builtin"
   and   pi::"name prm"
   shows "pi\<bullet>e = e"
-  by (induct rule: builtin.induct_weak) (simp_all)
+  by (induct rule: builtin.weak_induct) (simp_all)
 
 lemma fresh_ty[simp]:
   fixes x::"name" 
@@ -222,7 +222,7 @@ proof -
   have A:"(pi\<bullet>fv e) = fv (pi\<bullet>e)" using pt_perm_supp[of pi e] at_name_inst pt_trm_inst by auto
   assume "closed e"
   hence "fv e = {}" using closed_def by simp
-  hence "(pi\<bullet>fv e) = {}" using perm_empty[of pi] by auto
+  hence "(pi\<bullet>fv e) = {}" using empty_eqvt[of pi] by auto
   hence "closed (pi\<bullet>e)" using A closed_def by auto
   thus ?thesis .
 qed    
@@ -240,13 +240,10 @@ nominal_primrec
  "(BI c)[y::=t'] = (BI c)"
  "(Num c)[y::=t'] = (Num c)"
  "(Bool c)[y::=t'] = (Bool c)"
-apply(finite_guess add: eq_eqvt perm_if fs_name1)+
+apply(finite_guess add: eq_eqvt if_eqvt fs_name1)+
 apply(perm_full_simp)
 apply(auto simp add: fs_name1 eq_eqvt abs_fresh)
-apply(finite_guess add: eq_eqvt perm_if fs_name1)+
-apply(fresh_guess add: eq_eqvt perm_if fs_name1)+
-apply(perm_full_simp)
-apply(fresh_guess add: eq_eqvt perm_if fs_name1)+
+apply(fresh_guess add: eq_eqvt fs_name1)+
 done
 
 
@@ -515,9 +512,9 @@ nominal_primrec
   "add1_fun (BI a) = None"
   "add1_fun (Var a) = None"
   apply auto
-  apply(finite_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat abs_fresh)+
+  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat abs_fresh)+
   apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some abs_fresh)+
+  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -529,9 +526,9 @@ nominal_primrec
   "nott_fun (BI a) = None"
   "nott_fun (Var a) = None"
   apply auto
-  apply(finite_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
+  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
   apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
+  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -543,9 +540,9 @@ nominal_primrec
   "booleanp_fun (Var v) = False"
   "booleanp_fun (Iff a b c) = False"
   apply auto
-  apply(finite_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
+  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
   apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
+  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -557,9 +554,9 @@ nominal_primrec
   "numberp_fun (Var v) = False"
   "numberp_fun (Iff a b c) = False"
   apply auto
-  apply(finite_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
+  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
   apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt perm_if fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
+  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -1091,7 +1088,7 @@ lemma env_plus1_eqvt:
   fixes pi::"name prm"
   shows "env_plus1  (pi\<bullet>eff) (pi\<bullet>\<Gamma>)= pi\<bullet>(env_plus1 eff \<Gamma>)"
   by (nominal_induct eff avoiding: \<Gamma> rule: eff.induct)
-   (auto simp add: eff.eqvt envop_eqvt simp del: envop_def)
+   (auto simp add: eff.eqvts envop_eqvt simp del: envop_def)
 
 
 lemma env_plus_eqvt:
@@ -1103,7 +1100,7 @@ lemma env_minus1_eqvt:
   fixes pi::"name prm"
   shows "env_minus1  (pi\<bullet>eff) (pi\<bullet>\<Gamma>)= pi\<bullet>(env_minus1 eff \<Gamma>)"
   by (nominal_induct eff avoiding: \<Gamma> rule: eff.induct)
-     (auto simp add: eff.eqvt envop_eqvt simp del: envop_def)
+     (auto simp add: eff.eqvts envop_eqvt simp del: envop_def)
 
 
 lemma env_minus_eqvt:
@@ -1191,7 +1188,6 @@ where
   \<Longrightarrow> \<Gamma> \<turnstile> App e1 e2 : T1 ; FF"
 | T_IfTrue[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; TT ; \<Gamma> \<turnstile> e2 : T2 ; eff;  \<turnstile> T2 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
 | T_IfFalse[intro]: "\<lbrakk>\<Gamma> \<turnstile> e1 : T1 ; FF ; \<Gamma> \<turnstile> e3 : T3 ; eff;  \<turnstile> T3 <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> (Iff e1 e2 e3) : T ; NE" 
-
 
 
 (* general lemmas about typing *)
