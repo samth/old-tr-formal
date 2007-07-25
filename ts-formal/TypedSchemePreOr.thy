@@ -5,6 +5,12 @@
 
 *)
 
+(*
+   This contains occurence typing with:
+   - variables as tests
+   - eta-expansion
+*)
+
 theory TypedScheme
 imports Nominal
 

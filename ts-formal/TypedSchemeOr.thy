@@ -5,6 +5,11 @@
 
 *)
 
+(*
+ This contains work towards including or in the calculus, using
+ comb_eff 
+*)
+
 theory TypedScheme
 imports Nominal
 
