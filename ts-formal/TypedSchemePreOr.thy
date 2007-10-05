@@ -1,7 +1,6 @@
 (* This file requires:
 
- - The Nominal Isabelle Package, version 0.11
- - An Isabelle Snapshot from no earlier than April 27, 2007
+ - An Isabelle Snapshot from no earlier than October 5, 2007
 
 *)
 
@@ -16,6 +15,7 @@ imports Nominal
 
 begin
 
+ML {*ResAtp.set_prover "vampire"*}
 (* ML {* ThmDeps.enable() *} *) 
 
 
@@ -318,7 +318,8 @@ qed
  
 
 lemma fv_lam:
-  "fv (Lam[name:T].body) =  fv body - {name}"
+  fixes name
+  shows "fv (Lam[name:T].body) =  fv body - {name}"
 proof -
   have sT:"supp T = ({} :: name set)" using supp_latent_eff_ty by auto
   have "fv (Lam[name:T].body) = (supp ([name].body):: name set) \<union> supp T" using trm.supp by auto
@@ -401,7 +402,7 @@ lemma beta_closed_closed:
 text {* values *}
 
 
-inductive2 values :: "trm \<Rightarrow> bool" ("_ : values" [80])
+inductive values :: "trm \<Rightarrow> bool" ("_ : values" [80])
 where
   abs_value[simp]: "Lam[x:t].b : values"
 |  bi_value[simp]: "BI c : values"
@@ -426,9 +427,9 @@ lemma not_false_eqvt:
   using b a
   by induct (auto simp add: perm_bool)
 
-inductive_cases2 iff_value:"Iff a b c : values"
-inductive_cases2 app_value:"App a b : values"
-inductive_cases2 var_value:"Var a : values"
+inductive_cases iff_value:"Iff a b c : values"
+inductive_cases app_value:"App a b : values"
+inductive_cases var_value:"Var a : values"
 
 nominal_inductive values by (simp add: abs_fresh)
 
@@ -647,15 +648,13 @@ lemma delta_value:
 
 text {* Evaluation contexts *}
 
-consts 
-  ctxt :: "(trm \<Rightarrow> trm) set"
 
-inductive ctxt
-intros
+inductive_set ctxt :: "(trm \<Rightarrow> trm) set"
+where
   C_Hole[simp, intro]: "(%t. t) \<in> ctxt"
-  C_App1[simp, intro]: "E : ctxt \<Longrightarrow> (%t .  (App (E t) u)) : ctxt"
-  C_App2[simp, intro]: "E : ctxt \<Longrightarrow> v : values \<Longrightarrow> (%t . (App v (E t))) : ctxt"
-  C_Iff[simp, intro]: "E : ctxt \<Longrightarrow> (%t . (Iff (E t) thn els)) : ctxt"
+|  C_App1[simp, intro]: "E : ctxt \<Longrightarrow> (%t .  (App (E t) u)) : ctxt"
+|  C_App2[simp, intro]: "E : ctxt \<Longrightarrow> v : values \<Longrightarrow> (%t . (App v (E t))) : ctxt"
+|  C_Iff[simp, intro]: "E : ctxt \<Longrightarrow> (%t . (Iff (E t) thn els)) : ctxt"
 
 lemma ctxt_compose:
   assumes a:"E1 : ctxt" and b:"E2 : ctxt"
@@ -701,7 +700,7 @@ lemma closed_in_ctxt_closed_ctxt:
     thus ?case using IH[of "(E L')" L'] `E : ctxt` `closed rator`
       by (auto simp add: trm.supp closed_def)
   next
-    case (C_Iff E els thn L' e')
+    case (C_Iff E thn els L' e')
     let ?trm = "Iff (E L') thn els"
     have IH:"!!e L. \<lbrakk>closed e; E \<in> ctxt; e = E L\<rbrakk> \<Longrightarrow> closed L \<and> closed_ctxt E" using prems by blast
     have cl:"closed ?trm" using prems by blast
@@ -721,7 +720,7 @@ lemma closed_in_ctxt:
 
 text{* Reduction *}
 
-inductive2 reduce :: "trm \<Rightarrow> trm \<Rightarrow> bool" ("_ \<hookrightarrow> _" [200,200] 200)
+inductive reduce :: "trm \<Rightarrow> trm \<Rightarrow> bool" ("_ \<hookrightarrow> _" [200,200] 200)
   where
   e_beta[simp]: "v : values \<Longrightarrow> x \<sharp> v \<Longrightarrow> (App (Lam[x:t].b) v) \<hookrightarrow> (b[x::=v])"
   | e_if_false[simp]: "Iff (Bool False) e1 e2 \<hookrightarrow> e2"
@@ -733,16 +732,19 @@ equivariance reduce
 nominal_inductive reduce
   by (simp_all add: abs_fresh subst_removes_var)
 
-inductive2
+inductive
   "step" :: "trm\<Rightarrow>trm\<Rightarrow>bool" (" _ \<longrightarrow> _" [80,80]80)
 where
   step_one[intro]:"\<lbrakk>E : ctxt; L \<hookrightarrow> R\<rbrakk> \<Longrightarrow> E L \<longrightarrow> E R"
 
-inductive2
+inductive
 step_multi :: "trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<longrightarrow>\<^sup>* _" [80,80] 80)
 where 
   sm_refl:"a \<longrightarrow>\<^sup>* a"
 | sm_trans:"a \<longrightarrow> b \<Longrightarrow> b \<longrightarrow>\<^sup>* c \<Longrightarrow> a \<longrightarrow>\<^sup>* c"
+
+(* doesn't work *)
+(* equivariance step *)
 
 
 constdefs
@@ -793,15 +795,15 @@ proof -
     using ctxt_compose[OF ct 1] g1 g3 ex_help[of "C e" ?E tnew] by auto
 qed
 
-inductive_cases2 iff_bi_red : "(Iff (Const (BI bi)) thn els) \<hookrightarrow> e"
-inductive_cases2 iff_red : "(Iff tst thn els) \<hookrightarrow> e"
+inductive_cases iff_bi_red : "(Iff (Const (BI bi)) thn els) \<hookrightarrow> e"
+inductive_cases iff_red : "(Iff tst thn els) \<hookrightarrow> e"
 
 lemma reduce_closed:
   assumes "closed L" and "L \<hookrightarrow> R"
   shows "closed R"
   using `L \<hookrightarrow> R` `closed L`
   proof (induct)
-    case (e_beta v x b t) 
+    case (e_beta v x t b) 
     have a:"closed (Abs x b t)" using e_beta closed_def trm.supp by simp
     have b:"closed v" using e_beta closed_def trm.supp by simp
     from a b show ?case using e_beta beta_closed_closed by simp
@@ -815,7 +817,7 @@ lemma reduce_closed:
 
 
 lemma step_closed:
-  assumes A:"closed e" and B:"e \<longrightarrow> e'"
+  assumes A:"closed e" and B:"(e :: trm) \<longrightarrow> e'"
   shows "closed e'"
 proof - 
   from B obtain E L R where C:"E : ctxt"  "e = E L"  "L \<hookrightarrow> R"  "e' = E R" by induct auto
@@ -836,7 +838,7 @@ lemma multi_step_closed:
 
 text {* "partial order" (not really) between effects *}
 
-inductive2
+inductive
   subeff :: "eff \<Rightarrow> eff \<Rightarrow> bool"("\<turnstile> _ <e: _" [60,60] 60)
 where
   SE_Refl[intro]: "\<turnstile> F <e: F"
@@ -845,12 +847,14 @@ where
 | SE_VE[intro]: "\<turnstile> NE <e: VE x"
 | SE_TE[intro]: "\<turnstile> NE <e: TE S x"
 
-inductive_cases2 ne_case:"\<turnstile> F1 <e: eff.NE"
-inductive_cases2 ne_case_rev:"\<turnstile> eff.NE <e: F1"
-inductive_cases2 tt_case:"\<turnstile> F1 <e: eff.TT"
-inductive_cases2 tt_case_rev:"\<turnstile> eff.TT <e: F1"
-inductive_cases2 ff_case:"\<turnstile> F1 <e: eff.FF"
-inductive_cases2 ff_case_rev:"\<turnstile> eff.FF <e: F1"
+equivariance subeff
+
+inductive_cases ne_case:"\<turnstile> F1 <e: eff.NE"
+inductive_cases ne_case_rev:"\<turnstile> eff.NE <e: F1"
+inductive_cases tt_case:"\<turnstile> F1 <e: eff.TT"
+inductive_cases tt_case_rev:"\<turnstile> eff.TT <e: F1"
+inductive_cases ff_case:"\<turnstile> F1 <e: eff.FF"
+inductive_cases ff_case_rev:"\<turnstile> eff.FF <e: F1"
 
 lemma no_sub_FF: 
    "\<lbrakk>\<turnstile> T <e: T' ; T' = FF \<rbrakk> \<Longrightarrow> T = FF"
@@ -896,7 +900,7 @@ qed
 
 text{* subtyping *}
 
-inductive2
+inductive
   subtype :: "ty \<Rightarrow> ty \<Rightarrow> bool" ("\<turnstile> _ <: _" [60,60] 60)
 where
   S_Refl[intro]: "\<turnstile> T <: T"
@@ -905,16 +909,12 @@ where
 | S_UnionAbove[intro]: "\<lbrakk>T : set Ts ; \<turnstile> S <: T\<rbrakk> \<Longrightarrow> \<turnstile> S <: Union Ts"
 | S_UnionBelow[intro]: "\<lbrakk>!! T.( T : set Ts \<Longrightarrow> \<turnstile> T <: S)\<rbrakk> \<Longrightarrow> \<turnstile> Union Ts <: S"
 
-lemma subtype_eqvt[eqvt]: 
-  fixes pi :: "name prm"
-  shows "subtype S T ==> subtype (pi \<bullet> S) (pi \<bullet> T)"
-  by auto
-  
+equivariance subtype
 
-(* nominal_inductive subtype *)
+nominal_inductive subtype done
 
 
-inductive_cases2 sub_arr_cases: "\<turnstile> T <: S1 \<rightarrow> S2 : L"
+inductive_cases sub_arr_cases: "\<turnstile> T <: S1 \<rightarrow> S2 : L"
 
 lemma subtype_arr_elim:
   "\<lbrakk>\<turnstile> T <: S ; S = S0 \<rightarrow> S1 : le\<rbrakk> \<Longrightarrow> (EX T0 T1. T = T0 \<rightarrow> T1 : le \<and> \<turnstile> S0 <: T0 \<and> \<turnstile> T1 <: S1) \<or> (EX T0 T1 le'. T = T0 \<rightarrow> T1 : le' \<and> le = latent_eff.NE \<and> \<turnstile> S0 <: T0 \<and> \<turnstile> T1 <: S1) \<or> (EX Ts. T = Union Ts)"
@@ -943,7 +943,7 @@ fun size_ty3 :: "ty*ty*ty \<Rightarrow> nat"
 where 
 size_ty3_def[simp]:"size_ty3 (a,b,c) = size_ty a + size_ty b + size_ty c"
 
-inductive_cases2 union_sub_cases[consumes 1, case_names 1 2 3 4]:"\<turnstile> Union Ts <: S"
+inductive_cases union_sub_cases[consumes 1, case_names 1 2 3 4]:"\<turnstile> Union Ts <: S"
 
 lemma union_sub_elim: 
   assumes A:"\<turnstile> Union Ts <: T " (is "\<turnstile> ?S <: T") 
@@ -1082,7 +1082,7 @@ text {* type environments *}
 types varEnv = "(name*ty) list"
 
 text {* valid contexts *}
-inductive2
+inductive
   valid :: "(name\<times>ty) list \<Rightarrow> bool"
 where
     v1[intro]: "valid []"
@@ -1107,7 +1107,7 @@ lemma valid_elim:
   and    a :: "name"
   and    \<tau> :: "ty"
   shows "valid ((a,\<tau>)#\<Gamma>) \<Longrightarrow> valid \<Gamma> \<and> a\<sharp>\<Gamma>"
-by (ind_cases2 "valid ((a,\<tau>)#\<Gamma>)") simp
+by (ind_cases "valid ((a,\<tau>)#\<Gamma>)") simp
 
 lemma valid_unicity[rule_format]: 
   assumes a: "valid \<Gamma>"
@@ -1172,8 +1172,8 @@ lemma ty_cases[consumes 0, case_names Top Int TT FF Arr Union]:
   using  ty_latent_eff.induct[of P "(%e . True)" "(%e . True)" T] prems
   by auto
 
-inductive_cases2 tt_below_union:  "\<turnstile> ty.TT <: ty.Union Ts"
-inductive_cases2 ff_below_union:  "\<turnstile> ty.FF <: ty.Union Ts"
+inductive_cases tt_below_union:  "\<turnstile> ty.TT <: ty.Union Ts"
+inductive_cases ff_below_union:  "\<turnstile> ty.FF <: ty.Union Ts"
 
 (* I believe this to be true without C, but it's easier to prove this way, and that's all we need *)
 lemma restrict_soundness:
@@ -1218,7 +1218,7 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
 	hence req:"restrict S T =  Union (map (restrict S) Ts)" using r by auto
 	have T:"\<turnstile> T0 <: Union Ts" using prems by simp
 	have "?this \<Longrightarrow> ?thesis"
-	proof (ind_cases2 "\<turnstile> T0 <: Union Ts")
+	proof (ind_cases "\<turnstile> T0 <: Union Ts")
 	  assume 0:"Union Ts = T0" thus ?thesis using `simple_ty T0` by (induct T0 rule: simple_ty.induct) auto
 	next
 	  fix Ts'
@@ -1306,7 +1306,7 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
 	hence req:"remove S T =  Union (map (remove S) Ts)" using r by auto
 	have T:"\<turnstile> T0 <: Union Ts" using prems by simp
 	have "?this \<Longrightarrow> ?thesis"
-	proof (ind_cases2 "\<turnstile> T0 <: Union Ts")
+	proof (ind_cases "\<turnstile> T0 <: Union Ts")
 	  assume 0:"Union Ts = T0" thus ?thesis using `simple_ty T0` by auto
 	next
 	  fix Ts'
@@ -1481,7 +1481,7 @@ lemma comb_eff_eqvt[eqvt]:
   using comb_eff.simps by auto
 
 text {* type judgments *}
-inductive2
+inductive
   typing :: "varEnv \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> eff \<Rightarrow> bool" (" _ \<turnstile> _ : _ ; _ " [60,60,60,60] 60) 
 where
   T_Var[intro]:   "\<lbrakk>valid \<Gamma>; (v,T)\<in>set \<Gamma>\<rbrakk>\<Longrightarrow> \<Gamma> \<turnstile> Var v : T ; VE v" 
@@ -1697,61 +1697,61 @@ lemma "[] \<turnstile> (Lam[x:Top]. (Iff (App (BI NumberP) (Var x)) (App (BI Add
 
 (* inductive cases about typing *)
 
-inductive_cases2 iff_t_cases : "G \<turnstile> Iff tst thn els : t ; e"
-inductive_cases2 app_bi_cases : "G \<turnstile> App (Const (BI b)) rand : t ; e"
-inductive_cases2 type_arr_case_num: "\<Gamma> \<turnstile> ((Num n)) : (T1 \<rightarrow> T2 : eff) ; eff'"
-inductive_cases2 type_arr_case_bool: "\<Gamma> \<turnstile> ((Bool b)) : (T1 \<rightarrow> T2 : eff) ; eff'"
-inductive_cases2 type_bi_case: "\<Gamma> \<turnstile> ((BI b)) : t ; eff"
-inductive_cases2 type_add1_case: "\<Gamma> \<turnstile> ((BI Add1)) : t ; eff"
-inductive_cases2 bi_typing_cases: "\<Gamma> \<turnstile> (BI b) : t ; eff"
-inductive_cases2 abs_ty_int: "\<Gamma> \<turnstile> (Abs x body t) : ty.Int ; eff'"
-inductive_cases2 abs_ty_bool: "\<Gamma> \<turnstile> (Abs x body t) : BoolTy ; eff'"
-inductive_cases2 const_ty_int: "\<Gamma> \<turnstile> e : ty.Int ; eff'"
-inductive_cases2 const_ty_bool: "\<Gamma> \<turnstile> e : BoolTy ; eff'"
-inductive_cases2 iff_false_ty: "\<Gamma> \<turnstile> Iff (Bool False) thn els : t ; eff"
-inductive_cases2 app_bi_ty: "\<Gamma> \<turnstile> App (BI b) arg : t ; eff"
+inductive_cases iff_t_cases : "G \<turnstile> Iff tst thn els : t ; e"
+inductive_cases app_bi_cases : "G \<turnstile> App (Const (BI b)) rand : t ; e"
+inductive_cases type_arr_case_num: "\<Gamma> \<turnstile> ((Num n)) : (T1 \<rightarrow> T2 : eff) ; eff'"
+inductive_cases type_arr_case_bool: "\<Gamma> \<turnstile> ((Bool b)) : (T1 \<rightarrow> T2 : eff) ; eff'"
+inductive_cases type_bi_case: "\<Gamma> \<turnstile> ((BI b)) : t ; eff"
+inductive_cases type_add1_case: "\<Gamma> \<turnstile> ((BI Add1)) : t ; eff"
+inductive_cases bi_typing_cases: "\<Gamma> \<turnstile> (BI b) : t ; eff"
+inductive_cases abs_ty_int: "\<Gamma> \<turnstile> (Abs x body t) : ty.Int ; eff'"
+inductive_cases abs_ty_bool: "\<Gamma> \<turnstile> (Abs x body t) : BoolTy ; eff'"
+inductive_cases const_ty_int: "\<Gamma> \<turnstile> e : ty.Int ; eff'"
+inductive_cases const_ty_bool: "\<Gamma> \<turnstile> e : BoolTy ; eff'"
+inductive_cases iff_false_ty: "\<Gamma> \<turnstile> Iff (Bool False) thn els : t ; eff"
+inductive_cases app_bi_ty: "\<Gamma> \<turnstile> App (BI b) arg : t ; eff"
 
 (* Typing Values*)
 
 
 lemma false_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (trm.Bool False) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.FF \<and> eff = FF \<and> valid \<Gamma>"
-apply (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool False) : \<sigma> ; eff")
+apply (ind_cases "\<Gamma> \<turnstile> (trm.Bool False) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
 
 lemma num_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.Int \<and> eff = TT \<and> valid \<Gamma>"
-by (ind_cases2 "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff") auto
+by (ind_cases "\<Gamma> \<turnstile> (Num n) : \<sigma> ; eff") auto
 
 lemma true_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff \<Longrightarrow> \<sigma> = ty.TT \<and> eff = TT \<and> valid \<Gamma> "
-by (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff") 
+by (ind_cases "\<Gamma> \<turnstile> (trm.Bool True) : \<sigma> ; eff") 
  (auto simp add: trm.inject)
 
 lemma bool_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff \<Longrightarrow>  (\<sigma> = ty.TT \<or> \<sigma> = ty.FF) \<and> valid \<Gamma> "
-apply (ind_cases2 "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff")
+apply (ind_cases "\<Gamma> \<turnstile> (trm.Bool b) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
 
 lemma bi_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff \<Longrightarrow> eff = TT \<and> \<sigma> = \<Delta>\<^isub>\<tau> b \<and> valid \<Gamma>"
-apply (ind_cases2 "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff")
+apply (ind_cases "\<Gamma> \<turnstile> (BI b) : \<sigma> ; eff")
 apply (auto simp add: trm.inject)
 done
 
-inductive_cases2 bool_sub_int: "\<turnstile> BoolTy <: ty.Int"
-inductive_cases2 tt_sub_int: "\<turnstile> ty.TT <: ty.Int"
-inductive_cases2 ff_sub_int: "\<turnstile> ty.FF <: ty.Int"
+inductive_cases bool_sub_int: "\<turnstile> BoolTy <: ty.Int"
+inductive_cases tt_sub_int: "\<turnstile> ty.TT <: ty.Int"
+inductive_cases ff_sub_int: "\<turnstile> ty.FF <: ty.Int"
 thm bool_sub_int
-inductive_cases2 arr_sub_int: "\<turnstile> A\<rightarrow>B:L <: ty.Int"
-inductive_cases2 int_sub_tt: "\<turnstile> ty.Int <: ty.TT"
-inductive_cases2 int_sub_ff: "\<turnstile> ty.Int <: ty.FF"
-inductive_cases2 arr_sub_tt: "\<turnstile> A\<rightarrow>B:L <: ty.TT"
-inductive_cases2 arr_sub_ff: "\<turnstile> A\<rightarrow>B:L <: ty.FF"
-inductive_cases2 int_sub_bool_cases: "\<turnstile> ty.Int <: Union [ty.TT, ty.FF]"
-inductive_cases2 arr_sub_bool_cases: "\<turnstile> A\<rightarrow>B:L <: Union [ty.TT, ty.FF]"
+inductive_cases arr_sub_int: "\<turnstile> A\<rightarrow>B:L <: ty.Int"
+inductive_cases int_sub_tt: "\<turnstile> ty.Int <: ty.TT"
+inductive_cases int_sub_ff: "\<turnstile> ty.Int <: ty.FF"
+inductive_cases arr_sub_tt: "\<turnstile> A\<rightarrow>B:L <: ty.TT"
+inductive_cases arr_sub_ff: "\<turnstile> A\<rightarrow>B:L <: ty.FF"
+inductive_cases int_sub_bool_cases: "\<turnstile> ty.Int <: Union [ty.TT, ty.FF]"
+inductive_cases arr_sub_bool_cases: "\<turnstile> A\<rightarrow>B:L <: Union [ty.TT, ty.FF]"
 
 declare BoolTy_def[simp]
 
@@ -1776,7 +1776,7 @@ qed
 
 thm int_sub_bool
 
-inductive_cases2 abs_ty_elim2[consumes 1, case_names 1]: "\<Gamma> \<turnstile> Lam[x:S].b : T ; eff"
+inductive_cases abs_ty_elim2[consumes 1, case_names 1]: "\<Gamma> \<turnstile> Lam[x:S].b : T ; eff"
 
 lemma int_value:
   assumes a:"v : values"
@@ -1837,7 +1837,7 @@ lemma typing_bi:
   using a bi_typing_cases[of \<Gamma> b t eff "t = \<Delta>\<^isub>\<tau> b"]
   by (simp add: trm.inject)  
 
-inductive_cases2 arr_sub_arr_cases:"\<turnstile> A1 \<rightarrow> A2 : L <: B1 \<rightarrow> B2 : L'"
+inductive_cases arr_sub_arr_cases:"\<turnstile> A1 \<rightarrow> A2 : L <: B1 \<rightarrow> B2 : L'"
 
 lemma typed_prim_reduce:
   assumes a:"\<Gamma> \<turnstile> (BI b) : U ; eff" and b:"\<Gamma> \<turnstile> v : T ; eff'" and c:"v : values"
@@ -1891,9 +1891,9 @@ lemma if_decomp:
   qed
   
 
-inductive_cases2 tt_sub_arr_cases: "\<turnstile> ty.TT <:A1 \<rightarrow> A2 : L"
-inductive_cases2 ff_sub_arr_cases: "\<turnstile> ty.FF <:A1 \<rightarrow> A2 : L"
-inductive_cases2 num_sub_arr_cases: "\<turnstile> ty.Int <:A1 \<rightarrow> A2 : L"
+inductive_cases tt_sub_arr_cases: "\<turnstile> ty.TT <:A1 \<rightarrow> A2 : L"
+inductive_cases ff_sub_arr_cases: "\<turnstile> ty.FF <:A1 \<rightarrow> A2 : L"
+inductive_cases num_sub_arr_cases: "\<turnstile> ty.Int <:A1 \<rightarrow> A2 : L"
 
 lemma app_decomp:
   assumes a:" G \<turnstile> rator : U ; eff1"
@@ -1915,7 +1915,7 @@ lemma app_decomp:
       assume asm1:"rator \<in> values" and asm2:"rand \<in> values"
       hence "(EX E L R. (App rator rand) = E L \<and> E : ctxt \<and> L \<hookrightarrow> R)" using asm1 a aa a' sub well_typed
         proof (nominal_induct avoiding: rand rule: values.strong_induct )
-          case (abs_value x b t)
+          case (abs_value x t b)
           let ?E = "(%t. t)"
           let ?L = "App (Abs x b t) rand"
           have "?L \<hookrightarrow> (b[x::=rand])" by (rule e_beta)
@@ -2000,30 +2000,29 @@ qed (simp)
 
 (* Some useful lemmas for deriving facts from typing derivations *)
 
-inductive_cases2 app_ty_elim2[consumes 1, case_names 1 2 3 4]: "\<Gamma> \<turnstile> App t1 t2 : \<sigma> ; eff"
+inductive_cases app_ty_elim2[consumes 1, case_names 1 2 3 4]: "\<Gamma> \<turnstile> App t1 t2 : \<sigma> ; eff"
 thm app_ty_elim2
-inductive_cases2 iff_ty_elim2[consumes 1, case_names 1 2 3]: "\<Gamma> \<turnstile> Iff t1 t2 t3 : T ; eff"
+inductive_cases iff_ty_elim2[consumes 1, case_names 1 2 3]: "\<Gamma> \<turnstile> Iff t1 t2 t3 : T ; eff"
 thm abs_ty_elim2
 
 (* slow *)
 lemma app_ty_elim[rule_format]: 
   "\<Gamma> \<turnstile> App t1 t2 : \<sigma> ; eff \<Longrightarrow> 
   \<exists> T0 T0' T1 le eff' eff'' U. (\<Gamma> \<turnstile> t1 : U ; eff' \<and> \<Gamma> \<turnstile> t2 : T0' ; eff'' \<and> \<turnstile> U <: T0 \<rightarrow> T1 : le \<and> \<turnstile> T0' <: T0 \<and> T1 = \<sigma>)"
-  apply (ind_cases2 "\<Gamma> \<turnstile> App t1 t2 : \<sigma> ; eff")
+  apply (ind_cases "\<Gamma> \<turnstile> App t1 t2 : \<sigma> ; eff")
   apply (auto simp add: trm.inject ty.inject)
-  by blast+
-
+  by metis+
 
 lemma abs_ty_elim_eff[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff\<rbrakk> \<Longrightarrow> eff = eff.TT"
-  by (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff")
+  by (ind_cases "\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff")
      (auto simp add: trm.inject)
 
 
 lemma abs_ty_elim[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> Lam[a:T0].b : \<sigma> ; eff ; a \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> 
   \<exists> T1 eff' L S. ((a,T0)#\<Gamma> \<turnstile> b : T1 ; eff' \<and> \<sigma> = (T0 \<rightarrow> T1 : L) \<and> eff = eff.TT \<and> ((eff' = TE S a \<and> L = Latent S) \<or> L = latent_eff.NE))"
-apply (ind_cases2 "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
+apply (ind_cases "\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff")
 apply(auto simp add: trm.distinct trm.inject alpha) 
 apply(drule_tac pi="[(a,x)]::name prm" in typing.eqvt)
 apply(auto)
@@ -2040,13 +2039,13 @@ apply(force simp add: calc_atm)
 apply(force intro!: pt_fresh_fresh[OF pt_name_inst, OF at_name_inst])
 done
 
-inductive_cases2 abs_ty_cases[consumes 1, case_names 1 2]:"\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff"
+inductive_cases abs_ty_cases[consumes 1, case_names 1 2]:"\<Gamma> \<turnstile> Lam[a:T0].b: \<sigma> ; eff"
 thm abs_ty_cases
 
 (*
 lemma app_abs_ty_elim_eff[rule_format]: 
   "\<lbrakk>\<Gamma> \<turnstile> App (Abs x b T) t2 : \<sigma> ; eff ; x \<sharp> \<Gamma>\<rbrakk> \<Longrightarrow> eff = eff.NE"
-  proof (ind_cases2 "\<Gamma> \<turnstile> App (Abs x b T) t2 : \<sigma> ; eff", auto simp add: trm.inject abs_ty_elim)
+  proof (ind_cases "\<Gamma> \<turnstile> App (Abs x b T) t2 : \<sigma> ; eff", auto simp add: trm.inject abs_ty_elim)
     fix T0 S eff1 U 
     assume "\<Gamma> \<turnstile> Lam [x:T].b : U ; eff1 "" \<turnstile> U <: T0 \<rightarrow> \<sigma> : Latent S" "x \<sharp> \<Gamma>"
     then obtain T1 L where "U = T \<rightarrow> T1 : L" using abs_ty_elim[of \<Gamma> x b T "U" L] by auto
@@ -2066,7 +2065,7 @@ lemma app_abs_ty_elim_eff[rule_format]:
 *)
 lemma if_ty_elim_weak[rule_format]: 
   "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff \<Longrightarrow> \<exists> T0 eff'. (\<Gamma> \<turnstile> t1 : T0 ; eff') \<and> eff = NE"
-by (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
+by (ind_cases "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
    (auto simp add: trm.inject)
 
 lemma if_ty_elim[rule_format]: 
@@ -2076,7 +2075,7 @@ lemma if_ty_elim[rule_format]:
   (\<exists> T1 T3 F3. (\<Gamma> \<turnstile> t1 : T1 ; FF) \<and> \<Gamma> \<turnstile> t3 : T3 ; F3 \<and> \<turnstile> T3 <: \<sigma> \<and> eff = NE)
   \<or>
   (\<exists> T1 T2 F2. (\<Gamma> \<turnstile> t1 : T1 ; TT) \<and> \<Gamma> \<turnstile> t2 : T2 ; F2 \<and> \<turnstile> T2 <: \<sigma>  \<and> eff = NE)"
-proof (ind_cases2 "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
+proof (ind_cases "\<Gamma> \<turnstile> Iff t1 t2 t3: \<sigma> ; eff")
   fix e1 T1 eff1 e2 T2 eff2 e3 T3 eff3
   assume "Iff t1 t2 t3 = Iff e1 e2 e3"" eff = eff.NE""  \<Gamma> \<turnstile> e1 : T1 ; eff1""  env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2 "
     "env_minus eff1 \<Gamma> \<turnstile> e3 : T3 ; eff3"" \<turnstile> T2 <: \<sigma>"" \<turnstile> T3 <: \<sigma>"
@@ -2092,16 +2091,16 @@ next
   thus ?thesis by (auto simp add: trm.inject)
 qed
 
-inductive_cases2 iff_false_ty_cases:  "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff"
-inductive_cases2 ff_eff_cases: "\<Gamma> \<turnstile> e : T; FF"
-inductive_cases2 tt_eff_cases: "\<Gamma> \<turnstile> e : T; TT"
-inductive_cases2 ne_eff_cases: "\<Gamma> \<turnstile> e : T; NE"
+inductive_cases iff_false_ty_cases:  "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff"
+inductive_cases ff_eff_cases: "\<Gamma> \<turnstile> e : T; FF"
+inductive_cases tt_eff_cases: "\<Gamma> \<turnstile> e : T; TT"
+inductive_cases ne_eff_cases: "\<Gamma> \<turnstile> e : T; NE"
 
 
 lemma if_true_ty_elim[rule_format]: 
    "\<lbrakk>\<Gamma> \<turnstile> Iff v t2 t3: \<sigma> ; eff ; v : values; v ~= Bool False\<rbrakk> \<Longrightarrow>
   \<exists> T0 eff'. ((\<Gamma> \<turnstile> t2 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = NE)"  
-proof (ind_cases2 "\<Gamma> \<turnstile> Iff (v) t2 t3: \<sigma> ; eff")
+proof (ind_cases "\<Gamma> \<turnstile> Iff (v) t2 t3: \<sigma> ; eff")
   fix eff1 eff2 T1 T2 e1 e2 e3 
   assume "v : values" "env_plus eff1 \<Gamma> \<turnstile> e2 : T2 ; eff2" "Iff v t2 t3 = Iff e1 e2 e3" "\<turnstile> T2 <: \<sigma>" 
     "\<Gamma> \<turnstile> e1 : T1 ; eff1" "eff = NE"
@@ -2130,7 +2129,7 @@ next
   hence tv:"\<Gamma> \<turnstile> v : T1 ; FF" by simp
   have "v = Bool False" using `v : values` tv
   proof (induct v rule: values.induct)
-    case (abs_value x b T) thus ?case using abs_ty_elim_eff[of \<Gamma> x b T T1 FF] by auto
+    case (abs_value x T b) thus ?case using abs_ty_elim_eff[of \<Gamma> x b T T1 FF] by auto
   next
     case (num_value n) thus ?case using num_ty_elim[of _ _ _ FF] by auto
   next
@@ -2145,7 +2144,7 @@ qed
 lemma if_false_ty_elim[rule_format]: 
    "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff \<Longrightarrow>
   \<exists> T0 eff'. ((\<Gamma> \<turnstile> t3 : T0 ; eff') \<and> \<turnstile> T0 <: \<sigma> \<and> eff = eff.NE)"  
-proof (ind_cases2 "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff")
+proof (ind_cases "\<Gamma> \<turnstile> Iff (trm.Bool False) t2 t3: \<sigma> ; eff")
   fix e1 e2 e3 T1
   assume "Iff (trm.Bool False) t2 t3 = Iff e1 e2 e3" and "\<Gamma> \<turnstile> e1 : T1 ; TT"
   hence "\<Gamma> \<turnstile> (trm.Bool False) : T1 ; TT" by (simp add: trm.inject)
@@ -2168,16 +2167,16 @@ qed
 
 lemma var_ty_elim:
   "\<Gamma> \<turnstile> Var v : \<sigma> ; eff \<Longrightarrow> (v,\<sigma>) : set \<Gamma> \<and> eff = VE v \<and> valid \<Gamma>"
-  by (ind_cases2 "\<Gamma> \<turnstile> Var v : \<sigma> ; eff")
+  by (ind_cases "\<Gamma> \<turnstile> Var v : \<sigma> ; eff")
      (auto simp add: trm.inject)
 
-inductive_cases2 app_ty_ff:"\<Gamma> \<turnstile> App e arg : T' ; FF"
+inductive_cases app_ty_ff:"\<Gamma> \<turnstile> App e arg : T' ; FF"
   
 lemma app_ty_ff_elim:
   "\<Gamma> \<turnstile> App rator rand : T ; FF \<Longrightarrow>
   EX S T0 le F1 T0' F2 U.  \<Gamma> \<turnstile> rator : U ; F1 \<and> \<Gamma> \<turnstile> rand : T0' ; F2 \<and> \<turnstile> T0' <: T0 \<and> \<turnstile> U <: T0 \<rightarrow> T : le \<and>
   le = Latent S \<and> (~ (\<turnstile> T0' <: S)) \<and> rand : values \<and> closed rand"
-  proof (ind_cases2 "\<Gamma> \<turnstile> App rator rand : T ; FF")
+  proof (ind_cases "\<Gamma> \<turnstile> App rator rand : T ; FF")
     fix e1 T0 S eff1 e2 Ta eff2 U
     assume "App rator rand = App e1 e2 "" \<Gamma> \<turnstile> e1 : U ; eff1 " "\<turnstile> U <:  T0 \<rightarrow> T : Latent S"
       "\<Gamma> \<turnstile> e2 : Ta ; eff2 ""\<turnstile> Ta <: T0""~ (\<turnstile> Ta <: S)" "e2 : values" "closed e2"
@@ -2191,7 +2190,7 @@ lemma app_ty_tt_elim:
   "\<Gamma> \<turnstile> App rator rand : T ; TT \<Longrightarrow>
   EX S T0 le F1 T0' F2 U. \<Gamma> \<turnstile> rator : U ; F1 \<and> \<Gamma> \<turnstile> rand : T0' ; F2 \<and> \<turnstile> T0' <: T0 \<and> \<turnstile> U <: T0 \<rightarrow> T : le 
   \<and> le = Latent S \<and> \<turnstile> T0' <: S "
-  proof (ind_cases2 "\<Gamma> \<turnstile> App rator rand : T ; TT")
+  proof (ind_cases "\<Gamma> \<turnstile> App rator rand : T ; TT")
     fix e1 T0 S eff1 e2 Ta eff2 U
     assume "App rator rand = App e1 e2 "" \<Gamma> \<turnstile> e1 : U ; eff1 " "\<turnstile> U <: T0 \<rightarrow> T : Latent S"
       "\<Gamma> \<turnstile> e2 : Ta ; eff2 ""\<turnstile> Ta <: T0"" \<turnstile> Ta <: S"
@@ -2215,7 +2214,7 @@ next
 next
   case bool_value thus ?case using bool_ty_elim[OF bool_value] by auto
 next
-  case (abs_value a b T' \<Gamma>') thus ?case using abs_ty_elim[of \<Gamma>' a b T' T F] by auto
+  case (abs_value a T' b \<Gamma>') thus ?case using abs_ty_elim[of \<Gamma>' a b T' T F] by auto
 qed
 
 text {* lemmas about the effects of closed terms *}
@@ -2223,13 +2222,13 @@ text {* lemmas about the effects of closed terms *}
 lemma ve_not_closed:
   "\<Gamma> \<turnstile> e : T ; eff.VE x \<Longrightarrow>
   x : supp e"
-  by (ind_cases2 "\<Gamma> \<turnstile> e : T ; eff.VE x")
+  by (ind_cases "\<Gamma> \<turnstile> e : T ; eff.VE x")
      (auto simp add: eff.inject trm.supp at_supp supp_atm)
 
 lemma te_not_closed:
   "\<Gamma> \<turnstile> e : T ; eff.TE T' x \<Longrightarrow>
   x : supp e"
-  proof (ind_cases2 "\<Gamma> \<turnstile> e : T ; eff.TE T' x")
+  proof (ind_cases "\<Gamma> \<turnstile> e : T ; eff.TE T' x")
     fix e1 T0 S eff1 e2 Ta xa
     assume "e = App e1 e2" "TE T' x = TE S xa" "\<Gamma> \<turnstile> e2 : Ta ; VE xa"
     have "x = xa" using prems eff.inject by auto
@@ -2253,13 +2252,13 @@ lemma closed_eff_below_NE:
   shows "\<turnstile> eff <e: eff.NE"
   using closed_eff simple_eff_below_ne prems by auto
 
-inductive_cases2 const_ty_int_case: "\<Gamma> \<turnstile> (Num n) : ty.Int ; eff"
-inductive_cases2 trm_ty_int_case: "\<Gamma> \<turnstile> e : ty.Int ; eff"
-inductive_cases2 const_ty_bool_case: "\<Gamma> \<turnstile> (Bool b) : BoolTy ; eff"
+inductive_cases const_ty_int_case: "\<Gamma> \<turnstile> (Num n) : ty.Int ; eff"
+inductive_cases trm_ty_int_case: "\<Gamma> \<turnstile> e : ty.Int ; eff"
+inductive_cases const_ty_bool_case: "\<Gamma> \<turnstile> (Bool b) : BoolTy ; eff"
 
 lemma add1_eff_ne:
   "\<Gamma> \<turnstile> (App (BI Add1) v) :  T1 ; eff1 \<Longrightarrow> eff1 = eff.NE"
-proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI Add1) v) :  T1 ; eff1")
+proof (ind_cases " \<Gamma> \<turnstile> (App (BI Add1) v) :  T1 ; eff1")
   assume "eff1 = eff.NE" thus ?thesis by simp
 next
   fix T0 T1 S eff1a e1 e2 U
@@ -2284,11 +2283,11 @@ next
   thus ?thesis using prems arr_sub_arr_cases[of ty.Int ty.Int latent_eff.NE] by (auto simp add: ty.inject)
 qed
 
-inductive_cases2 type_nott_case: "\<Gamma> \<turnstile> (BI Nott) : t ; e"
+inductive_cases type_nott_case: "\<Gamma> \<turnstile> (BI Nott) : t ; e"
 
 lemma nott_eff_ne:
   "\<Gamma> \<turnstile> (App (BI Nott) v) :  T1 ; eff1 \<Longrightarrow> eff1 = eff.NE"
-proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI Nott) v) :  T1 ; eff1")
+proof (ind_cases " \<Gamma> \<turnstile> (App (BI Nott) v) :  T1 ; eff1")
   assume "eff1 = eff.NE" thus ?thesis by simp
 next
   fix T0 T1 S eff1a e1 e2 U
@@ -2313,7 +2312,7 @@ next
   thus ?thesis using prems arr_sub_arr_cases[of Top BoolTy latent_eff.NE] by (auto simp add: ty.inject)
 qed
 
-inductive_cases2 type_booleanp_case: "\<Gamma> \<turnstile> (BI BooleanP) : t ; e"
+inductive_cases type_booleanp_case: "\<Gamma> \<turnstile> (BI BooleanP) : t ; e"
 
 lemma value_eff:
   assumes "v : values" and "\<Gamma> \<turnstile> v :  T ; eff"
@@ -2331,7 +2330,7 @@ lemma value_eff:
 
 lemma booleanp_eff_simple:
   "\<lbrakk>\<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; eff1 ; v : values\<rbrakk> \<Longrightarrow> simple_eff eff1"
-proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; eff1")
+proof (ind_cases " \<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; eff1")
   fix T0 T1 S eff1a e1 e2 xa T
   assume "\<Gamma> \<turnstile> e2 : T ; VE xa" "App (BI BooleanP) v = App e1 e2" "v : values"
   hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"] 
@@ -2341,7 +2340,7 @@ qed (auto)
 
 lemma numberp_eff_simple:
   "\<lbrakk>\<Gamma> \<turnstile> (App (BI NumberP) v) :  T1 ; eff1 ; v : values\<rbrakk> \<Longrightarrow> simple_eff eff1"
-proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI NumberP) v) :  T1 ; eff1")
+proof (ind_cases " \<Gamma> \<turnstile> (App (BI NumberP) v) :  T1 ; eff1")
   fix T0 T1 S eff1a e1 e2 xa T
   assume "\<Gamma> \<turnstile> e2 : T ; VE xa" "App (BI NumberP) v = App e1 e2" "v : values"
   hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"]
@@ -2351,7 +2350,7 @@ qed (auto)
 
 lemma procp_eff_simple:
   "\<lbrakk>\<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; eff1 ; v : values\<rbrakk> \<Longrightarrow> simple_eff eff1"
-proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; eff1")
+proof (ind_cases " \<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; eff1")
   fix T0 T1 S eff1a e1 e2 xa T
   assume "\<Gamma> \<turnstile> e2 : T ; VE xa" "App (BI ProcP) v = App e1 e2" "v : values"
   hence "VE xa = eff.NE \<or> VE xa = eff.TT  \<or> VE xa = eff.FF " using value_eff[of v \<Gamma> T "VE xa"]
@@ -2360,7 +2359,7 @@ proof (ind_cases2 " \<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; eff1")
 qed (auto)
 
 
-inductive_cases2 app_boolp_ff: "\<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; FF"
+inductive_cases app_boolp_ff: "\<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; FF"
 
 lemma booleanp_FF_preserved:
   assumes "\<Gamma> \<turnstile> (App (BI BooleanP) v) :  T1 ; FF" and "v : values" and "\<Delta> BooleanP v = Some u"
@@ -2370,7 +2369,7 @@ lemma booleanp_FF_preserved:
     case (bool_value b)
     let ?P = "\<Gamma> \<turnstile> App (BI BooleanP) (trm.Bool b) : T1 ; FF" 
     have "?P ==> ?case"
-      proof (ind_cases2 ?P)
+      proof (ind_cases ?P)
         fix S T e1 e2 T0 eff1 eff2 U
         assume "App (BI BooleanP) (trm.Bool b) = App e1 e2"  "\<Gamma> \<turnstile> e1 : U ; eff1 "  "\<Gamma> \<turnstile> e2 : T ; eff2"
           "~ (\<turnstile> T <: S)" "e2 : values" "\<turnstile> U <:  T0 \<rightarrow> T1 : Latent S"
@@ -2428,7 +2427,7 @@ lemma booleanp_soundness_eff:
       qed
     qed
 
-inductive_cases2 app_nump_ff: "\<Gamma> \<turnstile> (App (BI NumberP) v) :  T1 ; FF"
+inductive_cases app_nump_ff: "\<Gamma> \<turnstile> (App (BI NumberP) v) :  T1 ; FF"
 thm app_nump_ff
 
 lemma numberp_FF_preserved:
@@ -2441,7 +2440,7 @@ lemma numberp_FF_preserved:
     case (num_value b) 
     let ?P = "\<Gamma> \<turnstile> App (BI NumberP) (trm.Num b) : T1 ; FF" 
     have "?P ==> ?case"
-      proof (ind_cases2 ?P)
+      proof (ind_cases ?P)
         fix S T e1 e2 T0 eff1 eff2 U
         assume "App (BI NumberP) (trm.Num b) = App e1 e2"  "\<Gamma> \<turnstile> e1 : U ; eff1 "  "\<Gamma> \<turnstile> e2 : T ; eff2"
           "~ (\<turnstile> T <: S)" "e2 : values" "\<turnstile> U <:  T0 \<rightarrow> T1 : Latent S"
@@ -2498,10 +2497,10 @@ lemma all_fun_ty_below:
   shows "\<turnstile> S \<rightarrow> T : F <: (Union []) \<rightarrow> Top : latent_eff.NE"
   by (rule S_Fun) auto
 
-inductive_cases2 below_latent_ne_cases: "\<turnstile> S \<rightarrow> T : F <: S' \<rightarrow> T' : latent_eff.NE"
+inductive_cases below_latent_ne_cases: "\<turnstile> S \<rightarrow> T : F <: S' \<rightarrow> T' : latent_eff.NE"
 thm below_latent_ne_cases
 
-inductive_cases2 app_procp_ff: "\<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; FF"
+inductive_cases app_procp_ff: "\<Gamma> \<turnstile> (App (BI ProcP) v) :  T1 ; FF"
 thm app_nump_ff
 thm app_procp_ff
 
@@ -2514,10 +2513,10 @@ lemma procp_FF_preserved:
   next
     case (num_value b) thus ?case by auto 
   next
-    case (abs_value x b t) 
+    case (abs_value x t b) 
     let ?P = "\<Gamma> \<turnstile> App (BI ProcP) (Lam[x:t].b) : T1 ; FF" 
     have "?P ==> ?case"
-      proof (ind_cases2 ?P)
+      proof (ind_cases ?P)
         fix e1 U eff1 T0 S e2 T eff2
         assume "App (BI ProcP) (Lam [x:t].b) = App e1 e2 ""  \<Gamma> \<turnstile> e1 : U ; eff1 "" \<turnstile> U <: T0 \<rightarrow> T1 : Latent S "
 	  "\<Gamma> \<turnstile> e2 : T ; eff2 ""  \<turnstile> T <: T0 "" \<not> \<turnstile> T <: S "" e2 \<in> values "" closed e2"
@@ -2535,7 +2534,7 @@ lemma procp_FF_preserved:
     case (bi_value c)
     let ?P = "\<Gamma> \<turnstile> App (BI ProcP) (BI c) : T1 ; FF" 
     have "?P ==> ?case"
-    proof (ind_cases2 ?P)
+    proof (ind_cases ?P)
       fix e1 U eff1 T0 S e2 T eff2
       assume "App (BI ProcP) (BI c) = App e1 e2 ""  \<Gamma> \<turnstile> e1 : U ; eff1 "" \<turnstile> U <: T0 \<rightarrow> T1 : Latent S "
 	"\<Gamma> \<turnstile> e2 : T ; eff2 ""  \<turnstile> T <: T0 "" \<not> \<turnstile> T <: S "" e2 \<in> values "" closed e2"
@@ -3133,13 +3132,13 @@ lemma closed_any_env:
     thus ?thesis by simp
   qed    
 
-inductive_cases2 ve_ty_elim: "\<Gamma> \<turnstile> e : T ; VE x"  
+inductive_cases ve_ty_elim: "\<Gamma> \<turnstile> e : T ; VE x"  
 
 lemma te_ty_elim: 
  "\<Gamma> \<turnstile> t1 : T ; TE U z \<Longrightarrow>
   EX f A A1 Fn S B. t1 = (App f (Var z)) \<and> \<Gamma> \<turnstile> f : B ; Fn \<and> \<turnstile> B <:  A1 \<rightarrow> T : Latent U \<and>
   \<Gamma> \<turnstile> (Var z) : A ; VE z \<and> \<turnstile> A <: A1 "
-  proof (ind_cases2 "\<Gamma> \<turnstile> t1 : T ; TE U z")
+  proof (ind_cases "\<Gamma> \<turnstile> t1 : T ; TE U z")
     fix e1 T0 eff1 e2 Ta x S B
     assume "t1 = App e1 e2" "TE U z = TE S x"
       "\<Gamma> \<turnstile> e1 : B ; eff1 "" \<Gamma> \<turnstile> e2 : Ta ; VE x " "\<turnstile> B <: T0 \<rightarrow> T : Latent S"
@@ -3181,8 +3180,8 @@ lemma unique_var_typing:
     thus False using `x \<sharp> \<Gamma>` by auto
   qed
 
-inductive_cases2 tt_sub_ff:"\<turnstile> ty.TT <: ty.FF"
-inductive_cases2 ff_sub_tt:"\<turnstile> ty.FF <: ty.TT"
+inductive_cases tt_sub_ff:"\<turnstile> ty.TT <: ty.FF"
+inductive_cases ff_sub_tt:"\<turnstile> ty.FF <: ty.TT"
 
 lemma value_effect_tt_or_ff:
   assumes "v : values" and "\<Gamma> \<turnstile> v : T ; F"
@@ -3242,7 +3241,7 @@ proof -
   thus ?thesis using sz using trm.inject by auto
 qed
 
-inductive_cases2 te_elim_auto: "\<Gamma> \<turnstile> e : T ; TE S x"
+inductive_cases te_elim_auto: "\<Gamma> \<turnstile> e : T ; TE S x"
 thm te_elim_auto
 
 lemma subst_preserve_TE:
@@ -3263,7 +3262,7 @@ proof -
   thus ?thesis using `e = App e1 e2` by auto
 qed
   
-inductive_cases2 lam_latent_eff_elim_auto: "\<Gamma> \<turnstile> Lam[x:T].b : S1 \<rightarrow> S2 : Latent U ; F"
+inductive_cases lam_latent_eff_elim_auto: "\<Gamma> \<turnstile> Lam[x:T].b : S1 \<rightarrow> S2 : Latent U ; F"
 thm lam_latent_eff_elim_auto
 
 lemma preserve_subst:
@@ -3467,7 +3466,7 @@ next
     fix Env a ty body T S x
     assume  "Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x"
     have  " Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x \<Longrightarrow> False"
-      by (ind_cases2 " Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x") 
+      by (ind_cases " Env \<turnstile>  (Lam [a:ty].body) : T ; TE S x") 
     thus False using prems by auto
   qed
 
@@ -3914,10 +3913,10 @@ proof -
     by auto
 qed
 
-inductive_cases2 beta_cases:"App (Abs x b T) v \<hookrightarrow> e "
+inductive_cases beta_cases:"App (Abs x b T) v \<hookrightarrow> e "
 
-inductive_cases2 beta_TT_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; TT"
-inductive_cases2 beta_FF_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; FF"
+inductive_cases beta_TT_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; TT"
+inductive_cases beta_FF_cases:"\<Gamma> \<turnstile> App (Abs x b T) v : T' ; FF"
 
 lemma preserve_red:
   assumes typed:"\<Gamma> \<turnstile> e : t ; eff" and cl:"closed e"
@@ -3963,7 +3962,7 @@ lemma preserve_red:
     hence h:"\<turnstile> eff' <e: eff" using `eff = NE` by auto
     thus ?case using f g  by auto
   next
-    case (e_beta v x b T \<Gamma>' T')
+    case (e_beta v x T b \<Gamma>' T')
     hence "simple_eff eff" using closed_eff by auto
     thm app_ty_elim[of \<Gamma>' "(Lam[x:T].b)" v t eff]
     (* hence "eff = NE" using app_abs_ty_elim_eff by auto *)
@@ -4168,7 +4167,7 @@ lemma subst_in_ctxt_preserves_type:
 	thus ?case by auto
       qed
     next
-      case (C_Iff E els thn u' t t' T' F')
+      case (C_Iff E thn els u' t t' T' F')
       have A:"closed (E t)" and B:"closed (E t')" using C_Iff closed_def trm.supp by auto
       have C:"\<Gamma> \<turnstile> Iff (E t) thn els: T' ; F'" using C_Iff by auto
       hence
@@ -4248,23 +4247,23 @@ lemma typing_ctxt:
       using app_ty_elim[of \<Gamma> rator "C' L" S F] ` \<Gamma> \<turnstile> App rator (C' L)  : S ; F` by blast
     thus ?case using ih by auto
   next
-    case (C_Iff C' els thn S F)
+    case (C_Iff C' thn els S F)
     hence ih: "!! T0 eff. \<Gamma> \<turnstile> C' L : T0 ; eff  \<Longrightarrow> \<exists>T' a.  \<Gamma> \<turnstile> L : T' ; a" by simp
     obtain T0 eff' where  "\<Gamma> \<turnstile> C' L : T0 ; eff'"
       using if_ty_elim[of \<Gamma> "C' L" thn els S F] ` \<Gamma> \<turnstile> Iff (C' L) thn els : S ; F` by auto
     thus ?case using ih by auto
   qed
 
-inductive_cases2 step_cases: "(e::trm) \<longrightarrow> e'"
+inductive_cases step_cases: "(e::trm) \<longrightarrow> e'"
 
 
-inductive_cases2 bi_reduce:"BI b \<hookrightarrow> x"
-inductive_cases2 bool_reduce:"Bool b \<hookrightarrow> x"
-inductive_cases2 abs_reduce:"(Lam[a:T].b) \<hookrightarrow> x"
-inductive_cases2 num_reduce:"Num n \<hookrightarrow> x"
+inductive_cases bi_reduce:"BI b \<hookrightarrow> x"
+inductive_cases bool_reduce:"Bool b \<hookrightarrow> x"
+inductive_cases abs_reduce:"(Lam[a:T].b) \<hookrightarrow> x"
+inductive_cases num_reduce:"Num n \<hookrightarrow> x"
 
 lemma value_reduce_step:
-  assumes A:"v : values" and B:"v \<longrightarrow> v'"
+  assumes A:"v : values" and B:"v \<longrightarrow> (v'::trm)"
   shows "v \<hookrightarrow> v'"
   using B A
   proof(induct)
@@ -4294,6 +4293,7 @@ proof(rule ccontr, simp)
 
 
 lemma value_not_reduce:
+  fixes v v' :: trm
   assumes "v : values"
   shows "~ (EX v'. v \<longrightarrow> v')"
 proof (rule ccontr)
@@ -4305,6 +4305,7 @@ qed
 
 
 theorem preservation:
+  fixes e e' :: trm
   assumes typed:"\<Gamma> \<turnstile> e : t ; eff" and cl:"closed e"
   and red:"e \<longrightarrow> e'"
   shows "EX t' eff'. \<Gamma> \<turnstile> e' : t' ; eff' \<and> \<turnstile> t' <: t \<and> \<turnstile> eff' <e: eff"
@@ -4332,6 +4333,7 @@ qed
 text {* soundness *}
 
 lemma soundness_finite:
+  fixes e e' e'' :: trm
   assumes A:"\<Gamma> \<turnstile> e : T ; F" and B:"e \<longrightarrow>\<^sup>* e'" and C:"~ (EX e''. e' \<longrightarrow> e'')" and E:"closed e"
   shows "EX T' F'. (e' : values \<and> \<Gamma> \<turnstile> e' : T' ; F' \<and> \<turnstile> T' <: T \<and> \<turnstile> F' <e: F)"
   using B prems
@@ -4370,7 +4372,7 @@ proof -
   {
     assume "~(reduce_forever e)"
     hence "EX e'. (e \<longrightarrow>\<^sup>* e') \<and> ~(EX e''. e' \<longrightarrow> e'')" by (auto simp add: reduce_forever_def)
-    then obtain e' where B:"e \<longrightarrow>\<^sup>* e'" and C:"~ (EX e''. e' \<longrightarrow> e'')" by auto
+    then obtain e'::trm where B:"e \<longrightarrow>\<^sup>* e'" and C:"~ (EX e''. e' \<longrightarrow> e'')" by auto
     hence ?thesis using soundness_finite[OF A B C E] by auto
   }
   moreover
@@ -4383,7 +4385,7 @@ qed
 
 text {* simpler type system, without silly rules *}
 
-inductive2
+inductive
   typing2 :: "varEnv \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> eff \<Rightarrow> bool" (" _ \<turnstile>\<^isub>2 _ : _ ; _ " [60,60,60,60] 60) 
 where
   T2_Var[intro]:   "\<lbrakk>valid \<Gamma>; (v,T)\<in>set \<Gamma>\<rbrakk>\<Longrightarrow> \<Gamma> \<turnstile>\<^isub>2 Var v : T ; VE v" 
