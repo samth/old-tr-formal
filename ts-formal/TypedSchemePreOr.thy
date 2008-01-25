@@ -1,6 +1,6 @@
 (* This file requires:
 
- - An Isabelle Snapshot from no earlier than October 5, 2007
+ - Nominal Isabelle version 0.14
 
 *)
 
@@ -14,10 +14,6 @@ theory TypedSchemePreOr
 imports Nominal
 
 begin
-
-ML {*ResAtp.set_prover "vampire"*}
-(* ML {* ThmDeps.enable() *} *) 
-
 
 (* datatype definitions *)
 atom_decl name
@@ -111,11 +107,58 @@ lemma pt_trm_inst: "pt TYPE(trm) TYPE(name)" using pt_name_inst by auto
 
 lemma fs_trm_inst: "fs TYPE(trm) TYPE(name)" using fs_name_inst by auto
 
+thm impI
+
+lemma "A \<and> B \<longrightarrow> B \<and> A"
+  apply (tactic {* resolve_tac [@{thm impI}] 1 *})
+  apply (tactic {* eresolve_tac [@{thm conjE }] 1 *})
+  apply (tactic {* resolve_tac [@{thm conjI }] 1 *})
+  apply (tactic {* REPEAT (assume_tac 1) *})
+done
+  
+
+ML {* 
+  fun v [t1,t2,t3] = 
+      (resolve_tac [t1] 1) 
+	  THEN eresolve_tac [t2] 1 
+	  THEN resolve_tac [t3] 1 
+	  THEN REPEAT (assume_tac 1)
+      | v _ = error "need 3 theorems"
+
+*}
+
+ML {* open Method *}
+
+ML {* fun f' a b = (a -- b) *}
+
+ML {* induct_tac "t" *}
+
+
+ML {* fun f (s : Method.src) (ctxt : Proof.context) = SIMPLE_METHOD (thms_args v s ctxt) *}
+
+method_setup my_tac =
+  {*  f *}
+  {* a stupid tactic *}
+
+lemma "A \<and> B \<longrightarrow> B \<and> A"
+  by (my_tac impI conjE conjI)
+
+
+ML {*NominalInduct.nominal_induct_method*}
+
+ML {* NominalPermeq.fresh_guess_meth *}
+
+
+
+
+
 lemma perm_ty_latent[simp]: 
   fixes T::"ty"
   and   le::"latent_eff"
   and   pi::"name prm"
   shows "pi\<bullet>le = le \<and> pi\<bullet>T = T"
+
+(*   apply (tactic \<guillemotleft>auto ()\<guillemotright>)  *)
   by simp
 
 lemma perm_ty: 
@@ -125,10 +168,28 @@ lemma perm_ty:
   shows "pi\<bullet>T = T"
   by simp
 
+  ML {* fun f (s : Method.src) ctxt = RAW_METHOD_CASES 
+    (fn x => (Induct.induct_tac ctxt false [] [] [] (SOME [@{thm builtin.weak_induct}]) [] 1))*}
+
+method_setup itac =
+  {*  f *}
+  {* a stupid tactic *}
+
+
+
+
 lemma perm_builtin[simp]: 
   fixes e::"builtin"
   and   pi::"name prm"
   shows "pi\<bullet>e = e"
+  apply (itac )
+
+(*   apply (tactic {* induct_thm_tac @{thm builtin.weak_induct} "e" 1 *}) *)
+ML {* RAW_METHOD_CASES *}
+
+
+
+  
   by (induct rule: builtin.weak_induct) (simp_all)
 
 lemma fresh_ty[simp]:
@@ -593,32 +654,32 @@ lemma delta_closed:
   assumes "\<Delta> b t = Some v"
   shows "closed v"
   using prems
-  proof (nominal_induct b rule: builtin.induct)
-    case Add1
-    thus ?case 
-      by (nominal_induct t rule: trm.induct)
-         (auto simp add: supp_nat closed_def trm.supp)
-  next
-    case Nott
-    thus ?case
-      by (nominal_induct t rule: trm.induct)
-         (auto simp add: supp_def perm_bool closed_def trm.supp)
-  next
-    case BooleanP
-    thus ?case
-      by (nominal_induct t rule: trm.induct)
-         (auto simp add: supp_def perm_bool closed_def trm.supp)
-  next
-    case NumberP
-    thus ?case
-      by (nominal_induct t rule: trm.induct)
-         (auto simp add: supp_def perm_bool closed_def trm.supp)
-  next
-    case ProcP
-    thus ?case
-      by (nominal_induct t rule: trm.induct)
-         (auto simp add: supp_def perm_bool closed_def trm.supp)
-       qed
+proof (nominal_induct b rule: builtin.induct)
+  case Add1
+  thus ?case 
+    by (nominal_induct t rule: trm.induct)
+  (auto simp add: supp_nat closed_def trm.supp)
+next
+  case Nott
+  thus ?case
+    by (nominal_induct t rule: trm.induct)
+  (auto simp add: supp_def perm_bool closed_def trm.supp)
+next
+  case BooleanP
+  thus ?case
+    by (nominal_induct t rule: trm.induct)
+  (auto simp add: supp_def perm_bool closed_def trm.supp)
+next
+  case NumberP
+  thus ?case
+    by (nominal_induct t rule: trm.induct)
+  (auto simp add: supp_def perm_bool closed_def trm.supp)
+next
+  case ProcP
+  thus ?case
+    by (nominal_induct t rule: trm.induct)
+  (auto simp add: supp_def perm_bool closed_def trm.supp)
+qed
 
 lemma delta_value:
   fixes b :: builtin and t::trm
@@ -2217,7 +2278,9 @@ next
 next
   case bool_value thus ?case using bool_ty_elim[OF bool_value] by auto
 next
-  case (abs_value a T' b \<Gamma>') thus ?case using abs_ty_elim[OF abs_value(2) abs_value(1), of ?case] by simp 
+  case (abs_value a T' b \<Gamma>') thus ?case
+    by (cases rule: abs_ty_elim[OF abs_value(2) abs_value(1)])(simp)
+    using abs_ty_elim[OF abs_value(2) abs_value(1), of ?case] by simp 
 qed
 
 text {* lemmas about the effects of closed terms *}
