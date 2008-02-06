@@ -141,6 +141,19 @@ ML {* fun v' (terms ) avoid fix rules facts =
 
 datatype ITree  = Leaf nat | Node "(ITree list)"
 
+lemma foo27[simp]:
+  fixes l :: "'a::size list"
+  and x :: "'a::size"
+  assumes a:"x : set l"
+  shows "size x < Suc (list_size size l)"
+  using a
+proof (induct l) 
+  case Nil thus ?case by simp
+next
+  case (Cons e es)
+  thus ?case by (cases " x \<in> set es") auto
+qed
+
 fun appendl :: "'a list list \<Rightarrow> 'a list"
 where
 "appendl ([]) = []"
@@ -153,7 +166,7 @@ where
 | "flatten (Node l) = appendl (map flatten l)"
 
 lemma "flatten (Node [Leaf 1]) = [1]"
-  apply auto
+by auto
 
 
 
