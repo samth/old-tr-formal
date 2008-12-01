@@ -3,8 +3,7 @@
 (require mzlib/trace
          scheme/list
          scheme/match
-         redex
-         "redex-both.ss")
+         redex)
 
 (provide (all-defined-out))
 
