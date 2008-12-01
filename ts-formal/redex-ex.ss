@@ -1,11 +1,11 @@
 #lang scheme/base
 
-(require (lib "trace.ss")
+(require mzlib/trace
          scheme/list
          scheme/match
+         redex
          "redex-both.ss")
 
-(require-redex)
 (provide (all-defined-out))
 
 (define t1 (term ((lambda (x : top) x) 3)))
