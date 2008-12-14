@@ -95,4 +95,11 @@
 (define t17
   (term ((lambda ([x : int] [y : int]) (if (zero? y) (add1 x) x)) 1 2)))
 
-(define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 bad))
+(define t18
+  (term ((lambda ([a : top])
+          (if ((lambda ([x : top] [y : top]) (number? y)) 12 a)
+              (add1 a)
+              123))
+         #f)))
+
+(define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad))
