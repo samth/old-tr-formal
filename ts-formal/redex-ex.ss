@@ -119,7 +119,25 @@
            (if (cons? a) (car a) 0))
          (cons #t #f))))
 
-(define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4))
+(define t-cons-5
+  (term ((lambda ([a : top])
+           (if (cons? a) 
+               (if (number? (car a))
+                   (zero? (car a))
+                   #t)
+               #f))
+         (cons 1 2))))
+
+(define t-cons-6
+  (term ((lambda ([a : top])
+           (if (cons? a) 
+               (if (number? (car a))
+                   (zero? (car a))
+                   12)
+               11))
+         (cons #f 10))))
+
+(define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4 t-cons-5 t-cons-6))
 
 (define terms (append (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad)
                       cons-terms))
