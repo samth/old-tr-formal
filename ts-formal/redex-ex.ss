@@ -102,4 +102,24 @@
               123))
          #f)))
 
-(define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad))
+;;  terms with cons
+
+(define t-cons-1
+  (term (car (cons 1 2))))
+
+(define t-cons-2
+  (term (cdr (cons 1 2))))
+
+(define t-cons-3
+  (term ((lambda ([a : top])
+           (if (cons? a) (car a) 0))
+         0)))
+(define t-cons-4
+  (term ((lambda ([a : top])
+           (if (cons? a) (car a) 0))
+         (cons #t #f))))
+
+(define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4))
+
+(define terms (append (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad)
+                      cons-terms))
