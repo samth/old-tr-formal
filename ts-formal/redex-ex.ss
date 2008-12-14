@@ -91,4 +91,8 @@
            (if v (add1 v) ((lambda ([x : bool]) 7) v)))
          42)))
 
-(define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 bad))
+;; terms with multiple args
+(define t17
+  (term ((lambda ([x : int] [y : int]) (if (zero? y) (add1 x) x)) 1 2)))
+
+(define terms (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 bad))
