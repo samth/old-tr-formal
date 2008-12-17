@@ -51,7 +51,7 @@
 \newcommand\andsym{\ma{\mathit{and}}}
 \newcommand\orsym{\ma{\mathit{or}}}
 \newcommand\plus{\mathbin{+}}
-\newcommand\abs[3]{\ma{\l #1:#2 . #3}}
+\newcommand\abs[3]{\ma{\l \overvec{#1:#2} . #3}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
 \newcommand\cond[3]{\ma{(\ifsym\ #1\ #2\ #3)}}
 \renewcommand\cons[2]{(\conssym\ #1\ #2)}
@@ -63,9 +63,21 @@
 % typing judgements
 \newcommand\hastype[2]{\ma{#1 \mathbin{:} #2}}
 \newcommand\hasty[3]{\hastype{#1 \vdash #2}{#3}}
-\newcommand\hastyeff[4]{\hastype{#1 \vdash #2}{#3 ; #4}}
+\newcommand\hastyeff[6][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4|#5\ ;\ #6}}}
+
+\newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
+
+
+\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bullet} {\noeffect}}
+\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
+\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
+
 \newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
 \newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
+
+
+
+
 \newcommand\subtype[2]{\ma{\vdash #1 \subtypesym #2}}
 \newcommand\notsubtype[2]{\ma{\vdash #1 \not\subtypesym #2}}
 \newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{?} #2}}
