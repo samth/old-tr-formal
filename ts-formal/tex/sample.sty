@@ -18,8 +18,8 @@
 % will all look the same!
 
 % types
-\newbfop\num{Number}
-\newbfop\bool{Boolean}
+\newbfop\num{N}
+\newbfop\bool{B}
 \newbfop\tt{\ma{\#t}}
 \newbfop\ff{\ma{\#f}}
 \newbfop\ttt{\#t}
@@ -28,10 +28,10 @@
 \newbfop\ifsym{if}
 \newbfop\pecar{car}
 \newbfop\pecdr{cdr}
-\newcommand\noeffect{\ma{\bullet}}
+\newcommand\noeffect{\ma{\mbox{\boldmath{$0$}}}}
 %\newbfop\usym{\ma{\bigcup}}
 \newcommand\usym{\ma{\bigcup}}
-\newcommand\proctype[4]{\ma{(#1 {\xrightarrow{#3}}_{#4} #2)}}
+\newcommand\proctype[4]{\ma{#1 {\xrightarrow[#4]{#3}} #2}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -48,6 +48,8 @@
 \renewcommand\car{\ma{\mathit{car}}}
 \renewcommand\cdr{\ma{\mathit{cdr}}}
 \newcommand\consp{\ma{\mathit{cons?}}}
+\newcommand\andsym{\ma{\mathit{and}}}
+\newcommand\orsym{\ma{\mathit{or}}}
 \newcommand\plus{\mathbin{+}}
 \newcommand\abs[3]{\ma{\l #1:#2 . #3}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
