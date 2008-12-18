@@ -31,6 +31,7 @@
 \newcommand\noeffect{\ma{\mbox{\boldmath{$0$}}}}
 %\newbfop\usym{\ma{\bigcup}}
 \newcommand\usym{\ma{\bigcup}}
+\newcommand\isym{\ma{\bigcap}}
 \newcommand\proctype[4]{\ma{#1 {\xrightarrow[#4]{#3}} #2}}
 %\newcommand\uty
 % \proctype is a little overkill.
@@ -43,7 +44,7 @@
 \newcommand\procp{\ma{\mathit{procedure?}}}
 \newcommand\addone{\ma{\mathit{add1}}}
 \newcommand\boolp{\ma{\mathit{boolean?}}}
-\newcommand\nott{\ma{\mathit{not}}}
+\newcommand\notsym{\ma{\mathit{not}}}
 \newcommand\conssym{\ma{\mathit{cons}}}
 \renewcommand\car{\ma{\mathit{car}}}
 \renewcommand\cdr{\ma{\mathit{cdr}}}
@@ -52,11 +53,14 @@
 \newcommand\orsym{\ma{\mathit{or}}}
 \newcommand\plus{\mathbin{+}}
 \newcommand\abs[4][\relax{}]{\ma{\l \overvec[#1]{#2:#3} . #4}}
+\newcommand\abssingle[3]{\ma{\l {#1:#2} . #3}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
 \newcommand\cond[3]{\ma{(\ifsym\ #1\ #2\ #3)}}
 \renewcommand\cons[2]{(\conssym\ #1\ #2)}
 
 \newcommand\consty[2]{\ma{\langle {#1} , {#2} \rangle}}
+
+\newcommand{\nott}[1]{\comb{\notsym}{#1}}
 
 \def\subtypesym{<:}
 
@@ -74,6 +78,8 @@
 \newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
 \newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
 
+\newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
+
 \newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
 \newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
 
@@ -83,6 +89,10 @@
 \newcommand\subtype[2]{\ma{\vdash #1 \subtypesym #2}}
 \newcommand\notsubtype[2]{\ma{\vdash #1 \not\subtypesym #2}}
 \newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{?} #2}}
+
+\newcommand{\latentvarty}[3]{\proctype{#1}{#2}{{\comp{\fft}_{#3}|{\fft}_{#3}}}{#3}}
+\newcommand{\predty}[3][\top]{\proctype{#1}{\bool}{{#3}_{#2}|{\comp{#3}}_{#2}}{\bullet}}
+
 
 % reductions
 
