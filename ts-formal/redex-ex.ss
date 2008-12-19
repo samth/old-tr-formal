@@ -105,14 +105,14 @@
 ;;  terms with cons
 
 (define t-cons-1
-  (term (car (cons 1 2))))
+  (term (car (cons 77 2))))
 
 (define t-cons-2
-  (term (cdr (cons 1 2))))
+  (term (cdr (cons 1 78))))
 
 (define t-cons-3
   (term ((lambda ([a : top])
-           (if (cons? a) (car a) 0))
+           (if (cons? a) (car a) 99))
          0)))
 (define t-cons-4
   (term ((lambda ([a : top])
@@ -133,11 +133,25 @@
            (if (cons? a) 
                (if (number? (car a))
                    (zero? (car a))
-                   12)
+                   17)
                11))
          (cons #f 10))))
 
+(define t-cons-7
+  (term ((lambda ([a : top])
+           (if (cons? a) 
+               (zero? (car a))
+               #f))
+         (cons #f 10))))
+
+(define fail-not-wrong
+  (term ((lambda ([a : top])
+           (zero? a))
+         1)))
+
 (define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4 t-cons-5 t-cons-6))
 
-(define terms (append (list t1 t2 t3 t4 t5 t6 #;t7 #;t8 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad)
+(define terms (append (list t1 t2 t3 t4 t5 t6 t7 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad)
                       cons-terms))
+
+(define fail-terms (list t8 t-cons-7 fail-not-wrong))
