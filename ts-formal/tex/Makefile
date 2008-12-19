@@ -1,6 +1,5 @@
 all: model.pdf model-multi.pdf
 
-MULTI=true
 
 model-multi.pdf: model.tex ts.sty
 	pdflatex -jobname=model-multi '\newcommand{\multiargs}{true}\input{model.tex}'
