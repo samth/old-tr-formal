@@ -120,7 +120,8 @@
 
 % reductions
 
-\newcommand\subs[3]{\ma{#1[#2/#3]}}
+\newcommand\subs[3]{\ma{#1[#2/#3}]}
+\newcommand\subsmulti[4]{\ma{#1[\movervec[{#4}]{#2/#3}]}}
 \newcommand\step[2]{\ma{#1 \hookrightarrow #2}}
 \newcommand\reduce[2]{\ma{#1 \rightarrow #2}}
 \newcommand\reduces[2]{\ma{#1 \rightarrow^* #2}}
