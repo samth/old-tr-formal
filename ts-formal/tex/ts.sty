@@ -1,4 +1,22 @@
-%% macros for sample.tex
+%\usepackage{newif}
+
+\newif\ifmarg
+\margtrue
+
+%% macros for model.tex
+
+\newcommand\overvec[2][\relax]{\vbox{\mathsurround=0pt\ialign{##\hfil&&\hfil##\crcr
+  \rightarrowfill&&$\scriptstyle{#1}$\crcr
+  \noalign{\nointerlineskip}$\hfil\displaystyle{#2}\hfil$&&\crcr}}}
+
+\newcommand\movervec[2][\relax]
+{\ifmarg 
+  \overvec[#1]{#2}
+  \else
+  {#2}
+  \fi}
+
+\newcommand\marg[2]{\ifmarg {#1} \else {#2} \fi}
 
 \newcommand\lts{$\lambda_{TS}$}
 
@@ -33,7 +51,7 @@
 \newcommand\usym{\ma{\bigcup}}
 \newcommand\isym{\ma{\bigcap}}
 \newcommand\proctype[4]{\ma{#1 {\xrightarrow[#4]{#3}} #2}}
-\newcommand\proctop{\stackrel{\top}{\rightarrow}}
+\newcommand\proctop{\marg{\stackrel{\top}{\rightarrow}}{\proctype{\bot}{\top}{\bullet|\bullet}{\noeffect}}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -56,8 +74,9 @@
 \newcommand\andsym{\ma{\mathit{and}}}
 \newcommand\orsym{\ma{\mathit{or}}}
 \newcommand\plus{\mathbin{+}}
-\newcommand\abs[4][\relax{}]{\ma{\l \overvec[#1]{#2:#3} . #4}}
+\newcommand\abs[4][\relax{}]{\ma{\l \movervec[#1]{#2:#3} . #4}}
 \newcommand\abssingle[3]{\ma{\l {#1:#2} . #3}}
+\newcommand\absgeneral[2]{\ma{\l {#1} . {#2}}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
 \newcommand\cond[3]{\ma{(\ifsym\ #1\ #2\ #3)}}
 \renewcommand\cons[2]{(\conssym\ #1\ #2)}
@@ -137,3 +156,45 @@
 \]%
 \end{center}}
 \newcommand{\mathsc}[1]{\mbox{\textsc{#1}}}
+
+\newmeta\e{e}
+\newmeta\y{y}
+\newmeta\G{\Gamma}
+\newmeta\E{E}
+\newmeta\d{d}
+\newmeta\b{\beta}
+\newmeta\c{c}
+\newmeta\L{L}
+\newmeta\R{R}
+\newmeta\uu{u}
+\newmeta\vv{v}
+\newmeta\kk{k}
+\newmeta\n{n}
+\newmeta\i{i}
+\newmeta\pe{pe}
+\newmeta\ph{\hat{\p{}}}
+\newmeta\sig{\sigma}
+\newmeta\s{s}
+\newmeta\sh{\hat{s}}
+\newmeta\phii{{\phi}}
+\newmeta\phih{\hat{\phi}}
+
+\newcommand{\comp}[1]{\overline{#1}}
+\newmeta\compt{\comp{\tau}}
+\newmeta\ups{\upsilon}
+
+\newcommand{\both}{\hat{\bot}}
+
+%\newcommand\v{\vv{}}
+
+\newcommand\newometa[2]{\def#1##1{\ensuremath{\overvec{#2_{##1}}}}}
+
+
+\newometa\op{\psi}
+\newometa\oph{\hat{\psi}}
+
+\newcommand{\abstractfilter}[2]{\ma{\mathrm{abstractfilter}({#1}, {#2})}}
+\newcommand{\nooverlap}[2]{\ma{\mbox{no-overlap}({#1}, {#2})}}
+\newcommand{\applyfilter}[3]{\ma{\mathrm{applyfilter}({#1}, {#2}, {#3})}}
+\newcommand{\abstractone}[2]{\ma{\mathrm{abo}({#1}, {#2})}}
+\newcommand{\applyone}[3]{\ma{\mathrm{apo}({#1}, {#2}, {#3})}}
