@@ -65,6 +65,7 @@
 \newcommand\numberp{\ma{\mathit{number?}}}
 \newcommand\procp{\ma{\mathit{procedure?}}}
 \newcommand\addone{\ma{\mathit{add1}}}
+\newcommand\zerop{\ma{\mathit{zero?}}}
 \newcommand\boolp{\ma{\mathit{boolean?}}}
 \newcommand\notsym{\ma{\mathit{not}}}
 \newcommand\conssym{\ma{\mathit{cons}}}
@@ -115,7 +116,7 @@
 
 \newcommand{\latentvarty}[3]{\proctype{#1}{#2}{{\comp{\fft}_{#3}|{\fft}_{#3}}}{#3}}
 \newcommand{\predty}[3][\top]{\proctype{#1}{\bool}{{#3}_{#2}|{\comp{#3}}_{#2}}{\bullet}}
-
+\newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\bullet|\bullet}{\noeffect}}
 
 % reductions
 
