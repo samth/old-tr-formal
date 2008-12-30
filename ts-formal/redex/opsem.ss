@@ -401,7 +401,7 @@
    ,(*term-let occur-lang
                ([(t_op (p_op+ ...) (p_op- ...) s_op) (term (tc G e_op))]
                 [((t_a (p_a+ ...) (p_a- ...) s_a) ...) (term ((tc G e_args) ...))]
-                [_ (display (term t_op))]
+                ;[_ (display (term t_op))]
                 [(t_f ... -> t_r : ((ph_f+ ...) (ph_f- ...)) ... : sh_f) (term t_op)]
                 [#t (term (all (t_a . <: . t_f) ...))]
                 [((any_a ...) (any_b ...)) (term (flatten (apply-filter (p_a+ ...) (p_a- ...) t_a s_a) ...))]
