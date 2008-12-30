@@ -6,6 +6,7 @@
          scheme/class
          mred/mred
          redex
+         (for-syntax scheme/base)
          #;
          (planet cobbe/environment:3/environment))
 
@@ -33,7 +34,7 @@
   [(t u) N proctop top #t #f (t ... -> t : fh ... : sh) (pr t t) (U t ...)]
   ;; effects
   [f ((p ...) (p ...))]
-  [fh ((p ...) (p ...))]
+  [fh ((ph ...) (ph ...))]
   [p (t pi x) (! t pi x) bot]
   
   [ph (t pi) (! t pi) both]
@@ -209,7 +210,7 @@
 (define-metafunction occur-lang
   predty : t pi -> t
   [(predty t pi)
-   (top -> (U #t #f) : ((t pi) (! t pi)) : 0)])
+   (top -> (U #t #f) : (((t pi)) ((! t pi))) : 0)])
 
 (define reductions
   (reduction-relation 
@@ -354,6 +355,21 @@
     [(term-let* () . e) (term-let () . e)]
     [(term-let* (cl . rest) . e) (term-let (cl) (term-let* rest . e))]))
 
+(define-syntax (*term-let-one stx)
+  (syntax-case stx ()
+    [(_ lang ([pat rhs]) . body)
+     (with-syntax ([(mf-name) (generate-temporaries '(mf))])
+       #'(let ()
+           (define-metafunction lang 
+             mf-name : any -> any
+             [(mf-name pat) ,body])
+           (term (mf-name ,rhs))))]))
+
+(define-syntax *term-let
+  (syntax-rules ()
+    [(*term-let lang () . e) (term-let () . e)]
+    [(*term-let lang (cl . rest) . e) (*term-let-one lang (cl) (*term-let lang rest . e))]))
+
 (define-metafunction occur-lang
   tc : G e -> (t (p ...) (p ...) s)
   ;; T-Var
@@ -368,12 +384,33 @@
   [(tc G #f) (#f (bot) () 0)]
   ;; T-Abs
   [(tc G (lambda ([x : u] ...) e))
-   ,(term-let* ([(t (p_+ ...) (p_- ...) s) (term (tc ((x u) ... . G) e))]
+   ,(*term-let occur-lang
+               ([(t (p_+ ...) (p_- ...) s) (term (tc ((x u) ... . G) e))]
                 [sh_new (match (term s)
                           [0 (term 0)]
                           [(list pi x_i) 
-                           (or (find x_i (term (x ...))) 0)])]
+                           (let ([idx (find x_i (term (x ...)))])
+                             (if idx
+                                 (list pi idx)
+                                 0))])]
                 [((ph_+ ...) (ph_- ...))
                  (term ((abstract-filter x (p_+ ...) (p_- ...)) ...))])
                (term (u ... -> t : (ph_+ ...) (ph_- ...) : sh_new)))]
+  ;; T-App
+  [(tc G (e_op e_args ...))
+   ,(*term-let occur-lang
+               ([(t_op (p_op+ ...) (p_op- ...) s_op) (term (tc G e_op))]
+                [((t_a (p_a+ ...) (p_a- ...) s_a) ...) (term ((tc G e_args) ...))]
+                [_ (display (term t_op))]
+                [(t_f ... -> t_r : ((ph_f+ ...) (ph_f- ...)) ... : sh_f) (term t_op)]
+                [#t (term (all (t_a . <: . t_f) ...))]
+                [((any_a ...) (any_b ...)) (term (flatten (apply-filter (p_a+ ...) (p_a- ...) t_a s_a) ...))]
+                [((p_r+ ...) (p_r- ...)) (term ((flatten any_a ...) (flatten any_b ...)))]
+                [s_r (match (term sh_f)                       
+                       [(list pi* i)
+                        (match (list-ref (term (s_a ...)) i)
+                          [(list pi x) (list (append pi* pi) x)]
+                          [_ 0])]
+                       [_ 0])])
+               (term (t_r (p_r+ ...) (p_r- ...) s_r)))]
   )
