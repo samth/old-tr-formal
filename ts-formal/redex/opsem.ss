@@ -2,6 +2,7 @@
 
 (require mzlib/trace
          (except-in scheme/list flatten #;lookup)
+         (only-in srfi/1 lset=)
          scheme/match 
          scheme/class
          mred/mred
@@ -47,6 +48,8 @@
   
   [G ((x t) ...)]
   )
+
+(define type? (redex-match occur-lang t))
 
 (define-metafunction occur-lang
   <: : t t -> boolean
@@ -237,16 +240,22 @@
 
 
 (define-metafunction occur-lang
-  abstract-filter : x (p ...) (p ...) -> ((ph ...) (ph ...))
-  [(abstract-filter x (p_1 ...) (p_2 ...))
+  abstract-filter : x f -> fh
+  [(abstract-filter x ((p_1 ...) (p_2 ...)))
    ((flatten (abo x p_1) ...)
     (flatten (abo x p_2) ...))])
 
 (define-metafunction occur-lang
-  apply-filter : (ph_+ ...) (ph_- ...) t s -> ((p ...) (ph ...))
-  [(apply-filter (p_+ ...) (p_- ...) t s)
-   ((flatten (apo p_+ t s) ...)
-    (flatten (apo p_- t s) ...))])
+  apply-filter : fh t s -> f
+  [(apply-filter ((ph_+ ...) (ph_- ...)) t s)
+   ((flatten (apo ph_+ t s) ...)
+    (flatten (apo ph_- t s) ...))
+   #;
+   (where any (begin (display (term ((apo ph_+ t s) ...)))
+                     (newline)
+                     (display (term ((apo ph_- t s) ...)))
+                     (newline)
+                     (term 1)))])
 
 (define-metafunction occur-lang
   abo : x p -> (ph ...)
@@ -258,21 +267,39 @@
 
 (define-metafunction occur-lang
   apo : ph t s -> (p ...)
+  [(apo any_1 any_2 any_3) 
+   #f                           
+   (side-condition (and (printf "args: ~a\n" (term (any_1 any_2 any_3))) #f))]
   [(apo both t s) (bot)]
   [(apo (! t pi) u s) (bot) (side-condition (term (u . <: . t)))]
-  [(apo (t pi) u s) (bot) (side-condition (term (no-overlap u t)))]
+  [(apo (t pi) u s) (bot) (side-condition (and (printf "in no-overlap~n") (term (no-overlap u t))))]
   [(apo ph u 0) ()]
-  [(apo (t (pe_1 ...)) u ((pe_2 ...) x)) (t (pe_1 ... pe_2 ...) x)]
-  [(apo (! t (pe_1 ...)) u ((pe_2 ...) x)) (! t (pe_1 ... pe_2 ...) x)])
+  [(apo (t (pe_1 ...)) u ((pe_2 ...) x)) ((t (pe_1 ... pe_2 ...) x))]
+  [(apo (! t (pe_1 ...)) u ((pe_2 ...) x)) ((! t (pe_1 ... pe_2 ...) x))])
 
 (define-metafunction occur-lang
-  flatten : any ... -> any
-  [(flatten) ()]
-  [(flatten (any_1 ...) any_2 ...) ,(append (term (any_1 ...)) (term (flatten any_2 ...)))])
+  flatten : any ... -> any  
+  [(flatten (any_1 ...) ...) (any_1 ... ...)])
 
 ;; conservative
 (define-metafunction occur-lang
   comb-filter : f f f -> f
+  ;; silly student expansion
+  [(comb-filter f (any (any_1 ... bot any_2 ...)) ((any_3 ... bot any_4 ...) any_5)) f]
+
+  ;; if we know the test is true or false
+  [(comb-filter (any (any_1 ... bot any_2 ...)) f_2 f_3) f_2]
+  [(comb-filter ((any_1 ... bot any_2 ...) any) f_2 f_3) f_3]
+  
+  ;; and
+  [(comb-filter ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)) (any_1 (any_2 ... bot any_3)))
+   ((p_1+ ... p_2+ ...) ())]
+  
+  ;; not sure if this is ever useful
+  [(comb-filter f_tst f_1 f_2) 
+   f_1
+   (side-condition (lset= (term f_1) (term f_2)))]
+  
   [(comb-filter f_1 f_2 f_3) (() ())])
 
 (define-metafunction occur-lang
@@ -303,8 +330,9 @@
   [(no-overlap (pr t_1 t_2) (t ... -> u : fh ... : sh)) #t]
   [(no-overlap (U t ...) u) (all (no-overlap t u) ...)]
   [(no-overlap t u) 
-   ,(parameterize ([no-overlap-recur #f]) (term (no-overlap u t)))
-   (side-condition (no-overlap-recur))]
+   #t
+   (side-condition (and (no-overlap-recur)
+                        (parameterize ([no-overlap-recur #f]) (term (no-overlap u t)))))]
   [(no-overlap t u) #f])
 
 (define-metafunction occur-lang
@@ -333,7 +361,7 @@
           (x_t (update t_t (! t pi)))
           (x_2 t_2) ...)
          (p_rest ...))]
-  [(env+ ((x t) ...) (bot p_rest)) ((x (U)) ...)]
+  [(env+ ((x t) ...) (bot p_rest ...)) ((x (U)) ...)]
   ;; the relevant variable not in G
   [(env+ G (p p_rest ...)) (env+ G (p_rest ...))])
 
@@ -350,6 +378,7 @@
                            (cond [(find x (cdr l)) => add1]
                                  [else #f]))))
 
+
 (define-syntax term-let*
   (syntax-rules ()
     [(term-let* () . e) (term-let () . e)]
@@ -358,12 +387,14 @@
 (define-syntax (*term-let-one stx)
   (syntax-case stx ()
     [(_ lang ([pat rhs]) . body)
-     (with-syntax ([(mf-name) (generate-temporaries '(mf))])
-       #'(let ()
+     (with-syntax ([(mf-name) (generate-temporaries (list 'mf))])
+       (quasisyntax/loc stx
+         (let ([r rhs])
            (define-metafunction lang 
              mf-name : any -> any
-             [(mf-name pat) ,body])
-           (term (mf-name ,rhs))))]))
+             [(mf-name pat) ,(begin . body)]
+             [(mf-name any) ,#,(syntax/loc stx (error 'term-let "term ~a did not match pattern ~a" r 'pat))])
+           (term (mf-name ,r)))))]))
 
 (define-syntax *term-let
   (syntax-rules ()
@@ -371,21 +402,27 @@
     [(*term-let lang (cl . rest) . e) (*term-let-one lang (cl) (*term-let lang rest . e))]))
 
 (define-metafunction occur-lang
-  tc : G e -> (t (p ...) (p ...) s)
+  proctype? : t -> boolean
+  [(proctype? (t_f ... -> t_r : ((ph_f+ ...) (ph_f- ...)) ... : sh_f)) #t]
+  [(proctype? any) #f])
+
+(define-metafunction occur-lang
+  tc : G e -> (t ((p ...) (p ...)) s)
   ;; T-Var
-  [(tc G x) ((lookup G x) ((! #f () x)) ((#f () x)) (() x))]
+  [(tc G x) ((lookup G x) (((! #f () x)) ((#f () x))) (() x))]
   ;; T-Const
-  [(tc G c) ((delta-t c) () (bot) 0)]
+  [(tc G c) ((delta-t c) (() (bot)) 0)]
   ;; T-Num
-  [(tc G number) (N () (bot) 0)]
+  [(tc G number) (N (() (bot)) 0)]
   ;; T-True
-  [(tc G #t) (#t () (bot) 0)]
+  [(tc G #t) (#t (() (bot)) 0)]
   ;; T-False
-  [(tc G #f) (#f (bot) () 0)]
+  [(tc G #f) (#f ((bot) ()) 0)]
   ;; T-Abs
   [(tc G (lambda ([x : u] ...) e))
    ,(*term-let occur-lang
-               ([(t (p_+ ...) (p_- ...) s) (term (tc ((x u) ... . G) e))]
+               ([(t ((p_+ ...) (p_- ...)) s) (term (tc ((x u) ... . G) e))]
+                [f (term ((p_+ ...) (p_- ...)))]
                 [sh_new (match (term s)
                           [0 (term 0)]
                           [(list pi x_i) 
@@ -393,24 +430,38 @@
                              (if idx
                                  (list pi idx)
                                  0))])]
-                [((ph_+ ...) (ph_- ...))
-                 (term ((abstract-filter x (p_+ ...) (p_- ...)) ...))])
-               (term (u ... -> t : (ph_+ ...) (ph_- ...) : sh_new)))]
+                [(fh ...)
+                 (term ((abstract-filter x f) ...))])
+               (term ((u ... -> t : fh ... : sh_new) (() (bot)) 0)))]
   ;; T-App
   [(tc G (e_op e_args ...))
    ,(*term-let occur-lang
-               ([(t_op (p_op+ ...) (p_op- ...) s_op) (term (tc G e_op))]
-                [((t_a (p_a+ ...) (p_a- ...) s_a) ...) (term ((tc G e_args) ...))]
-                ;[_ (display (term t_op))]
-                [(t_f ... -> t_r : ((ph_f+ ...) (ph_f- ...)) ... : sh_f) (term t_op)]
+               ([any (printf "started\n")]
+                [(t_op ((p_op+ ...) (p_op- ...)) s_op) (term (tc G e_op))]
+                [((t_a ((p_a+ ...) (p_a- ...)) s_a) ...) (term ((tc G e_args) ...))]
+                [any (display (term t_op))]
+                [any (unless (term (proctype? t_op))
+                       (error 'tc "~a not a proc type in ~a" (term t_op) (term e_op)))]
+                [(t_f ... -> t_r : fh_f ... : sh_f) (term t_op)]
                 [#t (term (all (t_a . <: . t_f) ...))]
-                [((any_a ...) (any_b ...)) (term (flatten (apply-filter (p_a+ ...) (p_a- ...) t_a s_a) ...))]
-                [((p_r+ ...) (p_r- ...)) (term ((flatten any_a ...) (flatten any_b ...)))]
+                [any (display "got here 1")]
+                [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                
+                [any (display "got here 4\n")]
                 [s_r (match (term sh_f)                       
                        [(list pi* i)
                         (match (list-ref (term (s_a ...)) i)
                           [(list pi x) (list (append pi* pi) x)]
                           [_ 0])]
-                       [_ 0])])
-               (term (t_r (p_r+ ...) (p_r- ...) s_r)))]
+                       [_ 0])]
+                [any (display "got here 5\n")])
+               (term (t_r ((p_+ ... ...) (p_- ... ...)) s_r)))]
+  ;; T-If
+  [(tc G (if e_tst e_thn e_els))
+   ,(*term-let occur-lang
+               ([(t_tst f_tst s_tst) (term (tc G e_tst))]
+                [((p_tst+ ...) (p_tst- ...)) (term f_tst)]
+                [(t_thn f_thn s_thn) (term (tc (env+ G (p_tst+ ...)) e_thn))]
+                [(t_els f_els s_els) (term (tc (env+ G (p_tst- ...)) e_els))]
+                [f (term (comb-filter f_tst f_thn f_els))])
+               (term ((U t_thn t_els) f 0)))]
   )
