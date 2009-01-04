@@ -254,7 +254,7 @@
   [(apply-filter ((ph_+ ...) (ph_- ...)) t s)
    ((flatten (apo ph_+ t s) ...)
     (flatten (apo ph_- t s) ...))
-   
+   #;
    (side-condition
     (begin 
       (printf "in apply-filter \n~a \n~a \n~a\n~a~n"
@@ -438,8 +438,7 @@
                 [s_r (match (term s)
                        [(list pi x) (term (,(cons 'car pi) ,x))]
                        [_ (term 0)])]
-                [f_r (term (apply-filter (((! #f (car))) ((#f (car)))) (pr t_1 t_2) s))]
-                [any (printf "f_r: ~a\n" (term f_r))])
+                [f_r (term (apply-filter (((! #f (car))) ((#f (car)))) (pr t_1 t_2) s))])
                (term (t_1 f_r s_r)))]
   ;; T-Car
   [(tc G (cdr e_1))
@@ -468,24 +467,19 @@
   ;; T-App
   [(tc G (e_op e_args ...))
    ,(*term-let occur-lang
-               ([any (printf "started\n")]
-                [(t_op ((p_op+ ...) (p_op- ...)) s_op) (term (tc G e_op))]
-                [((t_a ((p_a+ ...) (p_a- ...)) s_a) ...) (term ((tc G e_args) ...))]
-                [any (display (term t_op))]
+               ([(t_op ((p_op+ ...) (p_op- ...)) s_op) (term (tc G e_op))]
+                [((t_a ((p_a+ ...) (p_a- ...)) s_a) ...) (term ((tc G e_args) ...))]                
                 [any (unless (term (proctype? t_op))
                        (error 'tc "~a not a proc type in ~a" (term t_op) (term e_op)))]
                 [(t_f ... -> t_r : fh_f ... : sh_f) (term t_op)]
-                [#t (term (all (t_a . <: . t_f) ...))]
-                [any (display "got here 1")]
-                [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                
-                [any (display "got here 4\n")]
+                [#t (term (all (t_a . <: . t_f) ...))]                
+                [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                                
                 [s_r (match (term sh_f)                       
                        [(list pi* i)
                         (match (list-ref (term (s_a ...)) i)
                           [(list pi x) (list (append pi* pi) x)]
                           [_ 0])]
-                       [_ 0])]
-                [any (display "got here 5\n")])
+                       [_ 0])])
                (term (t_r ((p_+ ... ...) (p_- ... ...)) s_r)))]
   ;; T-If
   [(tc G (if e_tst e_thn e_els))
@@ -516,6 +510,11 @@
              #:else (list (term (#f ,p ,var)))
              #:s (term (,p ,var))))
 
+(define (type-res t var #:path [p null])
+  (mk-result (term (U #t #f))
+             #:then (list (term (,t ,p ,var)))
+             #:else (list (term (! ,t ,p ,var)))))
+
 (test--> reductions (if #t 1 2) 1)
 (test-equal (term (no-overlap #t (U #t #f))) #f)
 
@@ -524,5 +523,20 @@
 
 (test-equal (term (tc ([x (pr top top)]) (car x)))
             (var-res (term top) (term x) #:path (term (car))))
+
+(test-equal (term (tc ([x top]) (number? x)))
+            (type-res (term N) (term x)))
+
+(test-equal (term (tc ([x (pr top top)]) (number? (car x))))
+            (type-res (term N) (term x) #:path (list 'car)))
+
+(test-equal (term (tc () #f))
+            (term (#f ((bot) ()) 0)))
+
+(test-equal (term (tc () 3))
+            (term (N (() (bot)) 0)))
+
+(test-equal (term (tc () #t))
+            (term (#t (() (bot)) 0)))
 
 (test-results)
