@@ -1,17 +1,18 @@
 #lang scheme/base
 
 (require mzlib/trace
-         (except-in scheme/list flatten #;lookup)
+         (except-in scheme/list flatten)
          (only-in srfi/1 lset=)
          scheme/match 
          scheme/class
          mred/mred
          redex
-         (for-syntax scheme/base)
-         #;
-         (planet cobbe/environment:3/environment))
+         (for-syntax scheme/base))
 
 (provide (all-defined-out))
+
+(define T-Bot (make-parameter #t))
+(define T-Not (make-parameter #t))
 
 (define-language occur-lang
   ;; expressions
@@ -33,19 +34,22 @@
 
   ;; types
   [(t u) N proctop top #t #f (t ... -> t : fh ... : sh) (pr t t) (U t ...)]
-  ;; effects
+  ;; filters
   [f ((p ...) (p ...))]
   [fh ((ph ...) (ph ...))]
   [p (t pi x) (! t pi x) bot]
   
   [ph (t pi) (! t pi) both]
   
+  ;; subjects
   [s 0 (pi x)]
   [sh 0 (pi i)]
   
+  ;; paths
   [pi (pe ...)]
   [pe car cdr]
   
+  ;; environments
   [G ((x t) ...)]
   )
 
@@ -418,6 +422,30 @@
   [(tc G #t) (#t (() (bot)) 0)]
   ;; T-False
   [(tc G #f) (#f ((bot) ()) 0)]
+  ;; T-Cons
+  [(tc G (cons e_1 e_2))
+   ,(*term-let occur-lang
+               ([(t_1 f_1 s_1) (term (tc G e_1))]
+                [(t_2 f_2 s_2) (term (tc G e_2))])
+               (term ((pr t_1 t_2) (() (bot)) 0)))]
+  ;; T-Car
+  [(tc G (car e_1))
+   ,(*term-let occur-lang
+               ([((pr t_1 t_2) f s) (term (tc G e_1))]
+                [s_r (match (term s)
+                       [(list pi x) (term (,(cons 'car pi) ,x))]
+                       [_ (term 0)])]
+                [f_r (term (apply-filter (((! #f (car))) ((#f (car)))) (pr t_1 t_2) s))])
+               (term (t_1 f_r s_r)))]
+  ;; T-Car
+  [(tc G (cdr e_1))
+   ,(*term-let occur-lang
+               ([((pr t_1 t_2) f s) (term (tc G e_1))]
+                [s_r (match (term s)
+                       [(list pi x) (term (,(cons 'cdr pi) ,x))]
+                       [_ (term 0)])]
+                [f_r (term (apply-filter (((! #f (cdr))) ((#f (cdr)))) (pr t_1 t_2) s))])
+               (term (t_2 f_r s_r)))]
   ;; T-Abs
   [(tc G (lambda ([x : u] ...) e))
    ,(*term-let occur-lang
@@ -463,5 +491,15 @@
                 [(t_thn f_thn s_thn) (term (tc (env+ G (p_tst+ ...)) e_thn))]
                 [(t_els f_els s_els) (term (tc (env+ G (p_tst- ...)) e_els))]
                 [f (term (comb-filter f_tst f_thn f_els))])
-               (term ((U t_thn t_els) f 0)))]
+               (term ((U t_thn t_els) f 0)))]  
+  ;; T-Bot
+  [(tc (any_1 ... (x (U)) any_2 ...) e)
+   (term ((U) (() ()) 0))
+   (side-condition (T-Bot))]
+    ;; T-Not
+  [(tc G (not e))
+   ,(*term-let occur-lang
+               ([(t ((p_+ ...) (p_- ...)) s) (term (tc G e))])
+               (term ((U #t #f) ((p_- ...) (p_+ ...)) 0)))
+   (side-condition (T-Not))]
   )
