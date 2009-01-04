@@ -254,12 +254,16 @@
   [(apply-filter ((ph_+ ...) (ph_- ...)) t s)
    ((flatten (apo ph_+ t s) ...)
     (flatten (apo ph_- t s) ...))
-   #;
-   (where any (begin (display (term ((apo ph_+ t s) ...)))
-                     (newline)
-                     (display (term ((apo ph_- t s) ...)))
-                     (newline)
-                     (term 1)))])
+   
+   (side-condition
+    (begin 
+      (printf "in apply-filter \n~a \n~a \n~a\n~a~n"
+              (term (ph_+ ...)) (term (ph_- ...)) (term t) (term s))
+      (display (term ((apo ph_+ t s) ...)))
+      (newline)
+      (display (term ((apo ph_- t s) ...)))
+      (newline)
+      (term 1)))])
 
 (define-metafunction occur-lang
   abo : x p -> (ph ...)
@@ -270,13 +274,10 @@
   [(abo x (! t pi y)) () (side-condition (not (equal? (term x) (term y))))])
 
 (define-metafunction occur-lang
-  apo : ph t s -> (p ...)
-  [(apo any_1 any_2 any_3) 
-   #f                           
-   (side-condition (and (printf "args: ~a\n" (term (any_1 any_2 any_3))) #f))]
+  apo : ph t s -> (p ...)  
   [(apo both t s) (bot)]
-  [(apo (! t pi) u s) (bot) (side-condition (term (u . <: . t)))]
-  [(apo (t pi) u s) (bot) (side-condition (and (printf "in no-overlap~n") (term (no-overlap u t))))]
+  [(apo (! t ()) u s) (bot) (side-condition (term (u . <: . t)))]
+  [(apo (t ()) u s) (bot) (side-condition (term (no-overlap u t)))]
   [(apo ph u 0) ()]
   [(apo (t (pe_1 ...)) u ((pe_2 ...) x)) ((t (pe_1 ... pe_2 ...) x))]
   [(apo (! t (pe_1 ...)) u ((pe_2 ...) x)) ((! t (pe_1 ... pe_2 ...) x))])
@@ -323,6 +324,8 @@
 
 (define-metafunction occur-lang
   no-overlap : t t -> any
+  [(no-overlap top t) #f]
+  [(no-overlap t top) #f]
   [(no-overlap N #t) #t]
   [(no-overlap N #f) #t]
   [(no-overlap N (pr t_1 t_2)) #t]
@@ -435,7 +438,8 @@
                 [s_r (match (term s)
                        [(list pi x) (term (,(cons 'car pi) ,x))]
                        [_ (term 0)])]
-                [f_r (term (apply-filter (((! #f (car))) ((#f (car)))) (pr t_1 t_2) s))])
+                [f_r (term (apply-filter (((! #f (car))) ((#f (car)))) (pr t_1 t_2) s))]
+                [any (printf "f_r: ~a\n" (term f_r))])
                (term (t_1 f_r s_r)))]
   ;; T-Car
   [(tc G (cdr e_1))
@@ -503,3 +507,22 @@
                (term ((U #t #f) ((p_- ...) (p_+ ...)) 0)))
    (side-condition (T-Not))]
   )
+(define (mk-result t #:then [thn null] #:else [els null] #:s [s 0])
+  (term (,t (,thn ,els) ,s)))
+
+(define (var-res t var #:path [p null])
+  (mk-result t 
+             #:then (list (term (! #f ,p ,var)))
+             #:else (list (term (#f ,p ,var)))
+             #:s (term (,p ,var))))
+
+(test--> reductions (if #t 1 2) 1)
+(test-equal (term (no-overlap #t (U #t #f))) #f)
+
+(test-equal (term (tc ([x top]) x))
+            (var-res (term top) (term x)))
+
+(test-equal (term (tc ([x (pr top top)]) (car x)))
+            (var-res (term top) (term x) #:path (term (car))))
+
+(test-results)
