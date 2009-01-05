@@ -46,7 +46,7 @@
 \newbfop\ifsym{if}
 \newcommand\pecar{{\bf car}}
 \newcommand\pecdr{{\bf cdr}}
-\newcommand\noeffect{\bf 0}
+\newcommand\noeffect{\bf \emptyset}
 %\newbfop\usym{\ma{\bigcup}}
 \newcommand\usym{\ma{\bigcup}}
 \newcommand\isym{\ma{\bigcap}}
@@ -114,7 +114,7 @@
 \newcommand\notsubtype[2]{\ma{\vdash #1 \not\subtypesym #2}}
 \newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{?} #2}}
 
-\newcommand{\latentvarty}[3]{\proctype{#1}{#2}{{\comp{\fft}_{#3}|{\fft}_{#3}}}{#3}}
+\newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{#3}|{\fft}_{#3}}}{#4}}
 \newcommand{\predty}[3][\top]{\proctype{#1}{\bool}{{#3}_{#2}|{\comp{#3}}_{#2}}{\noeffect}}
 \newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\bullet|\bullet}{\noeffect}}
 

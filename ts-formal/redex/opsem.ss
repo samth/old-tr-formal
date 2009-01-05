@@ -28,7 +28,7 @@
   ;; constants
   [c add1 number? boolean? zero? not cons car cdr cons? procedure?]
   ;; variables
-  [x (variable-except lambda add1 if number? boolean? zero? not cons car cdr cons? procedure?)]
+  [(x y) (variable-except lambda add1 if number? boolean? zero? not cons car cdr cons? procedure?)]
 
   ;; contexts
   [E (v ... E e ...) (if E e e) hole]
@@ -44,7 +44,7 @@
   
   ;; subjects
   [s 0 (pi x)]
-  [sh 0 (pi i)]
+  [sh 0 (pi number)]
   
   ;; paths
   [pi (pe ...)]
@@ -434,6 +434,12 @@
                        [_ (term 0)])]
                 [f_r (term (apply-filter (((! #f (cdr))) ((#f (cdr)))) (pr t_1 t_2) s))])
                (term (t_2 f_r s_r)))]
+  ;; T-Not
+  [(tc G (not e))
+   ,(*term-let occur-lang
+               ([(t ((p_+ ...) (p_- ...)) s) (term (tc G e))])
+               (term ((U #t #f) ((p_- ...) (p_+ ...)) 0)))
+   (side-condition (T-Not))]
   ;; T-Abs
   [(tc G (lambda ([x : u] ...) e))
    ,(*term-let occur-lang
@@ -479,12 +485,6 @@
   [(tc (any_1 ... (x (union)) any_2 ...) e)
    (term ((U) (() ()) 0))
    (side-condition (T-Bot))]
-    ;; T-Not
-  [(tc G (not e))
-   ,(*term-let occur-lang
-               ([(t ((p_+ ...) (p_- ...)) s) (term (tc G e))])
-               (term ((U #t #f) ((p_- ...) (p_+ ...)) 0)))
-   (side-condition (T-Not))]
   )
 (define (mk-result t #:then [thn null] #:else [els null] #:s [s 0])
   (term (,t (,thn ,els) ,s)))
@@ -505,6 +505,15 @@
 
 (define (*or a b)
   (term (if ,a #t ,b)))
+
+(define-syntax-rule (truety t)
+  (term (,t (() (bot)) 0)))
+
+(define-syntax predtype
+  (syntax-rules ()
+    [(_ ty in p) (term (,in -> (U #t #f) : (((,ty ,p)) ((! ,ty ,p))) : 0))]
+    [(_ ty in) (predtype ty in (term ()))]
+    [(_ ty) (predtype ty (term top))]))
 
 (test--> reductions (if #t 1 2) 1)
 (test-equal (term (no-overlap #t (U #t #f))) #f)
@@ -547,5 +556,31 @@
             (type-res (term (U N #t #f)) (term x)))
 
 
+(test-equal (term (tc () (lambda ([x : top]) x)))
+            (truety (term (top -> top : (((! #f ())) ((#f ()))) : (() 0)))))
+
+(test-equal (term (tc () number?))
+            (truety (predtype (term N))))
+
+(test-equal (term (tc () (lambda ([x : top]) (number? x))))
+            (truety (predtype (term N))))
+
+(test-equal (term (tc () (cons 1 2)))
+            (truety (term (pr N N))))
+
+(test-equal (term (tc () (lambda ([x : (pr top top)]) (number? (car x)))))
+            (truety (predtype (term N) (term (pr top top)) (term (car)))))
+
+(test-equal (term (tc () (lambda ([x : (pr top top)]) (number? (cdr x)))))
+            (truety (predtype (term N) (term (pr top top)) (term (cdr)))))
+
+(test-equal (term (tc () (lambda ([x : (pr top top)]) (not (number? (car x))))))
+            (truety (term ((pr top top) -> (U #t #f) : (((! N (car))) ((N (car)))) : 0))))
+
+(test-equal (term (tc () (lambda ([x : top]) #f)))
+            (truety (term (top -> #f : ((both) ()) : 0))))
+
+(test-equal (term (tc () (lambda ([x : top] [y : top]) (number? x))))
+            (truety (term (top top -> (U #t #f) : (((N ())) ((! N ()))) (() ()) : 0))))
 
 (test-results)
