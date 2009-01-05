@@ -7,6 +7,7 @@
          scheme/class
          mred/mred
          redex
+         "utils.ss"
          (for-syntax scheme/base))
 
 (provide (all-defined-out))
@@ -33,7 +34,7 @@
   [E (v ... E e ...) (if E e e) hole]
 
   ;; types
-  [(t u) N proctop top #t #f (t ... -> t : fh ... : sh) (pr t t) (U t ...)]
+  [(t u) N proctop top #t #f (t ... -> t : fh ... : sh) (pr t t) (union t ...)]
   ;; filters
   [f ((p ...) (p ...))]
   [fh ((ph ...) (ph ...))]
@@ -69,11 +70,11 @@
    (side-condition (term (t_1 . <: . t_2)))
    (side-condition (term (u_1 . <: . u_2)))]
   ;; S-UnionSub
-  [((U t_1 ...) . <: . t_2)
+  [((union t_1 ...) . <: . t_2)
    #t
    (side-condition (term (all (t_1 . <: . t_2) ...)))]
   ;; S-UnionSuper
-  [(t_2 . <: . (U t_1 ...))
+  [(t_2 . <: . (union t_1 ...))
    #t
    (side-condition (term (any (t_2 . <: . t_1) ...)))]
   ;; S-Fun
@@ -153,30 +154,14 @@
   ;; multi-arg
   [(subst-vars (x_1 e_1) (x_2 e_2) ... e_t)
    (subst-vars (x_1 e_1) (subst-vars (x_2 e_2) ... e_t))])
-  
 
 (define-metafunction occur-lang
-  u : (x ...) ... -> (x ...)
-  [(u) ()]
-  [(u (x_1 ...)) (x_1 ...)]
-  [(u (x_1 ...) (x_2 ...)) (x_1 ... x_2 ...)]
-  [(u (x_1 ...) any_2 ...) (u (x_1 ...) (u any_2 ...))])
-
-;; free-vars : e -> (listof x)
-(define-metafunction occur-lang
-  free-vars : e -> (x ...)
-  [(free-vars (e_1 e_2)) (u (free-vars e_1) (free-vars e_2))]
-  [(free-vars x_1) (x_1)]
-  [(free-vars (if e_1 e_2 e_3)) (u (free-vars e_1) (free-vars e_2) (free-vars e_3))]
-  [(free-vars (lambda ([x_1 : t] ...) e_1))
-   (var- (x_1 ...) (free-vars e_1))]
-  [(free-vars v_1) ()])
-
-(define-metafunction occur-lang
-  var- : (x ...) (x ...) -> (x ...)
-  [(var- any_1 any_2) ,(remq* (term any_1) (term any_2))])
-
-(define (closed e) (equal? (term (free-vars ,e)) null))
+  U : t ... -> t
+  [(U) (union)]
+  [(U t u) u (side-condition (term (t . <: . u)))]
+  [(U t u) t (side-condition (term (u . <: . t)))]
+  [(U t u) (union t u)]
+  [(U t t_rest ...) (U t (U t_rest ...))])
 
 (define value? (redex-match occur-lang v))
 
@@ -289,35 +274,57 @@
 ;; conservative
 (define-metafunction occur-lang
   comb-filter : f f f -> f
+  #;
+  [(comb-filter any_1 any_2 any_3) 
+   #f
+   (side-condition
+    (and (printf "~a~n" `(comb-filter  ,(term any_1) ,(term any_2) ,(term any_3))) #f))]
   ;; silly student expansion
+  ;; (if e #t #f)
   [(comb-filter f (any (any_1 ... bot any_2 ...)) ((any_3 ... bot any_4 ...) any_5)) f]
 
   ;; if we know the test is true or false
+  ;; (if #t e2 e3)
   [(comb-filter (any (any_1 ... bot any_2 ...)) f_2 f_3) f_2]
+  ;; (if #f e2 e3)
   [(comb-filter ((any_1 ... bot any_2 ...) any) f_2 f_3) f_3]
   
-  ;; and
-  [(comb-filter ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)) (any_1 (any_2 ... bot any_3)))
+  ;; and (if e1 e2 #f)
+  [(comb-filter ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)) ((any_2 ... bot any_3 ...) any_1))
    ((p_1+ ... p_2+ ...) ())]
   
+  ;; or (if (number? x) #t (boolean? x))
+  [(comb-filter (((t_1 pi x) p_1+ ...) ((! t_1 pi_1 x_1) p_1- ...)) (any_1 (any_2 ... bot any_3 ...)) (((t_3 pi_3 x_3) p_3+ ...) ((! t_3 pi x) p_3- ...)))
+   ,(*term-let occur-lang
+               ([((p_r+ ...) (p_r- ...))
+                 (term (comb-filter ((p_1+ ...) (p_1- ...))
+                                    (any_1 (any_2 ... bot any_3 ...))
+                                    ((p_3+ ...) (p_3- ...))))])
+               (term ((((U t_1 t_3) pi x) p_r+ ...) ((! (U t_1 t_3) pi x) p_r- ...))))]
+  
+  ;; or (if e1 #t e3)
+  [(comb-filter ((p_1+ ...) (p_1- ...)) (any_1 (any_2 ... bot any_3 ...)) ((p_3+ ...) (p_3- ...)))
+   (() (p_1- ... p_3- ...))]
+  
   ;; not sure if this is ever useful
+  ;; (if e1 e e)
   [(comb-filter f_tst f_1 f_2) 
    f_1
-   (side-condition (lset= (term f_1) (term f_2)))]
+   (side-condition (lset= equal? (term f_1) (term f_2)))]
   
   [(comb-filter f_1 f_2 f_3) (() ())])
 
 (define-metafunction occur-lang
   restrict : t t -> t
   [(restrict t u) (U) (side-condition (term (no-overlap t u)))]
-  [(restrict (U t ...) u) (U (restrict t u) ...)]
+  [(restrict (union t ...) u) (union (restrict t u) ...)]
   [(restrict t u) t (side-condition (term (t . <: . u)))]
   [(restrict t u) u])
 
 (define-metafunction occur-lang
   remove : t t -> t
   [(remove t u) (U) (side-condition (term (t . <: . u)))]
-  [(remove (U t ...) u) (U (remove t u) ...)]
+  [(remove (union t ...) u) (union (remove t u) ...)]
   [(remove t u) t])
 
 (define no-overlap-recur (make-parameter #t))
@@ -335,7 +342,7 @@
   [(no-overlap #t (t ... -> u : fh ... : sh)) #t]
   [(no-overlap #f (t ... -> u : fh ... : sh)) #t]
   [(no-overlap (pr t_1 t_2) (t ... -> u : fh ... : sh)) #t]
-  [(no-overlap (U t ...) u) (all (no-overlap t u) ...)]
+  [(no-overlap (union t ...) u) (all (no-overlap t u) ...)]
   [(no-overlap t u) 
    #t
    (side-condition (and (no-overlap-recur)
@@ -358,17 +365,17 @@
 (define-metafunction occur-lang
   env+ : G (p ...) -> G
   [(env+ G ()) G]
-  [(env+ ((x_1 t_1) ... (x t_t) (x_2 t_2) ...) ((t pi x_t) p_rest ...))
+  [(env+ ((x_1 t_1) ... (x_t t_t) (x_2 t_2) ...) ((t pi x_t) p_rest ...))
    (env+ ((x_1 t_1) ...
           (x_t (update t_t (t pi)))
           (x_2 t_2) ...)
          (p_rest ...))]
-  [(env+ ((x_1 t_1) ... (x t_t) (x_2 t_2) ...) ((! t pi x_t) p_rest ...))
+  [(env+ ((x_1 t_1) ... (x_t t_t) (x_2 t_2) ...) ((! t pi x_t) p_rest ...))
    (env+ ((x_1 t_1) ...
           (x_t (update t_t (! t pi)))
           (x_2 t_2) ...)
          (p_rest ...))]
-  [(env+ ((x t) ...) (bot p_rest ...)) ((x (U)) ...)]
+  [(env+ ((x t) ...) (bot p_rest ...)) ((x (union)) ...)]
   ;; the relevant variable not in G
   [(env+ G (p p_rest ...)) (env+ G (p_rest ...))])
 
@@ -385,28 +392,6 @@
                            (cond [(find x (cdr l)) => add1]
                                  [else #f]))))
 
-
-(define-syntax term-let*
-  (syntax-rules ()
-    [(term-let* () . e) (term-let () . e)]
-    [(term-let* (cl . rest) . e) (term-let (cl) (term-let* rest . e))]))
-
-(define-syntax (*term-let-one stx)
-  (syntax-case stx ()
-    [(_ lang ([pat rhs]) . body)
-     (with-syntax ([(mf-name) (generate-temporaries (list 'mf))])
-       (quasisyntax/loc stx
-         (let ([r rhs])
-           (define-metafunction lang 
-             mf-name : any -> any
-             [(mf-name pat) ,(begin . body)]
-             [(mf-name any) ,#,(syntax/loc stx (error 'term-let "term ~a did not match pattern ~a" r 'pat))])
-           (term (mf-name ,r)))))]))
-
-(define-syntax *term-let
-  (syntax-rules ()
-    [(*term-let lang () . e) (term-let () . e)]
-    [(*term-let lang (cl . rest) . e) (*term-let-one lang (cl) (*term-let lang rest . e))]))
 
 (define-metafunction occur-lang
   proctype? : t -> boolean
@@ -491,7 +476,7 @@
                 [f (term (comb-filter f_tst f_thn f_els))])
                (term ((U t_thn t_els) f 0)))]  
   ;; T-Bot
-  [(tc (any_1 ... (x (U)) any_2 ...) e)
+  [(tc (any_1 ... (x (union)) any_2 ...) e)
    (term ((U) (() ()) 0))
    (side-condition (T-Bot))]
     ;; T-Not
@@ -514,6 +499,12 @@
   (mk-result (term (U #t #f))
              #:then (list (term (,t ,p ,var)))
              #:else (list (term (! ,t ,p ,var)))))
+
+(define (*and a b)
+  (term (if ,a ,b #f)))
+
+(define (*or a b)
+  (term (if ,a #t ,b)))
 
 (test--> reductions (if #t 1 2) 1)
 (test-equal (term (no-overlap #t (U #t #f))) #f)
@@ -538,5 +529,23 @@
 
 (test-equal (term (tc () #t))
             (term (#t (() (bot)) 0)))
+
+(test-equal (term (tc ([x top] [y top])
+                      ,(*and (term (number? x)) (term (boolean? y)))))
+            (term ((U #t #f) (((N () x) ((U #t #f) () y)) ()) 0)))
+
+(test-equal (term (tc ([x top] [y top])
+                      ,(*or (term (number? x)) (term (boolean? y)))))
+            (term ((U #t #f) (() ((! N () x) (! (U #t #f) () y))) 0)))
+
+(test-equal (term (tc ([x top])
+                      ,(*and (term (number? x)) (term (boolean? x)))))
+            (term ((U #t #f) (((N () x) ((U #t #f) () x)) ()) 0)))
+
+(test-equal (term (tc ([x top])
+                      ,(*or (term (number? x)) (term (boolean? x)))))
+            (type-res (term (U N #t #f)) (term x)))
+
+
 
 (test-results)
