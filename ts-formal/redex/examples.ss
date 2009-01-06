@@ -1,6 +1,6 @@
 #lang scheme/base
 
-(require redex)
+(require redex "opsem.ss")
 
 (provide (all-defined-out))
 

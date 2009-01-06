@@ -166,6 +166,7 @@
 (define-metafunction occur-lang
   U : t ... -> t
   [(U) (union)]
+  ;[(U t) t]
   [(U t u) u (side-condition (term (t . <: . u)))]
   [(U t u) t (side-condition (term (u . <: . t)))]
   [(U t u) (union t u)]
@@ -368,7 +369,8 @@
           (x_t (update t_t (! t pi)))
           (x_2 t_2) ...)
          (p_rest ...))]
-  [(env+ ((x t) ...) (bot p_rest ...)) ((x (union)) ...)]
+  [(env+ ((x t) ...) (bot p_rest ...)) ([x_fresh (union)] (x (union)) ...)
+                                       (where x_fresh ,(gensym))]
   ;; the relevant variable not in G
   [(env+ G (p p_rest ...)) (env+ G (p_rest ...))])
 
@@ -393,6 +395,10 @@
 ;; the type rules!
 (define-metafunction occur-lang
   tc : G e -> (t ((p ...) (p ...)) s)
+  ;; T-Bot
+  [(tc (any_1 ... (x (union)) any_2 ...) e)
+   (term ((U) (() ()) 0))
+   (side-condition (T-Bot))]
   ;; T-Var
   [(tc G x) ((lookup G x) (((! #f () x)) ((#f () x))) (() x))]
   ;; T-Const
@@ -456,7 +462,9 @@
                 [any (unless (term (proctype? t_op))
                        (error 'tc "~a not a proc type in ~a" (term t_op) (term e_op)))]
                 [(t_f ... -> t_r : fh_f ... : sh_f) (term t_op)]
-                [#t (term (all (t_a . <: . t_f) ...))]                
+                [boolean_subs? (term (all (t_a . <: . t_f) ...))]
+                [any (unless (term boolean_subs?)
+                       (error 'tc "not all subtypes: ~a ~a" (term (t_a ...)) (term (t_f ...))))]
                 [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                                
                 [s_r (match (term sh_f)                       
                        [(list pi* i)
@@ -473,10 +481,6 @@
                 [(t_thn f_thn s_thn) (term (tc (env+ G (p_tst+ ...)) e_thn))]
                 [(t_els f_els s_els) (term (tc (env+ G (p_tst- ...)) e_els))]
                 [f (term (comb-filter f_tst f_thn f_els))])
-               (term ((U t_thn t_els) f 0)))]  
-  ;; T-Bot
-  [(tc (any_1 ... (x (union)) any_2 ...) e)
-   (term ((U) (() ()) 0))
-   (side-condition (T-Bot))]
+               (term ((U t_thn t_els) f 0)))] 
   )
 

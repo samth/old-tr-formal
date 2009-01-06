@@ -1,9 +1,11 @@
 #lang scheme
 
-(require redex "opsem.ss" "utils.ss" "examples.ss")
+(require redex "opsem.ss" "utils.ss" "examples.ss" mzlib/trace)
 
-(define (tc-fun e)
-  (term (tc () ,e)))
+(define (tc-fun ex)
+  (unless (redex-match occur-lang e ex)
+    (error 'tc-fun "not an expression"))
+  (term (tc () ,ex)))
 
 (define (check e node)
   (let* ([parents (term-node-parents node)]
@@ -15,10 +17,7 @@
                    (with-handlers ([exn:fail? (lambda _ '())])
                      (map tc-fun parent-exprs))]
                   [(t_1 f_1 s_1) (term (tc () ,e))])
-        (term (all (all (t_1 . <: . t) ...)
-                   #; #;
-                   (all (subeff f_1 f) ...)
-                   (all (subsubj s_1 s) ...)))))))
+        (term (all (all (t_1 . <: . t) ...)))))))
 
 (define (tcx e)
   (parameterize ([enable-T-IfAnd #f]
@@ -27,22 +26,30 @@
                  [enable-T-IfVar #t])
     (tc-fun e)))
 
+
+(define (check/plain e)
+  (printf "c/p: ~a~n" e)
+  (with-handlers ([exn:fail? (lambda _ #f)])
+    (parameterize ([enable-T-IfTrue #f]
+                   [enable-T-IfFalse #f])
+      (tc-fun e))))
+
+(define (check/middle e)
+  (with-handlers ([exn:fail? (lambda _ #f)])
+    (tc-fun e)))
+
+(define (check/experimental e)
+  (with-handlers ([exn:fail? (lambda _ #f)])
+    (tcx e)))
+
+(trace check/plain)
+
 (define (check* e node)
   (define parents (term-node-parents node))
   (define children (term-node-children node))
   (define val? (value? e))
   (define parent-exprs (map term-node-expr parents))
-  (define (check/plain e)
-    (with-handlers ([exn:fail? (lambda _ #f)])
-      (parameterize ([enable-T-IfTrue #f]
-                     [enable-T-IfFalse #f])
-        (tc-fun e))))
-  (define (check/middle e)
-    (with-handlers ([exn:fail? (lambda _ #f)])
-      (tc-fun e)))
-  (define (check/experimental e)
-    (with-handlers ([exn:fail? (lambda _ #f)])
-      (tcx e)))
+  
   ;; check type preservation
   (*term-let occur-lang
     ([(e_p ...) parent-exprs]
@@ -79,7 +86,7 @@
         ;; this term didn't typecheck, but the parent did, which is bad
         [(and (not cur-type) (not (null? parent-types))) "red"]
         ;; otherwise it didn't check at all, nor did the parents
-        [else #f]))))
+        [else (printf "got here: ~a ~a~n" cur-type parent-types) #f]))))
 
 (define (r t) (apply-reduction-relation reductions t))
 (define (r* t) (apply-reduction-relation* reductions t))
