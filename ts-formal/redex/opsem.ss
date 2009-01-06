@@ -408,7 +408,7 @@
 
 ;; the type rules!
 (define-metafunction occur-lang
-  tc : G e -> (t ((p ...) (p ...)) s)
+  tc : G e -> (t f s)
   ;; T-Bot
   [(tc (any_1 ... (x (union)) any_2 ...) e)
    ((U) (() ()) 0)
@@ -470,20 +470,29 @@
   [(tc G (e_op e_args ...))
    ,(*term-let occur-lang
                ([(t_op ((p_op+ ...) (p_op- ...)) s_op) (term (tc G e_op))]
-                [((t_a ((p_a+ ...) (p_a- ...)) s_a) ...) (term ((tc G e_args) ...))]                
-                [any (unless (term (proctype? t_op))
-                       (error 'tc "~a not a proc type in ~a" (term t_op) (term e_op)))]
-                [(t_f ... -> t_r : fh_f ... : sh_f) (term t_op)]
-                [boolean_subs? (term (all (t_a . <: . t_f) ...))]
-                [any (unless (term boolean_subs?)
-                       (error 'tc "not all subtypes: ~a ~a" (term (t_a ...)) (term (t_f ...))))]
-                [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                                
-                [s_r (match/redex occur-lang sh_f
-                       [((pe_* ...) i) (match/redex occur-lang ,(list-ref (term (s_a ...)) (term i))
-                                         [((pe ...) x) (term ((pe_* ... pe ...) x))]
-                                         [any 0])]
-                       [any 0])])
-      (term (t_r ((p_+ ... ...) (p_- ... ...)) s_r)))]
+                [((t_a ((p_a+ ...) (p_a- ...)) s_a) ...) (term ((tc G e_args) ...))])
+      (define-metafunction occur-lang
+        tc/one : t -> (t f s)
+        [(tc/one (t_f ... -> t_r : fh_f ... : sh_f))
+         ,(*term-let occur-lang 
+            ([boolean_subs? (term (all (t_a . <: . t_f) ...))]
+             [any (unless (term boolean_subs?)
+                    (error 'tc "not all subtypes: ~a ~a" (term (t_a ...)) (term (t_f ...))))]
+             [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                                
+             [s_r (match/redex occur-lang sh_f
+                    [((pe_* ...) i) (match/redex occur-lang ,(list-ref (term (s_a ...)) (term i))
+                                      [((pe ...) x) (term ((pe_* ... pe ...) x))]
+                                      [any 0])]
+                    [any 0])])
+            (term (t_r ((p_+ ... ...) (p_- ... ...)) s_r)))])
+      (match/redex occur-lang t_op
+        [(side-condition t (term (proctype? t)))
+         (term (tc/one t))]
+        [(union t ...)
+         (*term-let occur-lang
+           ([((t_r f_r s_r) ...) (term ((tc/one t) ...))])
+           (term ((U t_r ...) (() ()) 0)))]
+        [any (error 'tc "~a not a proc type in ~a" (term t_op) (term e_op))]))]
   ;; T-If
   [(tc G (if e_tst e_thn e_els))
    ,(*term-let occur-lang
