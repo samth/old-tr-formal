@@ -1,9 +1,6 @@
 #lang scheme/base
 
-(require mzlib/trace
-         scheme/list
-         scheme/match
-         redex)
+(require redex)
 
 (provide (all-defined-out))
 

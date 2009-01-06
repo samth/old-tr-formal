@@ -15,6 +15,14 @@
 (define T-Bot (make-parameter #t))
 (define T-Not (make-parameter #t))
 
+;; JUNK - remove
+(define enable-T-IfAnd (make-parameter #f))
+(define enable-T-IfOr (make-parameter #f))
+(define enable-T-AbsPred (make-parameter #f))
+(define enable-T-IfTrue (make-parameter #t))
+(define enable-T-IfFalse (make-parameter #t))
+(define enable-T-IfVar (make-parameter #f))
+
 (define-language occur-lang
   ;; expressions
   [e x
@@ -238,17 +246,7 @@
   apply-filter : fh t s -> f
   [(apply-filter ((ph_+ ...) (ph_- ...)) t s)
    ((flatten (apo ph_+ t s) ...)
-    (flatten (apo ph_- t s) ...))
-   #;
-   (side-condition
-    (begin 
-      (printf "in apply-filter \n~a \n~a \n~a\n~a~n"
-              (term (ph_+ ...)) (term (ph_- ...)) (term t) (term s))
-      (display (term ((apo ph_+ t s) ...)))
-      (newline)
-      (display (term ((apo ph_- t s) ...)))
-      (newline)
-      (term 1)))])
+    (flatten (apo ph_- t s) ...))])
 
 (define-metafunction occur-lang
   abo : x p -> (ph ...)
@@ -274,11 +272,6 @@
 ;; conservative
 (define-metafunction occur-lang
   comb-filter : f f f -> f
-  #;
-  [(comb-filter any_1 any_2 any_3) 
-   #f
-   (side-condition
-    (and (printf "~a~n" `(comb-filter  ,(term any_1) ,(term any_2) ,(term any_3))) #f))]
   ;; silly student expansion
   ;; (if e #t #f)
   [(comb-filter f (any (any_1 ... bot any_2 ...)) ((any_3 ... bot any_4 ...) any_5)) f]
@@ -384,7 +377,6 @@
   [(lookup ((x_1 t_1) ... (x t) (x_2 t_2) ...) x) t]
   [(lookup G x) ,(error "variable not found in env" (term G) (term x))])
 
-;; the type rules!
 
 (define (find x l) (if (null? l) #f
                        (if (equal? x (car l)) 
@@ -398,6 +390,7 @@
   [(proctype? (t_f ... -> t_r : ((ph_f+ ...) (ph_f- ...)) ... : sh_f)) #t]
   [(proctype? any) #f])
 
+;; the type rules!
 (define-metafunction occur-lang
   tc : G e -> (t ((p ...) (p ...)) s)
   ;; T-Var
@@ -486,6 +479,8 @@
    (term ((U) (() ()) 0))
    (side-condition (T-Bot))]
   )
+
+
 (define (mk-result t #:then [thn null] #:else [els null] #:s [s 0])
   (term (,t (,thn ,els) ,s)))
 
