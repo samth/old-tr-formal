@@ -357,7 +357,7 @@
   [(update t (u ())) (restrict t u)]
   [(update t (! u ())) (remove t u)])
 
-(define-metafunction/traced occur-lang
+(define-metafunction occur-lang
   env+ : G (p ...) -> G
   [(env+ G ()) G]
   [(env+ ((x_1 t_1) ... (x_t t_t) (x_2 t_2) ...) ((t pi x_t) p_rest ...))
@@ -394,11 +394,12 @@
   [(proctype? any) #f])
 
 ;; the type rules!
-(define-metafunction/traced occur-lang
+(define-metafunction occur-lang
   tc : G e -> (t ((p ...) (p ...)) s)
   ;; T-Bot
   [(tc (any_1 ... (x (union)) any_2 ...) e)
    ((U) (() ()) 0)
+   #;
    (side-condition (and (T-Bot) (printf "T-Bot Matched: ~a" (term e))))]
   ;; T-Var
   [(tc G x) ((lookup G x) (((! #f () x)) ((#f () x))) (() x))]
