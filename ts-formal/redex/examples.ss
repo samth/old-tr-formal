@@ -1,6 +1,6 @@
 #lang scheme/base
 
-(require redex "opsem.ss")
+(require redex/reduction-semantics "opsem.ss")
 
 (provide (all-defined-out))
 
@@ -55,18 +55,18 @@
 
 (define bad 
   (term
-   ((((lambda ([x : (N -> (U N #t #f))])
+   ((((lambda ([x : (N -> (U N #t #f) : (() ()) : 0)])
         (lambda ([y : (U #t #f)])
           (if y
               x
-              (lambda ([z : N]) z))))
+              (lambda ([z : N]) 0))))
       (lambda ([x : N]) #f))
      #f)
     0)))
 
 (define bad2
   (term
-   ((((lambda ([x : (N -> (U N #t #f))])
+   ((((lambda ([x : (N -> (U N #t #f) : (() ()) : 0)])
         (lambda ([y : (U #t #f)])
           (if y
               x

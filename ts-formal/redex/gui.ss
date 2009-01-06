@@ -27,7 +27,6 @@
 
 
 (define (check/plain e)
-  (printf "c/p: ~a~n" e)
   (with-handlers ([exn:fail? (lambda _ #f)])
     (parameterize ([T-Bot #f]
                    [enable-T-IfAnd #f]
@@ -43,8 +42,6 @@
 (define (check/experimental e)
   (with-handlers ([exn:fail? (lambda _ #f)])
     (tcx e)))
-
-(trace check/plain)
 
 (define (check* e node)
   (define parents (term-node-parents node))
@@ -88,7 +85,7 @@
         ;; this term didn't typecheck, but the parent did, which is bad
         [(and (not cur-type) (not (null? parent-types))) "red"]
         ;; otherwise it didn't check at all, nor did the parents
-        [else (printf "got here: ~a ~a~n" cur-type parent-types) #f]))))
+        [else #f]))))
 
 (define (r t) (apply-reduction-relation reductions t))
 (define (r* t) (apply-reduction-relation* reductions t))

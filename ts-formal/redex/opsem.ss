@@ -2,15 +2,14 @@
 
 (require mzlib/trace
          (except-in scheme/list flatten)
-         (only-in srfi/1 lset=)
-         scheme/match 
-         scheme/class
-         mred/mred
-         redex
+         (only-in srfi/1 lset= lset<=)
+         redex/reduction-semantics
          "utils.ss"
          (for-syntax scheme/base))
 
 (provide (all-defined-out))
+
+(enable-caching? #f)
 
 (define T-Bot (make-parameter #t))
 (define T-Not (make-parameter #t))
@@ -31,6 +30,8 @@
      v]
   ;; values
   [v (lambda ([x : t] ...) e) number #t #f c (cons v v)]
+  [(n i) number]
+  [b boolean]
   [boolean #t #f]
   ;; constants
   [c add1 number? boolean? zero? not cons car cdr cons? procedure?]
@@ -85,15 +86,21 @@
    #t
    (side-condition (term (any (t_2 . <: . t_1) ...)))]
   ;; S-Fun
-  [((t_a ... -> t_r : ph_1 ... : sh_1) . <: . (u_a ... -> u_r : ph_2 ... : sh_2))
+  [((t_a ... -> t_r : fh_1 ... : sh_1) . <: . (u_a ... -> u_r : fh_2 ... : sh_2))
    #t
    (side-condition (term (t_r . <: . u_r)))
    (side-condition (term (all (u_a . <: . t_a) ...)))
    (side-condition (or (equal? (term sh_1) (term sh_2))
                        (equal? (term sh_2) (term 0))))
-   (side-condition (term (all (subset ph_1 ph_2) ...)))]
+   (side-condition (term (all (subset fh_2 fh_1) ...)))]
   ;; otherwise
   [(t_1 . <: . t_2) #f])
+
+(define-metafunction occur-lang
+  subset : fh fh -> boolean
+  [(subset ((ph_1+ ...) (ph_1- ...)) ((ph_2+ ...) (ph_2- ...)))
+   ,(and (lset<= equal? (term (ph_1+ ...)) (term (ph_2+ ...)))
+         (lset<= equal? (term (ph_1- ...)) (term (ph_2- ...))))])
 
 (define-metafunction occur-lang
   all : boolean ... -> boolean  
@@ -165,7 +172,7 @@
 (define-metafunction occur-lang
   U : t ... -> t
   [(U) (union)]
-  ;[(U t) t]
+  [(U t) t]
   [(U t u) u (side-condition (term (t . <: . u)))]
   [(U t u) t (side-condition (term (u . <: . t)))]
   [(U t u) (union t u)]
@@ -193,24 +200,7 @@
   [(delta (boolean? v_1)) #f]
   [(delta (c_1 v_1)) wrong])
 
-(define-metafunction occur-lang
-  delta-t : c -> t
-  [(delta-t number?) (predty N ())]
-  [(delta-t boolean?) (predty (U #t #f) ())]
-  [(delta-t procedure?) (predty proctop ())]
-  [(delta-t cons?) (predty (pr top top) ())]
-  [(delta-t add1) (simplefun N N)]
-  [(delta-t zero?) (simplefun N (U #t #f))]
-  [(delta-t not) (simplefun (U #t #f) (U #t #f))])
 
-(define-metafunction occur-lang
-  simplefun : t t -> t
-  [(simplefun t u) (t -> u : (() ()) : 0)])
-
-(define-metafunction occur-lang
-  predty : t pi -> t
-  [(predty t pi)
-   (top -> (U #t #f) : (((t pi)) ((! t pi))) : 0)])
 
 (define reductions
   (reduction-relation 
@@ -234,6 +224,29 @@
    with
    [(--> (in-hole E_1 a) (in-hole E_1 b)) (==> a b)]
    ))
+
+;; types only from here
+
+
+(define-metafunction occur-lang
+  delta-t : c -> t
+  [(delta-t number?) (predty N ())]
+  [(delta-t boolean?) (predty (U #t #f) ())]
+  [(delta-t procedure?) (predty proctop ())]
+  [(delta-t cons?) (predty (pr top top) ())]
+  [(delta-t add1) (simplefun N N)]
+  [(delta-t zero?) (simplefun N (U #t #f))]
+  [(delta-t not) (simplefun (U #t #f) (U #t #f))])
+
+
+(define-metafunction occur-lang
+  simplefun : t t -> t
+  [(simplefun t u) (t -> u : (() ()) : 0)])
+
+(define-metafunction occur-lang
+  predty : t pi -> t
+  [(predty t pi)
+   (top -> (U #t #f) : (((t pi)) ((! t pi))) : 0)])
 
 
 (define-metafunction occur-lang
@@ -399,8 +412,7 @@
   ;; T-Bot
   [(tc (any_1 ... (x (union)) any_2 ...) e)
    ((U) (() ()) 0)
-   #;
-   (side-condition (and (T-Bot) (printf "T-Bot Matched: ~a" (term e))))]
+   (side-condition (T-Bot))]
   ;; T-Var
   [(tc G x) ((lookup G x) (((! #f () x)) ((#f () x))) (() x))]
   ;; T-Const
@@ -421,18 +433,18 @@
   [(tc G (car e_1))
    ,(*term-let occur-lang
                ([((pr t_1 t_2) f s) (term (tc G e_1))]
-                [s_r (match (term s)
-                       [(list pi x) (term (,(cons 'car pi) ,x))]
-                       [_ (term 0)])]
+                [s_r (match/redex occur-lang s
+                       [((pe ...) x) (term ((car pe ...) x))]
+                       [any (term 0)])]
                 [f_r (term (apply-filter (((! #f (car))) ((#f (car)))) (pr t_1 t_2) s))])
                (term (t_1 f_r s_r)))]
   ;; T-Car
   [(tc G (cdr e_1))
    ,(*term-let occur-lang
                ([((pr t_1 t_2) f s) (term (tc G e_1))]
-                [s_r (match (term s)
-                       [(list pi x) (term (,(cons 'cdr pi) ,x))]
-                       [_ (term 0)])]
+                [s_r (match/redex occur-lang s
+                       [((pe ...) x) (term ((cdr pe ...) x))]
+                       [any (term 0)])]
                 [f_r (term (apply-filter (((! #f (cdr))) ((#f (cdr)))) (pr t_1 t_2) s))])
                (term (t_2 f_r s_r)))]
   ;; T-Not
@@ -446,13 +458,11 @@
    ,(*term-let occur-lang
                ([(t ((p_+ ...) (p_- ...)) s) (term (tc ((x u) ... . G) e))]
                 [f (term ((p_+ ...) (p_- ...)))]
-                [sh_new (match (term s)
+                [sh_new (match/redex occur-lang s
                           [0 (term 0)]
-                          [(list pi x_i) 
-                           (let ([idx (find x_i (term (x ...)))])
-                             (if idx
-                                 (list pi idx)
-                                 0))])]
+                          [(pi x_i) (match/redex occur-lang ,(find (term x_i) (term (x ...)))
+                                      [n (term (pi n))]
+                                      [#f 0])])]
                 [(fh ...)
                  (term ((abstract-filter x f) ...))])
                (term ((u ... -> t : fh ... : sh_new) (() (bot)) 0)))]
@@ -468,13 +478,12 @@
                 [any (unless (term boolean_subs?)
                        (error 'tc "not all subtypes: ~a ~a" (term (t_a ...)) (term (t_f ...))))]
                 [(((p_+ ...) (p_- ...)) ...) (term ((apply-filter fh_f t_a s_a) ...))]                                
-                [s_r (match (term sh_f)                       
-                       [(list pi* i)
-                        (match (list-ref (term (s_a ...)) i)
-                          [(list pi x) (list (append pi* pi) x)]
-                          [_ 0])]
-                       [_ 0])])
-               (term (t_r ((p_+ ... ...) (p_- ... ...)) s_r)))]
+                [s_r (match/redex occur-lang sh_f
+                       [((pe_* ...) i) (match/redex occur-lang ,(list-ref (term (s_a ...)) (term i))
+                                         [((pe ...) x) (term ((pe_* ... pe ...) x))]
+                                         [any 0])]
+                       [any 0])])
+      (term (t_r ((p_+ ... ...) (p_- ... ...)) s_r)))]
   ;; T-If
   [(tc G (if e_tst e_thn e_els))
    ,(*term-let occur-lang
