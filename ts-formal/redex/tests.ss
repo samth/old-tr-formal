@@ -101,4 +101,7 @@
 (test-equal (term (tc () (lambda ([x : top] [y : top]) (number? x))))
             (truety (term (top top -> (U #t #f) : (((N ())) ((! N ()))) (() ()) : 0))))
 
+(test-equal (term (tc () (if #f (add1 #f) 0)))
+            (truety (term N)))
+
 (test-results)

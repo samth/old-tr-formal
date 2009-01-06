@@ -14,14 +14,13 @@
 
 (define T-Bot (make-parameter #t))
 (define T-Not (make-parameter #t))
+(define enable-T-IfAnd (make-parameter #t))
+(define enable-T-IfOr (make-parameter #t))
 
 ;; JUNK - remove
-(define enable-T-IfAnd (make-parameter #f))
-(define enable-T-IfOr (make-parameter #f))
 (define enable-T-AbsPred (make-parameter #f))
 (define enable-T-IfTrue (make-parameter #t))
 (define enable-T-IfFalse (make-parameter #t))
-(define enable-T-IfVar (make-parameter #f))
 
 (define-language occur-lang
   ;; expressions
@@ -270,7 +269,6 @@
   flatten : any ... -> any  
   [(flatten (any_1 ...) ...) (any_1 ... ...)])
 
-;; conservative
 (define-metafunction occur-lang
   comb-filter : f f f -> f
   ;; silly student expansion
@@ -285,7 +283,8 @@
   
   ;; and (if e1 e2 #f)
   [(comb-filter ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)) ((any_2 ... bot any_3 ...) any_1))
-   ((p_1+ ... p_2+ ...) ())]
+   ((p_1+ ... p_2+ ...) ())
+   (side-condition (enable-T-IfAnd))]
   
   ;; or (if (number? x) #t (boolean? x))
   [(comb-filter (((t_1 pi x) p_1+ ...) ((! t_1 pi_1 x_1) p_1- ...)) (any_1 (any_2 ... bot any_3 ...)) (((t_3 pi_3 x_3) p_3+ ...) ((! t_3 pi x) p_3- ...)))
@@ -294,11 +293,13 @@
                  (term (comb-filter ((p_1+ ...) (p_1- ...))
                                     (any_1 (any_2 ... bot any_3 ...))
                                     ((p_3+ ...) (p_3- ...))))])
-               (term ((((U t_1 t_3) pi x) p_r+ ...) ((! (U t_1 t_3) pi x) p_r- ...))))]
+               (term ((((U t_1 t_3) pi x) p_r+ ...) ((! (U t_1 t_3) pi x) p_r- ...))))
+   (side-condition (enable-T-IfOr))]
   
   ;; or (if e1 #t e3)
   [(comb-filter ((p_1+ ...) (p_1- ...)) (any_1 (any_2 ... bot any_3 ...)) ((p_3+ ...) (p_3- ...)))
-   (() (p_1- ... p_3- ...))]
+   (() (p_1- ... p_3- ...))
+   (side-condition (enable-T-IfOr))]
   
   ;; not sure if this is ever useful
   ;; (if e1 e e)
@@ -356,7 +357,7 @@
   [(update t (u ())) (restrict t u)]
   [(update t (! u ())) (remove t u)])
 
-(define-metafunction occur-lang
+(define-metafunction/traced occur-lang
   env+ : G (p ...) -> G
   [(env+ G ()) G]
   [(env+ ((x_1 t_1) ... (x_t t_t) (x_2 t_2) ...) ((t pi x_t) p_rest ...))
@@ -393,12 +394,12 @@
   [(proctype? any) #f])
 
 ;; the type rules!
-(define-metafunction occur-lang
+(define-metafunction/traced occur-lang
   tc : G e -> (t ((p ...) (p ...)) s)
   ;; T-Bot
   [(tc (any_1 ... (x (union)) any_2 ...) e)
-   (term ((U) (() ()) 0))
-   (side-condition (T-Bot))]
+   ((U) (() ()) 0)
+   (side-condition (and (T-Bot) (printf "T-Bot Matched: ~a" (term e))))]
   ;; T-Var
   [(tc G x) ((lookup G x) (((! #f () x)) ((#f () x))) (() x))]
   ;; T-Const

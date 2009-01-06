@@ -2,10 +2,10 @@
 
 (require redex "opsem.ss" "utils.ss" "examples.ss" mzlib/trace)
 
-(define (tc-fun ex)
+(define (tc-fun ex [env '()])
   (unless (redex-match occur-lang e ex)
     (error 'tc-fun "not an expression"))
-  (term (tc () ,ex)))
+  (term (tc ,env ,ex)))
 
 (define (check e node)
   (let* ([parents (term-node-parents node)]
@@ -20,23 +20,25 @@
         (term (all (all (t_1 . <: . t) ...)))))))
 
 (define (tcx e)
-  (parameterize ([enable-T-IfAnd #f]
+  (parameterize ([enable-T-IfAnd #t]
                  [enable-T-IfOr #t]
-                 [enable-T-AbsPred #t]
-                 [enable-T-IfVar #t])
+                 [enable-T-AbsPred #t])
     (tc-fun e)))
 
 
 (define (check/plain e)
   (printf "c/p: ~a~n" e)
   (with-handlers ([exn:fail? (lambda _ #f)])
-    (parameterize ([enable-T-IfTrue #f]
-                   [enable-T-IfFalse #f])
+    (parameterize ([T-Bot #f]
+                   [enable-T-IfAnd #f]
+                   [enable-T-IfOr #f])
       (tc-fun e))))
 
 (define (check/middle e)
   (with-handlers ([exn:fail? (lambda _ #f)])
-    (tc-fun e)))
+    (parameterize ([enable-T-IfAnd #f]
+                   [enable-T-IfOr #f])
+    (tc-fun e))))
 
 (define (check/experimental e)
   (with-handlers ([exn:fail? (lambda _ #f)])
