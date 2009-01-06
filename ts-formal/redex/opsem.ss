@@ -15,6 +15,7 @@
 (define T-Not (make-parameter #t))
 (define enable-T-IfAnd (make-parameter #t))
 (define enable-T-IfOr (make-parameter #t))
+(define enable-union-> (make-parameter #t))
 
 ;; JUNK - remove
 (define enable-T-AbsPred (make-parameter #f))
@@ -359,14 +360,14 @@
 
 (define-metafunction occur-lang
   update : t ph -> t
-  [(update (pr t_1 t_2) (u (car pi)))
-   (pr (update t_1 (u pi)) t_2)]
-  [(update (pr t_1 t_2) (u (cdr pi)))
-   (pr t_1 (update t_2 (u pi)))]
-  [(update (pr t_1 t_2) (! u (car pi)))
-   (pr (update t_1 (! u pi)) t_2)]
-  [(update (pr t_1 t_2) (! u (cdr pi)))
-   (pr t_1 (update t_2 (! u pi)))]
+  [(update (pr t_1 t_2) (u (car pe ...)))
+   (pr (update t_1 (u (pe ...))) t_2)]
+  [(update (pr t_1 t_2) (u (cdr pe ...)))
+   (pr t_1 (update t_2 (u (pe ...))))]
+  [(update (pr t_1 t_2) (! u (car pe ...)))
+   (pr (update t_1 (! u (pe ...))) t_2)]
+  [(update (pr t_1 t_2) (! u (cdr pe ...)))
+   (pr t_1 (update t_2 (! u (pe ...))))]
   [(update t (u ())) (restrict t u)]
   [(update t (! u ())) (remove t u)])
 
@@ -488,7 +489,7 @@
       (match/redex occur-lang t_op
         [(side-condition t (term (proctype? t)))
          (term (tc/one t))]
-        [(union t ...)
+        [(side-condition (union t ...) (enable-union->))
          (*term-let occur-lang
            ([((t_r f_r s_r) ...) (term ((tc/one t) ...))])
            (term ((U t_r ...) (() ()) 0)))]

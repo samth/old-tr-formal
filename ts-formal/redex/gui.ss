@@ -54,7 +54,7 @@
     ([(e_p ...) parent-exprs]
      [((t_p f_p s_p) ...)
       (with-handlers ([exn:fail? (lambda _ '())])
-        (term ((tc e_p) ...)))]
+        (term ((tc () e_p) ...)))]
      [any_ct (check/experimental e)]
      [boolean_preserve?
       (if (term any_ct)
@@ -98,7 +98,7 @@
 (define (tr* . t) (traces reductions t #:multiple? #t #:pred check*))
 
 (define (trx t)
-  (parameterize ([enable-T-IfAnd #t] ;; this rule is unsound
+  (parameterize ([enable-T-IfAnd #t]
                  [enable-T-IfOr #t]
                  [enable-T-AbsPred #t])
     (tr t)))

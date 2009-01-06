@@ -152,3 +152,5 @@
                       cons-terms))
 
 (define fail-terms (list t8 t-cons-7 fail-not-wrong))
+
+(define current-bugs (list t-cons-5 t-cons-6))
