@@ -1,6 +1,6 @@
 #lang scheme
 
-(require redex "opsem.ss" "utils.ss" "examples.ss" mzlib/trace)
+(require redex "opsem.ss" "utils.ss" "examples.ss" "tests.ss" mzlib/trace)
 
 (define (tc-fun ex [env '()])
   (unless (redex-match occur-lang e ex)

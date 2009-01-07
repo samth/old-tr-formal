@@ -9,7 +9,7 @@
 
 (provide (all-defined-out))
 
-(enable-caching? #f)
+(caching-enabled? #f)
 
 (define T-Bot (make-parameter #t))
 (define T-Not (make-parameter #t))
