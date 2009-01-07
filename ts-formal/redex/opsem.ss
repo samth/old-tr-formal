@@ -505,3 +505,8 @@
                (term ((U t_thn t_els) f 0)))] 
   )
 
+
+(define (tc-fun ex [env '()])
+  (unless (redex-match occur-lang e ex)
+    (error 'tc-fun "not an expression"))
+  (term (tc ,env ,ex)))

@@ -2,11 +2,6 @@
 
 (require redex "opsem.ss" "utils.ss" "examples.ss" "tests.ss" mzlib/trace)
 
-(define (tc-fun ex [env '()])
-  (unless (redex-match occur-lang e ex)
-    (error 'tc-fun "not an expression"))
-  (term (tc ,env ,ex)))
-
 (define (check e node)
   (let* ([parents (term-node-parents node)]
          [parent-exprs (map term-node-expr parents)])

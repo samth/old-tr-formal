@@ -146,11 +146,14 @@
            (zero? a))
          1)))
 
+(define fail-not-proc
+  (term (1 1)))
+
 (define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4 t-cons-5 t-cons-6))
 
 (define terms (append (list t1 t2 t3 t4 t5 t6 t7 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad)
                       cons-terms))
 
-(define fail-terms (list t8 t-cons-7 fail-not-wrong))
+(define fail-terms (list t8 t-cons-7 fail-not-wrong fail-not-proc))
 
 (define current-bugs (list t-cons-5 t-cons-6))

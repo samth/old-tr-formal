@@ -119,6 +119,15 @@
  
  (test-equal (term (tc () (if #f (add1 #f) 0)))
              (truety (term N)))
+ 
+ (test-equal (term (tc () (lambda ([x : (pr top top)])
+                            (if ((lambda ([y : (pr top top)]) (number? (car y))) x)
+                                (add1 (car x))
+                                0))))
+             (truety (term ((pr top top) -> N : (() ()) : 0))))
+ 
+ (test-equal (term (tc ([x top]) (lambda ([y : top]) x) ))
+             (truety (term (top -> top : (() ()) : 0))))
  )
 (test-results)
 
