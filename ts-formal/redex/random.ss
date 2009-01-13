@@ -30,7 +30,9 @@
        (match/redex occur-lang ,(with-handlers ([exn:fail? (lambda _ #f)])
                                   (term ((tc () e) ...)))
          [((t_s f_s s_s) ...)
-          (term (all (t_s . <: . t) ...))]
+          (term (all (t_s . <: . t) ...
+                     (subset-f f_s f) ...
+                     (sub-s s_s s) ...))]
          [any (begin (printf "failing~n") #f)]))]
     [any #t]))
 

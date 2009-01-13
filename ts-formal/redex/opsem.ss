@@ -95,15 +95,33 @@
    (side-condition (term (all (u_a . <: . t_a) ...)))   
    (side-condition (or (equal? (term sh_1) (term sh_2))
                        (equal? (term sh_2) (term 0))))   
-   (side-condition (term (all (subset fh_2 fh_1) ...)))]
+   (side-condition (term (all (subset-fh fh_2 fh_1) ...)))]
   ;; otherwise
   [(t_1 . <: . t_2) #f])
 
 (define-metafunction occur-lang
-  subset : fh fh -> boolean
-  [(subset ((ph_1+ ...) (ph_1- ...)) ((ph_2+ ...) (ph_2- ...)))
+  subset-fh : fh fh -> boolean
+  [(subset-fh ((ph_1+ ...) (ph_1- ...)) ((ph_2+ ...) (ph_2- ...)))
    ,(and (lset<= equal? (term (ph_1+ ...)) (term (ph_2+ ...)))
          (lset<= equal? (term (ph_1- ...)) (term (ph_2- ...))))])
+
+(define-metafunction occur-lang
+  subset-f : f f -> boolean
+  [(subset ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)))
+   ,(and (lset<= equal? (term (p_1+ ...)) (term (p_2+ ...)))
+         (lset<= equal? (term (p_1- ...)) (term (p_2- ...))))])
+
+(define-metafunction occur-lang
+  sub-s : s s -> boolean
+  [(sub-s s s) #t]
+  [(sub-s s 0) #t]
+  [(sub-s s_1 s_2) #f])
+
+(define-metafunction occur-lang
+  sub-sh : sh sh -> boolean
+  [(sub-sh sh sh) #t]
+  [(sub-sh sh 0) #t]
+  [(sub-sh sh_1 sh_2) #f])
 
 (define-metafunction occur-lang
   all : boolean ... -> boolean  
