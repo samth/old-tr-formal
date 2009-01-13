@@ -3,6 +3,10 @@
 (require (for-syntax scheme/base) redex/reduction-semantics)
 (provide (all-defined-out))
 
+(define-syntax-rule (no-fail . e)
+  (with-handlers ([exn:fail? (lambda _ #f)])
+    . e))
+
 (define-syntax term-let*
   (syntax-rules ()
     [(term-let* () . e) (term-let () . e)]

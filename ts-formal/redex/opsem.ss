@@ -107,7 +107,7 @@
 
 (define-metafunction occur-lang
   subset-f : f f -> boolean
-  [(subset ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)))
+  [(subset-f ((p_1+ ...) (p_1- ...)) ((p_2+ ...) (p_2- ...)))
    ,(and (lset<= equal? (term (p_1+ ...)) (term (p_2+ ...)))
          (lset<= equal? (term (p_1- ...)) (term (p_2- ...))))])
 
@@ -530,3 +530,16 @@
   (unless (redex-match occur-lang e ex)
     (error 'tc-fun "not an expression"))
   (term (tc ,env ,ex)))
+
+
+(define-metafunction occur-lang 
+  check-sub : any any -> boolean
+  ;; the first term failed, so everything's ok
+  [(check-sub #f any) #t]
+  ;; the second term failed, so we have an error:
+  [(check-sub any #f) #f]
+  ;; the real case
+  [(check-sub (t f s) ((t_s f_s s_s) ...))
+   (all (t_s . <: . t) ...
+        (subset-f f_s f) ...
+        (sub-s s_s s) ...)])
