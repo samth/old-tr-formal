@@ -3,9 +3,10 @@
 (require (for-syntax scheme/base) redex/reduction-semantics)
 (provide (all-defined-out))
 
-(define-syntax-rule (no-fail . e)
-  (with-handlers ([exn:fail? (lambda _ #f)])
-    . e))
+(define-syntax no-fail
+  (syntax-rules ()
+    [(_ e r) (with-handlers ([exn:fail? (lambda _ r)]) e)]
+    [(_ e) (no-fail e #f)]))
 
 (define-syntax term-let*
   (syntax-rules ()
@@ -51,7 +52,6 @@
 (define enable-union-> (make-parameter #t))
 
 ;; JUNK - remove
-(define enable-T-AbsPred (make-parameter #f))
 (define enable-T-IfTrue (make-parameter #t))
 (define enable-T-IfFalse (make-parameter #t))
 

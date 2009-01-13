@@ -100,7 +100,8 @@
   ;; (if e1 e e)
   [(comb-filter f_tst f_1 f_2) 
    f_1
-   (side-condition (lset= equal? (term f_1) (term f_2)))]
+   (side-condition (term (all (subset-f f_1 f_2)
+                              (subset-f f_2 f_1))))]
   
   [(comb-filter f_1 f_2 f_3) (() ())])
 
@@ -301,9 +302,13 @@
   [(check-sub any #f) #f]
   ;; the real case
   [(check-sub (t f s) ((t_s f_s s_s) ...))
-   (all (t_s . <: . t) ...
-        (subset-f f_s f) ...
-        (sub-s s_s s) ...)])
+   (all 
+    ;; subtypes are more useful
+    (t_s . <: . t) ...
+    ;; supersets are more useful
+    (subset-f f f_s) ...
+    ;; super-? are more useful
+    (sub-s s s_s) ...)])
 
 (define (sub? trm trms)
   (term (check-sub ,(no-fail (tc-fun trm))
