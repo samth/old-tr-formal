@@ -1,6 +1,6 @@
 #lang scheme
 
-(require redex/reduction-semantics "opsem.ss")
+(require redex/reduction-semantics "opsem.ss" "types.ss")
 
 
 

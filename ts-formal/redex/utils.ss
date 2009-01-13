@@ -39,3 +39,20 @@
     [(*term-let lang () . e) (term-let () . e)]
     [(*term-let lang (cl . rest) . e) (*term-let-one lang (cl) (*term-let lang rest . e))]))
 
+
+(caching-enabled? #f)
+
+(print-struct #t)
+
+(define T-Bot (make-parameter #t))
+(define T-Not (make-parameter #t))
+(define enable-T-IfAnd (make-parameter #t))
+(define enable-T-IfOr (make-parameter #t))
+(define enable-union-> (make-parameter #t))
+
+;; JUNK - remove
+(define enable-T-AbsPred (make-parameter #f))
+(define enable-T-IfTrue (make-parameter #t))
+(define enable-T-IfFalse (make-parameter #t))
+
+

@@ -1,11 +1,13 @@
 #lang scheme
 
-(require redex "opsem.ss" "utils.ss" "examples.ss" "tests.ss" mzlib/trace)
+(require redex "opsem.ss" "types.ss" "utils.ss" "examples.ss" "tests.ss" mzlib/trace)
+
+(reduction-steps-cutoff 150)
 
 (define (check e node)
   (let* ([parents (term-node-parents node)]
          [parent-exprs (map term-node-expr parents)])
-    (with-handlers ([exn:fail? (lambda _ #f)])
+    (no-fail
       (*term-let occur-lang
                  ([((t f s) ...) 
                    ;; if the parents don't typecheck, just ignore them
@@ -22,21 +24,20 @@
 
 
 (define (check/plain e)
-  (with-handlers ([exn:fail? (lambda _ #f)])
+  (no-fail
     (parameterize ([T-Bot #f]
                    [enable-T-IfAnd #f]
                    [enable-T-IfOr #f])
       (tc-fun e))))
 
 (define (check/middle e)
-  (with-handlers ([exn:fail? (lambda _ #f)])
+  (no-fail
     (parameterize ([enable-T-IfAnd #f]
                    [enable-T-IfOr #f])
     (tc-fun e))))
 
 (define (check/experimental e)
-  (with-handlers ([exn:fail? (lambda _ #f)])
-    (tcx e)))
+  (no-fail (tcx e)))
 
 (define (check* e node)
   (define parents (term-node-parents node))
@@ -82,13 +83,9 @@
         ;; otherwise it didn't check at all, nor did the parents
         [else #f]))))
 
-(define (r t) (apply-reduction-relation reductions t))
-(define (r* t) (apply-reduction-relation* reductions t))
-
 (define (tr t) (traces reductions t #:pred check))
 
 (define (tr2 t) (traces reductions t))
-
 
 (define (tr* . t) (traces reductions t #:multiple? #t #:pred check*))
 
@@ -98,6 +95,3 @@
                  [enable-T-AbsPred #t])
     (tr t)))
 
-(reduction-steps-cutoff 150)
-
-(print-struct #t)

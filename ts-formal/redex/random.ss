@@ -1,6 +1,6 @@
 #lang scheme
 
-(require "opsem.ss" redex "utils.ss")
+(require "opsem.ss" "types.ss" redex/reduction-semantics "utils.ss")
 
 (define-extended-language nw-occur-lang occur-lang
   ;; no wrong
@@ -12,8 +12,6 @@
 (caching-enabled? #t)
 
 (redex-check occur-lang t (term (<: t (U N t))) #:attempts 10)
-
-(define (r t) (apply-reduction-relation reductions t))
 
 (define (sub? trm)
   (term (check-sub ,(no-fail (tc-fun trm))
