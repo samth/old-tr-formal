@@ -188,6 +188,9 @@
 
 (define value? (redex-match occur-lang v))
 
+(define lambda? (redex-match occur-lang (lambda ([x_1 : t_1] ..._a) e_body)))
+(define constant? (redex-match occur-lang c))
+
 
 (define-metafunction occur-lang
   delta : e -> any
@@ -226,6 +229,10 @@
    [==> (c_op v_arg ...) (delta (c_op v_arg ...))
         E-Delta
         (side-condition (not (value? (term (c_op v_arg ...)))))]
+   [==> (v_op v_arg ...) wrong
+        E-WrongApp
+        (side-condition (and (not (lambda? (term v_op)))
+                             (not (constant? (term v_op)))))]
    [--> (in-hole E_1 wrong) wrong
         E-Wrong
         (side-condition (not (equal? (term wrong) (term (in-hole E_1 wrong)))))]
