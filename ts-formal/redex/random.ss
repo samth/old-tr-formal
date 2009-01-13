@@ -11,13 +11,9 @@
 
 (caching-enabled? #t)
 
-(redex-check occur-lang t (term (<: t (U N t))) #:attempts 10)
-
-(define (sub? trm)
-  (term (check-sub ,(no-fail (tc-fun trm))
-                   ,(no-fail (map tc-fun (r trm))))))
-
-(redex-check nw-occur-lang e (sub? (term e)) #:attempts 10)
+(define (run-random-tests)
+  (redex-check occur-lang t (term (<: t (U N t))) #:attempts 10)
+  (redex-check nw-occur-lang e (sub? (term e) (r (term e))) #:attempts 10))
 
 
 

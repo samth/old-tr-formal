@@ -4,17 +4,8 @@
 
 (reduction-steps-cutoff 150)
 
-(define (check e node)
-  (let* ([parents (term-node-parents node)]
-         [parent-exprs (map term-node-expr parents)])
-    (no-fail
-      (*term-let occur-lang
-                 ([((t f s) ...) 
-                   ;; if the parents don't typecheck, just ignore them
-                   (with-handlers ([exn:fail? (lambda _ '())])
-                     (map tc-fun parent-exprs))]
-                  [(t_1 f_1 s_1) (term (tc () ,e))])
-        (term (all (all (t_1 . <: . t) ...)))))))
+(define (check e node)  
+  (sub? e (map term-node-expr (term-node-parents node))))
 
 (define (tcx e)
   (parameterize ([enable-T-IfAnd #t]

@@ -304,3 +304,7 @@
    (all (t_s . <: . t) ...
         (subset-f f_s f) ...
         (sub-s s_s s) ...)])
+
+(define (sub? trm trms)
+  (term (check-sub ,(no-fail (tc-fun trm))
+                   ,(no-fail (map tc-fun trms)))))
