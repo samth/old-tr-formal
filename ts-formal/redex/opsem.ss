@@ -43,7 +43,7 @@
   [E (v ... E e ...) (if E e e) hole]
 
   ;; types
-  [(t u) N proctop top #t #f (t ... -> t : fh ... : sh) (pr t t) (union t ...)]
+  [(t u) N proctop top #t #f (t ..._a -> t : fh ..._a : sh) (pr t t) (union t ...)]
   ;; filters
   [f ((p ...) (p ...))]
   [fh ((ph ...) (ph ...))]
@@ -87,12 +87,14 @@
    #t
    (side-condition (term (any (t_2 . <: . t_1) ...)))]
   ;; S-Fun
-  [((t_a ... -> t_r : fh_1 ... : sh_1) . <: . (u_a ... -> u_r : fh_2 ... : sh_2))
-   #t
+  [((t_a ..._1 -> t_r : fh_1 ..._1 : sh_1) . <: . (u_a ..._1 -> u_r : fh_2 ..._1 : sh_2))
+   #t   
    (side-condition (term (t_r . <: . u_r)))
-   (side-condition (term (all (u_a . <: . t_a) ...)))
+   ;; FIXME - shouldn't be necessary
+   (side-condition (= (length (term (u_a ...))) (length (term (t_a ...)))))
+   (side-condition (term (all (u_a . <: . t_a) ...)))   
    (side-condition (or (equal? (term sh_1) (term sh_2))
-                       (equal? (term sh_2) (term 0))))
+                       (equal? (term sh_2) (term 0))))   
    (side-condition (term (all (subset fh_2 fh_1) ...)))]
   ;; otherwise
   [(t_1 . <: . t_2) #f])
@@ -116,7 +118,7 @@
 (define-metafunction occur-lang
   subst-n : (x e) ... e -> e
   [(subst-n (x_1 any_1) (x_2 any_2) ... any_3) (subst x_1 any_1 (subst-n (x_2 any_2) ... any_3))]
-  [(subst-n any_3) any_3]) 
+  [(subst-n any_3) any_3])
 
 (define-metafunction occur-lang
   subst : x e e -> e
@@ -206,7 +208,7 @@
 (define reductions
   (reduction-relation 
    occur-lang
-   [==> ((lambda ([x_1 : t_1] ...) e_body) v_arg ...)
+   [==> ((lambda ([x_1 : t_1] ..._a) e_body) v_arg ..._a)
         (subst-n (x_1 v_arg) ... e_body)
         E-Beta]
    [==> (if #f e_2 e_3)
