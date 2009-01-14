@@ -1460,14 +1460,16 @@ lemma envop_eqvt:
 lemma env_plus_eqvt:
   fixes pi::"name prm"
   shows "(pi\<bullet>\<Gamma>) |+ pi\<bullet>eff = pi\<bullet>(\<Gamma> |+ eff)"
-  by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
-   (auto simp del: envop_d)
+by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
+(auto simp only: envop_eqvt env_plus.simps eff.perm perm_ty)
+
+
 
 lemma env_minus_eqvt:
   fixes pi::"name prm"
   shows "(pi\<bullet>\<Gamma>) |- pi\<bullet>eff = pi\<bullet>(\<Gamma> |- eff)"
   by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
-     (auto simp add: eff.eqvts envop_eqvt simp del: envop_def)
+     (auto simp only: envop_eqvt env_plus.simps eff.perm perm_ty)
 
 
 lemma env_plus_simple_eff:
