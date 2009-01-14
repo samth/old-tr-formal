@@ -107,48 +107,6 @@ lemma pt_trm_inst: "pt TYPE(trm) TYPE(name)" using pt_name_inst by auto
 
 lemma fs_trm_inst: "fs TYPE(trm) TYPE(name)" using fs_name_inst by auto
 
-thm impI
-
-lemma "A \<and> B \<longrightarrow> B \<and> A"
-  apply (tactic {* resolve_tac [@{thm impI}] 1 *})
-  apply (tactic {* eresolve_tac [@{thm conjE }] 1 *})
-  apply (tactic {* resolve_tac [@{thm conjI }] 1 *})
-  apply (tactic {* REPEAT (assume_tac 1) *})
-done
-  
-
-ML {* 
-  fun v [t1,t2,t3] = 
-      (resolve_tac [t1] 1) 
-	  THEN eresolve_tac [t2] 1 
-	  THEN resolve_tac [t3] 1 
-	  THEN REPEAT (assume_tac 1)
-      | v _ = error "need 3 theorems"
-
-*}
-
-ML {* open Method *}
-
-ML {* fun f' a b = (a -- b) *}
-
-ML {* induct_tac "t" *}
-
-
-ML {* fun f (s : Method.src) (ctxt : Proof.context) = SIMPLE_METHOD (thms_args v s ctxt) *}
-
-method_setup my_tac =
-  {*  f *}
-  {* a stupid tactic *}
-
-lemma "A \<and> B \<longrightarrow> B \<and> A"
-  by (my_tac impI conjE conjI)
-
-
-ML {*NominalInduct.nominal_induct_method*}
-
-ML {* NominalPermeq.fresh_guess_meth *}
-
-
 
 
 
@@ -168,29 +126,13 @@ lemma perm_ty:
   shows "pi\<bullet>T = T"
   by simp
 
-  ML {* fun f (s : Method.src) ctxt = RAW_METHOD_CASES 
-    (fn x => (Induct.induct_tac ctxt false [] [] [] (SOME [@{thm builtin.weak_induct}]) [] 1))*}
-
-method_setup itac =
-  {*  f *}
-  {* a stupid tactic *}
-
-
 
 
 lemma perm_builtin[simp]: 
   fixes e::"builtin"
   and   pi::"name prm"
   shows "pi\<bullet>e = e"
-  apply (itac )
-
-(*   apply (tactic {* induct_thm_tac @{thm builtin.weak_induct} "e" 1 *}) *)
-ML {* RAW_METHOD_CASES *}
-
-
-
-  
-  by (induct rule: builtin.weak_induct) (simp_all)
+  by (induct rule: builtin.induct) (simp_all)
 
 lemma fresh_ty[simp]:
   fixes x::"name" 
@@ -217,17 +159,21 @@ lemma supp_latent_eff_ty:
 
 text {* size of a term *}
 
-instance trm :: size ..
-
 nominal_primrec
+  size :: "trm \<Rightarrow> nat"
+  where
   "size (Var x) = 1"
-  "size (BI b) = 1"
-  "size (Bool b) = 1"
-  "size (Num b) = 1"
-  "size (App t1 t2) = (max (size t1) (size t2)) + 1"
-  "size (Iff t1 t2 t3) = (max (size t1) (max (size t2) (size t3))) + 1"
-  "size (Lam [a:T].t) = (size t) + 1"
+  | "size (BI b) = 1"
+  | "size (Bool b) = 1"
+  | "size (Num b) = 1"
+  | "size (App t1 t2) = (max (size t1) (size t2)) + 1"
+  | "size (Iff t1 t2 t3) = (max (size t1) (max (size t2) (size t3))) + 1"
+  | "size (Lam [a:T].t) = (size t) + 1"
   by (auto simp add: fresh_nat, finite_guess+, fresh_guess+)
+
+ instance trm :: size .. 
+
+
 
 abbreviation
   "smaller_than_abb" :: "trm \<Rightarrow> trm \<Rightarrow> bool" ("_ \<guillemotleft> _" [80,80] 80)
@@ -253,7 +199,7 @@ lemma trm_comp_induct[consumes 0, case_names Var App Lam BI Num Bool Iff]:
 proof (induct t arbitrary: x taking:"(% t :: trm. size t)" rule: measure_induct_rule)
   case (less s x) thus ?case
     -- "This would go through automatically, but I'm skeptical of that sort of thing"
-  proof (nominal_induct s avoiding: x rule: trm.induct)
+  proof (nominal_induct s avoiding: x rule: trm.strong_induct)
     case (Var v) thus ?case using a1 by auto
   next
     case (App t1 t2) thus ?case using a2 by auto
@@ -307,16 +253,17 @@ qed
 
 text {* capture-avoiding substitution *}
 
-consts subst :: "trm \<Rightarrow> name \<Rightarrow> trm \<Rightarrow> trm" ("_[_::=_]" [100,100,100] 100)
 
 nominal_primrec
+  subst :: "trm \<Rightarrow> name \<Rightarrow> trm \<Rightarrow> trm" ("_[_::=_]")
+  where
  "(Var x)[y::=t'] = (if x=y then t' else (Var x))"
- "(App t1 t2)[y::=t'] = App (t1[y::=t']) (t2[y::=t'])"
- "x\<sharp>(y,t',T) \<Longrightarrow> (Lam[x:T].t)[y::=t'] = Lam[x:T].(t[y::=t'])"
- "(Iff tst thn els)[y::=t'] = (Iff (tst[y::=t']) (thn[y::=t']) (els[y::=t']))"
- "(BI c)[y::=t'] = (BI c)"
- "(Num c)[y::=t'] = (Num c)"
- "(Bool c)[y::=t'] = (Bool c)"
+ | "(App t1 t2)[y::=t'] = App (t1[y::=t']) (t2[y::=t'])"
+ |"x\<sharp>(y,t',T) \<Longrightarrow> (Lam[x:T].t)[y::=t'] = Lam[x:T].(t[y::=t'])"
+ | "(Iff tst thn els)[y::=t'] = (Iff (tst[y::=t']) (thn[y::=t']) (els[y::=t']))"
+ |"(BI c)[y::=t'] = (BI c)"
+ |"(Num c)[y::=t'] = (Num c)"
+ |"(Bool c)[y::=t'] = (Bool c)"
   by (finite_guess+, auto simp add: abs_fresh, fresh_guess+)
 
 lemma subst_eqvt[simp, eqvt]:
@@ -325,12 +272,12 @@ lemma subst_eqvt[simp, eqvt]:
   and   t2:: "trm"
   and   a :: "name"
   shows "pi\<bullet>(t1[b::=t2]) = (pi\<bullet>t1)[(pi\<bullet>b)::=(pi\<bullet>t2)]"
-by (nominal_induct t1 avoiding: b t2 rule: trm.induct)
+by (nominal_induct t1 avoiding: b t2 rule: trm.strong_induct)
    (auto simp add: perm_bij fresh_prod fresh_atm fresh_bij)
 
 lemma subst_rename[rule_format]: 
   shows "c\<sharp>t1 \<longrightarrow> (t1[a::=t2] = ([(c,a)]\<bullet>t1)[c::=t2])"
-by (nominal_induct t1 avoiding: a c t2 rule: trm.induct)
+by (nominal_induct t1 avoiding: a c t2 rule: trm.strong_induct)
    (auto simp add: calc_atm fresh_atm abs_fresh fresh_nat trm.inject perm_nat_def perm_bool)
 
 
@@ -338,7 +285,7 @@ lemma forget:
   assumes a: "a\<sharp>t1"
   shows "t1[a::=t2] = t1"
   using a
-by (nominal_induct t1 avoiding: a t2 rule: trm.induct)
+by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
    (auto simp add: abs_fresh fresh_atm)
 
 
@@ -346,7 +293,7 @@ lemma subst_removes_var:
   assumes "e1[x::=e0] = e2" and "x \<sharp> e0"
   shows "x \<sharp> e2"
   using prems
-proof (nominal_induct e1 avoiding: e0 x e2 rule: trm.induct)
+proof (nominal_induct e1 avoiding: e0 x e2 rule: trm.strong_induct)
   case (Var v e0' x' e2')
   thus ?case using at_fresh[of x' v] at_name_inst
     by (cases "x' = v") auto
@@ -395,7 +342,7 @@ lemma subst_closed:
   assumes "e1[x::=e0] = e2" and "closed e0"
   shows "fv e2 <= fv e1"
   using prems
-proof (nominal_induct e1 avoiding: e0 x e2 rule: trm.induct)
+proof (nominal_induct e1 avoiding: e0 x e2 rule: trm.strong_induct)
   case (Var v e0' x' e2')
   thus ?case using at_fresh[of x' v] at_name_inst closed_def
     by (cases "x' = v") auto
@@ -496,91 +443,93 @@ nominal_inductive values by (simp add: abs_fresh)
 
 text {* Typing Constants *}
 
-consts
-  \<Delta>\<^isub>\<tau> :: "builtin \<Rightarrow> ty"
-
 nominal_primrec
+  \<Delta>\<^isub>\<tau> :: "builtin \<Rightarrow> ty"
+  where
   "\<Delta>\<^isub>\<tau> NumberP = (Top \<rightarrow> BoolTy : Latent ty.Int)"
-  "\<Delta>\<^isub>\<tau> BooleanP = (Top \<rightarrow> BoolTy : Latent BoolTy)"
-  "\<Delta>\<^isub>\<tau> ProcP = (Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE))"
-  "\<Delta>\<^isub>\<tau> Add1 = (ty.Int \<rightarrow> ty.Int : latent_eff.NE)"
-  "\<Delta>\<^isub>\<tau> Nott = (Top \<rightarrow> BoolTy : latent_eff.NE)"
+  |"\<Delta>\<^isub>\<tau> BooleanP = (Top \<rightarrow> BoolTy : Latent BoolTy)"
+  |"\<Delta>\<^isub>\<tau> ProcP = (Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE))"
+  |"\<Delta>\<^isub>\<tau> Add1 = (ty.Int \<rightarrow> ty.Int : latent_eff.NE)"
+  |"\<Delta>\<^isub>\<tau> Nott = (Top \<rightarrow> BoolTy : latent_eff.NE)"
   by simp_all
 
 lemma delta_t_eqvt[eqvt]:
   fixes pi :: "name prm"
   shows "pi \<bullet> \<Delta>\<^isub>\<tau> b = \<Delta>\<^isub>\<tau> (pi \<bullet> b)"
-  by (nominal_induct b rule: builtin.induct) auto
+  by (nominal_induct b rule: builtin.strong_induct) auto
 
 
 (* Delta Function *)
 
-consts
-  \<Delta>  :: "builtin \<Rightarrow> trm \<Rightarrow> trm option"
-  add1_fun :: "trm \<Rightarrow> trm option"
-  nott_fun :: "trm \<Rightarrow> trm option"
-  numberp_fun :: "trm \<Rightarrow> bool"
-  booleanp_fun :: "trm \<Rightarrow> bool"
-  procp_fun :: "trm \<Rightarrow> bool"
-  procp_bi_fun :: "builtin \<Rightarrow> bool"
-
 nominal_primrec
+  add1_fun :: "trm \<Rightarrow> trm option"
+  where
   "add1_fun (Num n) = Some (Num (n+1))"
-  "add1_fun (Lam[x:ty].b) = None"
-  "add1_fun (Iff a b c) = None"
-  "add1_fun (App a b) = None"
-  "add1_fun (Bool a) = None"
-  "add1_fun (BI a) = None"
-  "add1_fun (Var a) = None"
+  |"add1_fun (Lam[x:ty].b) = None"
+  |"add1_fun (Iff a b c) = None"
+  |"add1_fun (App a b) = None"
+  |"add1_fun (Bool a) = None"
+  |"add1_fun (BI a) = None"
+  |"add1_fun (Var a) = None"
   by (auto, finite_guess+, fresh_guess+)
 
 nominal_primrec
+  nott_fun :: "trm \<Rightarrow> trm option"
+  where
   "nott_fun (Num n) = (Some (Bool False))"
-  "nott_fun (Lam[x:ty].b) = (Some (Bool False))"
-  "nott_fun (Iff a b c) = (Some (Bool False))"
-  "nott_fun (App a b) = (Some (Bool False))"
-  "nott_fun (Bool b) = Some (Bool (~b))"
-  "nott_fun (BI a) = (Some (Bool False))"
-  "nott_fun (Var a) = (Some (Bool False))"
+  |"nott_fun (Lam[x:ty].b) = (Some (Bool False))"
+  |"nott_fun (Iff a b c) = (Some (Bool False))"
+  |"nott_fun (App a b) = (Some (Bool False))"
+  |"nott_fun (Bool b) = Some (Bool (~b))"
+  |"nott_fun (BI a) = (Some (Bool False))"
+  |"nott_fun (Var a) = (Some (Bool False))"
   by (auto, finite_guess+, fresh_guess+)
   
 
 nominal_primrec
+  booleanp_fun :: "trm \<Rightarrow> bool"
+  where
   "booleanp_fun (Bool b) = True"
-  "booleanp_fun (Num n) = False"
-  "booleanp_fun (Abs a b c) = False"
-  "booleanp_fun (App a b) = False"
-  "booleanp_fun (BI c) = False"
-  "booleanp_fun (Var v) = False"
-  "booleanp_fun (Iff a b c) = False"
+  |"booleanp_fun (Num n) = False"
+  |"booleanp_fun (Abs a b c) = False"
+  |"booleanp_fun (App a b) = False"
+  |"booleanp_fun (BI c) = False"
+  |"booleanp_fun (Var v) = False"
+  |"booleanp_fun (Iff a b c) = False"
   by (auto, finite_guess+, fresh_guess+)
 
 nominal_primrec
+  procp_fun :: "trm \<Rightarrow> bool"
+  where
   "procp_fun (Bool b) = False"
-  "procp_fun (Num n) = False"
-  "procp_fun (Abs a b c) = True"
-  "procp_fun (App a b) = False"
-  "procp_fun (BI c) = True"
-  "procp_fun (Var v) = False"
-  "procp_fun (Iff a b c) = False"
+  |"procp_fun (Num n) = False"
+  |"procp_fun (Abs a b c) = True"
+  |"procp_fun (App a b) = False"
+  |"procp_fun (BI c) = True"
+  |"procp_fun (Var v) = False"
+  |"procp_fun (Iff a b c) = False"
   by (auto, finite_guess+, fresh_guess+)
 
 nominal_primrec
+  numberp_fun :: "trm \<Rightarrow> bool"
+  where
   "numberp_fun (Bool b) = False"
-  "numberp_fun (Num n) = True"
-  "numberp_fun (Abs a b c) = False"
-  "numberp_fun (App a b) = False"
-  "numberp_fun (BI c) = False"
-  "numberp_fun (Var v) = False"
-  "numberp_fun (Iff a b c) = False"
+  |"numberp_fun (Num n) = True"
+  |"numberp_fun (Abs a b c) = False"
+  |"numberp_fun (App a b) = False"
+  |"numberp_fun (BI c) = False"
+  |"numberp_fun (Var v) = False"
+  |"numberp_fun (Iff a b c) = False"
   by (auto, finite_guess+, fresh_guess+)
 
 nominal_primrec
+  \<Delta>  :: "builtin \<Rightarrow> trm \<Rightarrow> trm option"
+  where
   "\<Delta> Add1 t = add1_fun t"
-  "\<Delta> Nott t = nott_fun t"
-  "\<Delta> BooleanP t = Some (Bool (booleanp_fun t))"
-  "\<Delta> NumberP t = Some (Bool (numberp_fun t))"
-  "\<Delta> ProcP t = Some (Bool (procp_fun t))"
+  |"\<Delta> Nott t = nott_fun t"
+  |"\<Delta> BooleanP t = Some (Bool (booleanp_fun t))"
+  |"\<Delta> NumberP t = Some (Bool (numberp_fun t))"
+  |"\<Delta> ProcP t = Some (Bool (procp_fun t))"
 by simp_all
 
 
@@ -590,28 +539,28 @@ lemma delta_eqvt:
   and   t  :: "trm"
   shows "\<Delta> (pi\<bullet>b) (pi\<bullet>t) = \<Delta> b t"
 proof -
-  have A:"(pi\<bullet>b) = b" by (nominal_induct b rule: builtin.induct) auto
+  have A:"(pi\<bullet>b) = b" by (nominal_induct b rule: builtin.strong_induct) auto
   have B:"\<Delta> b (pi\<bullet>t) = \<Delta> b t"
-  proof (nominal_induct rule: builtin.induct)
+  proof (nominal_induct rule: builtin.strong_induct)
     case Add1
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_nat_def)       
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_nat_def)       
   next
     case Nott
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   next
     case BooleanP
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   next
     case NumberP
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   next
     case ProcP
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   qed
   from A B show ?thesis by auto
 qed
@@ -622,28 +571,28 @@ lemma delta_eqvt2[eqvt]:
   and   t  :: "trm"
   shows "(pi\<bullet>(\<Delta> b t)) = \<Delta> (pi\<bullet>b) (pi\<bullet>t)"
 proof -
-  have A:"(pi\<bullet>b) = b" by (nominal_induct b rule: builtin.induct) auto
+  have A:"(pi\<bullet>b) = b" by (nominal_induct b rule: builtin.strong_induct) auto
   have B:"\<Delta> b (pi\<bullet>t) = (pi\<bullet>(\<Delta> b t))"
-  proof (nominal_induct rule: builtin.induct)
+  proof (nominal_induct rule: builtin.strong_induct)
     case Add1
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_nat_def)       
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_nat_def)       
   next
     case Nott
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   next
     case BooleanP
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   next
     case NumberP
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   next
     case ProcP
     thus ?case 
-      by (nominal_induct t rule: trm.induct) (auto simp add: perm_bool)
+      by (nominal_induct t rule: trm.strong_induct) (auto simp add: perm_bool)
   qed
   from A B show ?thesis by auto
 qed
@@ -654,30 +603,30 @@ lemma delta_closed:
   assumes "\<Delta> b t = Some v"
   shows "closed v"
   using prems
-proof (nominal_induct b rule: builtin.induct)
+proof (nominal_induct b rule: builtin.strong_induct)
   case Add1
   thus ?case 
-    by (nominal_induct t rule: trm.induct)
+    by (nominal_induct t rule: trm.strong_induct)
   (auto simp add: supp_nat closed_def trm.supp)
 next
   case Nott
   thus ?case
-    by (nominal_induct t rule: trm.induct)
+    by (nominal_induct t rule: trm.strong_induct)
   (auto simp add: supp_def perm_bool closed_def trm.supp)
 next
   case BooleanP
   thus ?case
-    by (nominal_induct t rule: trm.induct)
+    by (nominal_induct t rule: trm.strong_induct)
   (auto simp add: supp_def perm_bool closed_def trm.supp)
 next
   case NumberP
   thus ?case
-    by (nominal_induct t rule: trm.induct)
+    by (nominal_induct t rule: trm.strong_induct)
   (auto simp add: supp_def perm_bool closed_def trm.supp)
 next
   case ProcP
   thus ?case
-    by (nominal_induct t rule: trm.induct)
+    by (nominal_induct t rule: trm.strong_induct)
   (auto simp add: supp_def perm_bool closed_def trm.supp)
 qed
 
@@ -686,25 +635,25 @@ lemma delta_value:
   assumes "\<Delta> b t = Some v"
   shows "v : values"
   using prems
-  proof (nominal_induct b rule: builtin.induct)
+  proof (nominal_induct b rule: builtin.strong_induct)
     case Add1
-    thus ?case by (nominal_induct t rule: trm.induct) auto
+    thus ?case by (nominal_induct t rule: trm.strong_induct) auto
   next
     case Nott
     thus ?case
-      by (nominal_induct t rule: trm.induct) auto
+      by (nominal_induct t rule: trm.strong_induct) auto
   next
     case BooleanP
     thus ?case
-      by (nominal_induct t rule: trm.induct) auto
+      by (nominal_induct t rule: trm.strong_induct) auto
   next
     case NumberP
     thus ?case
-      by (nominal_induct t rule: trm.induct) auto
+      by (nominal_induct t rule: trm.strong_induct) auto
   next
     case ProcP
     thus ?case
-      by (nominal_induct t rule: trm.induct) auto
+      by (nominal_induct t rule: trm.strong_induct) auto
   qed
 
 text {* Evaluation contexts *}
@@ -757,8 +706,9 @@ lemma closed_in_ctxt_closed_ctxt:
     have IH:"!!e L. \<lbrakk>closed e; E \<in> ctxt; e = E L\<rbrakk> \<Longrightarrow> closed L \<and> closed_ctxt E" using prems by blast
     have cl:"closed (App rator (E L'))" using prems by blast
     from cl have "closed rator" by (auto simp add: closed_def trm.supp)
-    from cl have "closed (E L')"  by (auto simp add: closed_def trm.supp)
-    thus ?case using IH[of "(E L')" L'] `E : ctxt` `closed rator`
+    from C_App2 have y:"(\<lambda>a. App rator (E a)) : ctxt" by blast
+    from cl have x:"closed (E L')"  by (auto simp add: closed_def trm.supp)    
+    thus ?case using y IH[of "(E L')" L'] `E : ctxt` `closed rator`
       by (auto simp add: trm.supp closed_def)
   next
     case (C_Iff E thn els L' e')
@@ -831,7 +781,7 @@ lemma if_val_reduces:
   assumes a:"tst : values"
   shows "Iff tst thn els \<hookrightarrow> thn \<or> Iff tst thn els \<hookrightarrow> els"
   using a
-proof (nominal_induct tst rule: trm.induct)
+proof (nominal_induct tst rule: trm.strong_induct)
   case (Bool b) 
   thus ?case using e_if_true e_if_false
     by (cases b) (auto simp add: trm.inject)
@@ -938,13 +888,13 @@ lemma simple_eff_cases[consumes 1, case_names NE FF TT]:
   and a3:"P TT"
   shows "P F"
   using prems
-by (nominal_induct F rule: eff.induct) auto
+by (nominal_induct F rule: eff.strong_induct) auto
 
 lemma simple_eff_below_ne:
   assumes "simple_eff F"
   shows "\<turnstile> F <e: NE"
   using prems
-by (nominal_induct F rule: eff.induct) auto
+by (nominal_induct F rule: eff.strong_induct) auto
 
 
 lemma SE_Trans[intro]: 
@@ -1002,7 +952,7 @@ lemma union_size_ty:
 
 fun size_ty3 :: "ty*ty*ty \<Rightarrow> nat"
 where 
-size_ty3_def[simp]:"size_ty3 (a,b,c) = size_ty a + size_ty b + size_ty c"
+size_ty3_d[simp]:"size_ty3 (a,b,c) = size_ty a + size_ty b + size_ty c"
 
 inductive_cases union_sub_cases[consumes 1, case_names 1 2 3 4]:"\<turnstile> Union Ts <: S"
 
@@ -1020,7 +970,7 @@ proof (induct "X"=="(T1,?S,T)"  arbitrary: T1 Ts T taking: "size_ty3" rule: meas
     case 2 thus ?case by auto
   next
     case (3 T' Ts')
-    have X_inst:"X = (T1, ty.Union Ts, T)" .
+    have X_inst:"X = (T1, ty.Union Ts, T)" by fact
     have "size_ty T' < size_ty T" using 3 union_size_ty by auto
     hence "\<turnstile> T1 <: T'" using X_inst 3(4)[OF _ ` \<turnstile> ty.Union Ts <: T'` `T1 : set Ts`] by auto
     thus ?case using 3 by auto
@@ -1041,7 +991,7 @@ proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T taking: "size_ty3" rule: measure_
     case S_Refl thus ?case by auto
   next
     case (S_Top A)
-    have X_inst:"X = (A,Q,T)" .
+    have X_inst:"X = (A,Q,T)" by fact
     show ?case  
     proof -
       {
@@ -1116,7 +1066,7 @@ proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T taking: "size_ty3" rule: measure_
     ultimately show " \<turnstile> S1 \<rightarrow> S2 : L <: T" by blast
   next
     case (S_UnionAbove T1 Ts S)
-    have sub1:"\<turnstile> S <: T1" .
+    have sub1:"\<turnstile> S <: T1" by fact
     hence sub2:"\<turnstile> T1 <: T" using S_UnionAbove union_sub_elim[of Ts T T1] by auto
     have sz:"size_ty T1 < size_ty Q" using S_UnionAbove union_size_ty by auto
     hence "\<turnstile> S <: T" using S_UnionAbove(4)[OF _ sub1 sub2] sz S_UnionAbove(7) by auto
@@ -1182,10 +1132,6 @@ declare fresh_list_cons[simp]
 declare fresh_list_nil[simp]
 
 (* environment operations *)
-
-consts 
-  env_plus :: "eff \<Rightarrow> varEnv => varEnv"
-  env_minus :: "eff \<Rightarrow> varEnv => varEnv"
 
 (* original type is the SECOND argument *)
 
@@ -1403,12 +1349,12 @@ where
 
 fun mapfun :: "(ty \<Rightarrow> ty \<Rightarrow> ty) \<Rightarrow> ty \<Rightarrow> name \<Rightarrow> (name*ty) \<Rightarrow> (name * ty)"
 where
-mapfun_def: "mapfun f T x (v,S) =  (if (x = v) then (v, f T S) else (v,S))" 
+mapfun_d: "mapfun f T x (v,S) =  (if (x = v) then (v, f T S) else (v,S))" 
 
 
 constdefs
   envop :: "(ty \<Rightarrow> ty \<Rightarrow> ty) \<Rightarrow> name \<Rightarrow> ty \<Rightarrow> (name*ty) list \<Rightarrow> (name*ty) list"
-  envop_def[simp]:"envop f n t G == map (% (v,ty). (if (n = v) then (v,f t ty) else (v,ty))) G"
+  envop_d[simp]:"envop f n t G == map (% (v,ty). (if (n = v) then (v,f t ty) else (v,ty))) G"
 
 lemma envop_mapfun:
   shows "map (mapfun f T x) \<Gamma> = envop f x T \<Gamma> " using mapfun_def by auto
@@ -1441,11 +1387,13 @@ lemma envop_forget:
     
 
 nominal_primrec 
+  env_plus :: "eff \<Rightarrow> varEnv => varEnv"
+where
   "env_plus (NE) G = G"
-  "env_plus (TE T x) G = envop restrict x T G"
-  "env_plus (VE x) G = envop remove x (ty.FF) G"
-  "env_plus (TT) G = G"
-  "env_plus (FF) G = G"
+  |"env_plus (TE T x) G = envop restrict x T G"
+  |"env_plus (VE x) G = envop remove x (ty.FF) G"
+  |"env_plus (TT) G = G"
+  |"env_plus (FF) G = G"
   by auto
 
 lemma map_eqvt[eqvt]:
@@ -1457,24 +1405,26 @@ lemma map_eqvt[eqvt]:
 lemma env_plus_eqvt[eqvt]:
   fixes pi::"name prm"
   shows "pi\<bullet>(env_plus X G ) = env_plus (pi\<bullet>X) (pi\<bullet>G)"
-proof (nominal_induct X rule: eff.induct)
+proof (nominal_induct X rule: eff.strong_induct)
   case (TE T x) thus ?case by (perm_simp add: eqvts split_def) auto
 next
   case (VE x) thus ?case by (perm_simp add: eqvts split_def) auto
 qed(auto)
 
 nominal_primrec
+  env_minus :: "eff \<Rightarrow> varEnv => varEnv"
+  where
   "env_minus (NE) G = G"
-  "env_minus (TE T x) G = envop remove x T G"
-  "env_minus (VE x) G = envop replace x ty.FF G"
-  "env_minus (TT) G = G"
-  "env_minus (FF) G = G"
+  |"env_minus (TE T x) G = envop remove x T G"
+  |"env_minus (VE x) G = envop replace x ty.FF G"
+  |"env_minus (TT) G = G"
+  |"env_minus (FF) G = G"
   by auto
 
 lemma env_minus_eqvt[eqvt]:
   fixes pi::"name prm"
   shows "pi\<bullet>(env_minus X G) = env_minus (pi\<bullet>X) (pi\<bullet>G)"
-proof (nominal_induct X rule: eff.induct)
+proof (nominal_induct X rule: eff.strong_induct)
   case (TE T x) thus ?case
     by (perm_simp add: eqvts perm_fun_def split_def) auto
   case (VE x) thus ?case
@@ -1510,13 +1460,13 @@ lemma envop_eqvt:
 lemma env_plus_eqvt:
   fixes pi::"name prm"
   shows "(pi\<bullet>\<Gamma>) |+ pi\<bullet>eff = pi\<bullet>(\<Gamma> |+ eff)"
-  by (nominal_induct eff avoiding: \<Gamma> rule: eff.induct)
-   (auto simp add: eff.eqvts envop_eqvt simp del: envop_def)
+  by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
+   (auto simp del: envop_d)
 
 lemma env_minus_eqvt:
   fixes pi::"name prm"
   shows "(pi\<bullet>\<Gamma>) |- pi\<bullet>eff = pi\<bullet>(\<Gamma> |- eff)"
-  by (nominal_induct eff avoiding: \<Gamma> rule: eff.induct)
+  by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
      (auto simp add: eff.eqvts envop_eqvt simp del: envop_def)
 
 
@@ -1576,10 +1526,10 @@ abbreviation
 
 lemma envplus_empty:
   shows "env_plus eff [] = []"
-  by (nominal_induct rule: eff.induct) auto
+  by (nominal_induct rule: eff.strong_induct) auto
 lemma envminus_empty:
   shows "env_minus eff [] = []"
-  by (nominal_induct rule: eff.induct) auto
+  by (nominal_induct rule: eff.strong_induct) auto
 
 lemma w_lem1:
   fixes \<Gamma> \<Gamma>'
@@ -1599,13 +1549,13 @@ lemma weakening_envplus:
   assumes b:"\<Gamma> \<lless> \<Gamma>'" and a:"valid \<Gamma>'"
   shows "env_plus eff \<Gamma> \<lless> env_plus eff \<Gamma>'"
   using a prems w_lem1[of \<Gamma> \<Gamma>']
-  by (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.induct) auto
+  by (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.strong_induct) auto
 
 lemma weakening_envminus: 
   assumes "\<Gamma> \<lless> \<Gamma>'" and a:"valid \<Gamma>'" and b:"valid \<Gamma>"
   shows "env_minus eff \<Gamma> \<lless> env_minus eff \<Gamma>'"
   using a prems w_lem1[of \<Gamma> \<Gamma>']
-  by (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.induct) auto
+  by (nominal_induct eff avoiding: \<Gamma> \<Gamma>' rule: eff.strong_induct) auto
 
 lemma envplus_valid:
   assumes "valid \<Gamma>"
@@ -1617,7 +1567,7 @@ next
   case (v2 \<Gamma>' a T) 
 
   from v2 show ?case
-  proof (nominal_induct rule: eff.induct)
+  proof (nominal_induct rule: eff.strong_induct)
     case (TE S x)
     let ?op = "restrict"
     let ?G = "((a, T) # \<Gamma>')"
@@ -1669,7 +1619,7 @@ proof (induct rule: valid.induct)
   case v1 thus ?case using envminus_empty by auto
 next
   case (v2 \<Gamma>' a T) thus ?case
-  proof (nominal_induct rule: eff.induct)
+  proof (nominal_induct rule: eff.strong_induct)
     case (TE S x)
     let ?op = "remove"
     let ?G = "((a, T) # \<Gamma>')"
@@ -1857,7 +1807,7 @@ next
     by (induct rule: abs_ty_elim2) auto
 next
   case (bi_value b)
-  thus ?case using bi_ty_elim[of \<Gamma> b T F] using arr_sub_int by (nominal_induct b rule: builtin.induct) auto
+  thus ?case using bi_ty_elim[of \<Gamma> b T F] using arr_sub_int by (nominal_induct b rule: builtin.strong_induct) auto
 qed
 
   
@@ -1877,7 +1827,7 @@ next
     by (induct rule: abs_ty_elim2) auto
 next
   case (bi_value b)
-  thus ?case using bi_ty_elim[of \<Gamma> b T F] using arr_sub_bool by (nominal_induct b rule: builtin.induct) auto
+  thus ?case using bi_ty_elim[of \<Gamma> b T F] using arr_sub_bool by (nominal_induct b rule: builtin.strong_induct) auto
 qed
 
 lemma value_int_ty:
@@ -1905,7 +1855,7 @@ lemma typed_prim_reduce:
   and sub:"\<turnstile> T <: T0" and d: "\<turnstile> U <:  T0 \<rightarrow> T1 : le" 
   shows "EX v'. \<Delta> b v = Some v'"
   using a b c d sub
-  proof (nominal_induct b rule: builtin.induct)
+  proof (nominal_induct b rule: builtin.strong_induct)
     case Add1
     have "U = \<Delta>\<^isub>\<tau> Add1" using Add1 typing_bi[of \<Gamma> Add1 "U" eff] by simp
     hence "U = ty.Int \<rightarrow> ty.Int : latent_eff.NE" by auto
@@ -2271,7 +2221,7 @@ lemma value_simple_type:
 using B A
 proof (nominal_induct v avoiding: \<Gamma> rule: values.strong_induct)
   case (bi_value b) thus ?case using bi_ty_elim[of \<Gamma> b T F]
-    by (nominal_induct b rule: builtin.induct)  
+    by (nominal_induct b rule: builtin.strong_induct)  
        (auto simp add: trm.inject)
 next
   case num_value thus ?case using num_ty_elim[OF num_value] by auto
@@ -2307,7 +2257,7 @@ lemma closed_eff:
   assumes "closed e" and "\<Gamma> \<turnstile> e : T ; eff"
   shows "simple_eff eff"
 using prems
-proof (nominal_induct eff rule: eff.induct)
+proof (nominal_induct eff rule: eff.strong_induct)
   case (VE name) thus ?case using ve_not_closed[of _ e _ name] closed_def by auto
 next
   case (TE _ name) thus ?case using te_not_closed[of _ e _ _ name] closed_def by auto
@@ -2609,7 +2559,7 @@ lemma procp_FF_preserved:
       have "U = Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE)" using a bi_ty_elim[of \<Gamma> ProcP "U"] by auto
       hence c:"S = Union [] \<rightarrow> Top : latent_eff.NE" using prems arr_sub_arr_cases[of Top _ _ T0 T1 "Latent S"] latent_eff.inject by auto
       have b':"T = \<Delta>\<^isub>\<tau> c" using bi_ty_elim[OF b] by auto
-      hence "EX A1 A2 FA. T = A1 \<rightarrow> A2 : FA"  by (nominal_induct c rule: builtin.induct) auto
+      hence "EX A1 A2 FA. T = A1 \<rightarrow> A2 : FA"  by (nominal_induct c rule: builtin.strong_induct) auto
       then obtain A1 A2 F where d:"T = A1 \<rightarrow> A2 : F" by auto
       hence "\<turnstile> T <: S" using c d all_fun_ty_below by auto
       thus ?thesis using prems by auto
@@ -2660,7 +2610,7 @@ lemma procp_TT_preserved:
     {
       assume "EX c. v = BI c"
       then obtain c where "v = BI c" by auto
-      hence ?thesis using prems by (nominal_induct c rule: builtin.induct) auto
+      hence ?thesis using prems by (nominal_induct c rule: builtin.strong_induct) auto
     }
     ultimately show ?thesis using prems proc_value[of \<Gamma> v T0 eff2 "Union []" Top] by auto
   qed
@@ -2694,7 +2644,7 @@ lemma delta_soundness:
   and "\<Delta> b v = Some u" and "valid \<Gamma>"
   shows "EX eff' T1'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> eff' <e: eff \<and> \<turnstile> T1' <: T1"
   using prems
-proof (nominal_induct b rule: builtin.induct)
+proof (nominal_induct b rule: builtin.strong_induct)
   case Add1
   hence a:"eff = NE" using add1_eff_ne[of \<Gamma> v T1' eff] by auto
   have "EX  eff'. \<Gamma> \<turnstile> u : T1 ; eff'" using `v : values` `valid \<Gamma>` Add1
@@ -2725,7 +2675,7 @@ next
   case BooleanP
   have "valid \<Gamma>" using typing_valid prems by auto
   have "T1 = BoolTy" using BooleanP by (simp add: ty.inject)
-  then obtain bb where veq:"\<Delta> BooleanP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
+  then obtain bb where veq:"\<Delta> BooleanP v = Some (Bool bb)" by (nominal_induct v rule: trm.strong_induct) (auto)
   hence "EX  T1' eff'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" 
     using `T1 = BoolTy` BooleanP bool_sub_boolty
   proof (cases bb)
@@ -2763,7 +2713,7 @@ next
   case NumberP
   have "valid \<Gamma>" using typing_valid prems by auto
   have "T1 = BoolTy" using NumberP by (simp add: ty.inject)
-  then obtain bb where veq:"\<Delta> NumberP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
+  then obtain bb where veq:"\<Delta> NumberP v = Some (Bool bb)" by (nominal_induct v rule: trm.strong_induct) (auto)
   hence "EX  T1' eff'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" 
     using `T1 = BoolTy` NumberP bool_sub_boolty
   proof (cases bb)
@@ -2801,7 +2751,7 @@ next
   case ProcP
   have "valid \<Gamma>" using typing_valid prems by auto
   have "T1 = BoolTy" using ProcP by (simp add: ty.inject)
-  then obtain bb where veq:"\<Delta> ProcP v = Some (Bool bb)" by (nominal_induct v rule: trm.induct) (auto)
+  then obtain bb where veq:"\<Delta> ProcP v = Some (Bool bb)" by (nominal_induct v rule: trm.strong_induct) (auto)
   hence "EX  T1' eff'. \<Gamma> \<turnstile> u : T1' ; eff' \<and> \<turnstile> T1' <: T1" 
     using `T1 = BoolTy` ProcP bool_sub_boolty
   proof (cases bb)
@@ -2992,7 +2942,7 @@ next
   have A:"x \<sharp> e1" "x \<sharp> e2" "x \<sharp> e3" using T_If by auto
   have "\<Gamma>' - (x,T') \<turnstile> e1 : T1 ; F1" using T_If A by auto
   thus ?case using T_If
-    proof (nominal_induct "F1" rule: eff.induct)
+    proof (nominal_induct "F1" rule: eff.strong_induct)
       case NE
       from NE have 1:"\<Gamma>' - (x, T') \<turnstile> e1 : T1 ; eff.NE" by auto
       from NE have 2:"(\<Gamma>' - (x, T') |+ eff.NE) \<turnstile> e2 : T2 ; F2" by auto
@@ -3425,7 +3375,7 @@ next
   have L1:"\<Gamma>' \<turnstile> App ?ns1 ?ns2 : T1 ; NE" using Q S sub1 sub2 by auto
   have L2:"T1 = T'" .
   show ?case using appty
-  proof (nominal_induct F' rule: eff.induct)
+  proof (nominal_induct F' rule: eff.strong_induct)
     case NE thus ?case using L1 L2 by auto
   next
     case VE thus ?case using L1 L2 by auto
@@ -3557,7 +3507,7 @@ next
 	"?\<Gamma> \<turnstile> t1 : T1 ; F1 "" ?\<Gamma> |+ F1 \<turnstile> t2 : T2 ; F2 "" ?\<Gamma> |- F1 \<turnstile> t3 : T3 ; F3 "" \<turnstile> T2 <: T'""\<turnstile> T3 <: T'""F' = NE"
 	by auto
       hence ?thesis
-      proof (nominal_induct F1 rule: eff.induct)
+      proof (nominal_induct F1 rule: eff.strong_induct)
 	case NE
 	from NE have "\<exists>S1 G1.  \<Gamma>' \<turnstile> t1[x'::=e''] : S1 ; G1  \<and> \<turnstile> S1 <: T1 \<and> \<turnstile> G1 <e: NE" using Iff by auto
 	then obtain S1 G1 where  A:"\<Gamma>' \<turnstile> t1[x'::=e''] : S1 ; G1  "" \<turnstile> S1 <: T1 "" \<turnstile> G1 <e: NE" by auto
@@ -4000,7 +3950,7 @@ lemma preserve_red:
       and A4:"T1 = T" and A5:"\<turnstile> U <: T0 \<rightarrow> T1 : le"
       by auto
     hence "U = \<Delta>\<^isub>\<tau> p" using e_delta typing_bi[of \<Gamma> p  _ eff'] by simp
-    then obtain A0 A1 LA where "\<Delta>\<^isub>\<tau> p = A0 \<rightarrow> A1 : LA" "U = A0 \<rightarrow> A1 : LA" by (nominal_induct p rule: builtin.induct) auto
+    then obtain A0 A1 LA where "\<Delta>\<^isub>\<tau> p = A0 \<rightarrow> A1 : LA" "U = A0 \<rightarrow> A1 : LA" by (nominal_induct p rule: builtin.strong_induct) auto
     hence "\<turnstile> A0 \<rightarrow> A1 : LA <: T0 \<rightarrow> T1 : le" using `\<turnstile> U <: T0 \<rightarrow> T1 : le` by auto
     hence B:"le = LA \<or> le = latent_eff.NE" "\<turnstile> T0 <: A0" "\<turnstile> A1 <: T1" using arr_sub_arr_cases[of A0 A1 LA T0 T1 le] by auto
     have C1:" \<Gamma> \<turnstile> App (BI p) v' : T1 ; eff" using prems `T1 = T` by auto
@@ -4550,7 +4500,7 @@ lemma envplus_supp:
   assumes "valid \<Gamma>"
   shows "(supp (\<Gamma> |+ F) :: name set) <= (supp \<Gamma> :: name set)"
   using prems
-  apply (nominal_induct F rule: eff.induct)
+  apply (nominal_induct F rule: eff.strong_induct)
   apply (auto simp add: envop_supp)
   done
 
@@ -4558,7 +4508,7 @@ lemma envminus_supp:
   assumes "valid \<Gamma>"
   shows "(supp (\<Gamma> |- F) :: name set) <= (supp \<Gamma> :: name set)"
   using prems
-  apply (nominal_induct F rule: eff.induct)
+  apply (nominal_induct F rule: eff.strong_induct)
   apply (auto simp add: envop_supp)
   done
 
@@ -4586,7 +4536,7 @@ next
     by (auto simp add: trm.supp fv_lam abs_supp supp_list_cons supp_prod supp_latent_eff_ty supp_atm)
 next
   case (T2_Const \<Gamma> b) thus ?case
-    by (nominal_induct b rule: builtin.induct)
+    by (nominal_induct b rule: builtin.strong_induct)
      (auto simp add: trm.supp  builtin.supp)
 qed (auto simp add: trm.supp supp_nat supp_bool)
 
@@ -4626,7 +4576,7 @@ lemma unique_decomposition:
   assumes a:"closed e"
   shows "\<lbrakk>E : ctxt; E t = e; E' : ctxt; E' t' = e\<rbrakk> \<Longrightarrow> E = E'"
   using a
-  proof (nominal_induct e rule: trm.induct)
+  proof (nominal_induct e rule: trm.strong_induct)
     case (Var v)
     have f1:"E = (%t. t)" using Var by cases auto
     have f2:"E'= (%t. t)" using `E' : ctxt` Var by cases auto
@@ -4663,11 +4613,11 @@ lemma fresh_fact:
   and     b: "a\<sharp>t2"
   shows "a\<sharp>(t1[b::=t2])"
 using a b
-by (nominal_induct t1 avoiding: a b t2 rule: trm.induct)
+by (nominal_induct t1 avoiding: a b t2 rule: trm.strong_induct)
    (auto simp add: abs_fresh fresh_atm)
 
 lemma id_subs: "t[x::=Var x] = t"
-by (nominal_induct t avoiding: x rule: trm.induct)
+by (nominal_induct t avoiding: x rule: trm.strong_induct)
    (simp_all add: fresh_atm)
 
 lemma random_eqvt[simp]:
