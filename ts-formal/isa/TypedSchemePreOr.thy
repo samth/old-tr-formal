@@ -1457,20 +1457,15 @@ lemma envop_eqvt:
     case (Cons  G v T0) thus ?case using pt_bij4[of pi n v] pt_name_inst at_name_inst by auto
   qed
  
-lemma env_plus_eqvt:
+lemma env_plus_eqvt2:
   fixes pi::"name prm"
   shows "(pi\<bullet>\<Gamma>) |+ pi\<bullet>eff = pi\<bullet>(\<Gamma> |+ eff)"
-by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
-(auto simp only: envop_eqvt env_plus.simps eff.perm perm_ty)
+  using env_plus_eqvt by simp
 
-
-
-lemma env_minus_eqvt:
+lemma env_minus_eqvt2:
   fixes pi::"name prm"
   shows "(pi\<bullet>\<Gamma>) |- pi\<bullet>eff = pi\<bullet>(\<Gamma> |- eff)"
-  by (nominal_induct eff avoiding: \<Gamma> rule: eff.strong_induct)
-     (auto simp only: envop_eqvt env_plus.simps eff.perm perm_ty)
-
+  using env_minus_eqvt by simp
 
 lemma env_plus_simple_eff:
   assumes "simple_eff eff"
@@ -1931,7 +1926,7 @@ lemma app_decomp:
           case (abs_value x t b)
           let ?E = "(%t. t)"
           let ?L = "App (Abs x b t) rand"
-          have "?L \<hookrightarrow> (b[x::=rand])" by (rule e_beta)
+          have "?L \<hookrightarrow> (b[x::=rand])" (* GOT TO HERE *) by (rule e_beta)
           thus ?case using ex_help[of ?L ?E ?L] by auto
         next
           case (bool_value b)
