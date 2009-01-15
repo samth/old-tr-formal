@@ -1,3 +1,4 @@
+
 (* This file requires:
 
  - Nominal Isabelle version 0.14
@@ -1926,7 +1927,7 @@ lemma app_decomp:
           case (abs_value x t b)
           let ?E = "(%t. t)"
           let ?L = "App (Abs x b t) rand"
-          have "?L \<hookrightarrow> (b[x::=rand])" (* GOT TO HERE *) by (rule e_beta)
+          have "?L \<hookrightarrow> (b[x::=rand])" using `rand : values` `x \<sharp> rand` by (rule e_beta)
           thus ?case using ex_help[of ?L ?E ?L] by auto
         next
           case (bool_value b)
