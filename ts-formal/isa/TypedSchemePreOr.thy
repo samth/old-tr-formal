@@ -1,7 +1,7 @@
 
-(* This file requires:
+(* This file was checked with:
 
- - Nominal Isabelle version 0.14
+ - Isabelle repository snapshot 2eadbc24de8c (13-Jan-2009)
 
 *)
 
