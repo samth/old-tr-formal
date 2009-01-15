@@ -2138,7 +2138,7 @@ next
   fix e1 T1 e3 T3 effa e2
   assume "v : values" "v \<noteq> trm.Bool False" "Iff v t2 t3 = Iff e1 e2 e3" "\<Gamma> \<turnstile> e1 : T1 ; FF" "eff = NE"
   have "v = e1" using prems trm.inject by auto
-  hence tv:"\<Gamma> \<turnstile> v : T1 ; FF" by simp
+  hence tv:"\<Gamma> \<turnstile> v : T1 ; FF" using prems by simp
   have "v = Bool False" using `v : values` tv
   proof (induct v rule: values.induct)
     case (abs_value x T b) thus ?case using abs_ty_elim_eff[of \<Gamma> x b T T1 FF] by auto
@@ -2228,7 +2228,6 @@ next
 next
   case (abs_value a T' b \<Gamma>') thus ?case
     by (cases rule: abs_ty_elim[OF abs_value(2) abs_value(1)])(simp)
-    using abs_ty_elim[OF abs_value(2) abs_value(1), of ?case] by simp 
 qed
 
 text {* lemmas about the effects of closed terms *}
@@ -3272,7 +3271,7 @@ proof -
   note subst_preserve_TE_app[OF A neq val , of v]
   have "!! t bc bf . \<lbrakk>t \<guillemotleft> App e1 e2;  (y, T0) # \<Gamma> \<turnstile> t : bc ; bf \<rbrakk> 
     \<Longrightarrow> \<exists>T' F'.  \<Gamma> \<turnstile> t[y::=v] : T' ; F'  \<and> \<turnstile> T' <: bc \<and> \<turnstile> F' <e: bf" using ih `e = App e1 e2` by auto
-  hence "\<Gamma> \<turnstile> App e1 e2[y::=v] : T ; TE S x" using subst_preserve_TE_app[OF A neq val , of v] by auto
+  hence "\<Gamma> \<turnstile> (App e1 e2)[y::=v] : T ; TE S x" using subst_preserve_TE_app[OF A neq val , of v] by auto
   thus ?thesis using `e = App e1 e2` by auto
 qed
   
@@ -3345,9 +3344,9 @@ next
   thus ?case using BI B by auto
 next
   case (App s1 s2 \<Gamma>' x' e'' T' T1' T0' F' G')
-  have ih_s1: "\<And>c \<sigma> T F T' F' e' \<Gamma>. ((c,\<sigma>)#\<Gamma>) \<turnstile> s1:T; F \<Longrightarrow> closed e' \<Longrightarrow> e' : values \<Longrightarrow> valid ((c,\<sigma>)#\<Gamma>) \<Longrightarrow> \<Gamma>\<turnstile> e': T' ; F' \<Longrightarrow> \<turnstile> T' <: \<sigma> \<Longrightarrow> EX S G. \<Gamma> \<turnstile> s1[c::=e']:S ; G \<and> \<turnstile> S <: T \<and> \<turnstile> G <e: F" .
-  have ih_s2: "\<And>c \<sigma> T F T' F' e' \<Gamma>. ((c,\<sigma>)#\<Gamma>) \<turnstile> s2:T; F \<Longrightarrow> closed e' \<Longrightarrow> e' : values \<Longrightarrow> valid ((c,\<sigma>)#\<Gamma>) \<Longrightarrow> \<Gamma>\<turnstile> e': T' ; F' \<Longrightarrow> \<turnstile> T' <: \<sigma> \<Longrightarrow> EX S G. \<Gamma> \<turnstile> s2[c::=e']:S ; G \<and> \<turnstile> S <: T \<and> \<turnstile> G <e: F" .
-  have appty:"((x',T0')#\<Gamma>')\<turnstile>App s1 s2 : T'; F'" .
+  have ih_s1: "\<And>c \<sigma> T F T' F' e' \<Gamma>. ((c,\<sigma>)#\<Gamma>) \<turnstile> s1:T; F \<Longrightarrow> closed e' \<Longrightarrow> e' : values \<Longrightarrow> valid ((c,\<sigma>)#\<Gamma>) \<Longrightarrow> \<Gamma>\<turnstile> e': T' ; F' \<Longrightarrow> \<turnstile> T' <: \<sigma> \<Longrightarrow> EX S G. \<Gamma> \<turnstile> s1[c::=e']:S ; G \<and> \<turnstile> S <: T \<and> \<turnstile> G <e: F" using App by auto
+  have ih_s2: "\<And>c \<sigma> T F T' F' e' \<Gamma>. ((c,\<sigma>)#\<Gamma>) \<turnstile> s2:T; F \<Longrightarrow> closed e' \<Longrightarrow> e' : values \<Longrightarrow> valid ((c,\<sigma>)#\<Gamma>) \<Longrightarrow> \<Gamma>\<turnstile> e': T' ; F' \<Longrightarrow> \<turnstile> T' <: \<sigma> \<Longrightarrow> EX S G. \<Gamma> \<turnstile> s2[c::=e']:S ; G \<and> \<turnstile> S <: T \<and> \<turnstile> G <e: F" using App by auto
+  have appty:"((x',T0')#\<Gamma>')\<turnstile>App s1 s2 : T'; F'" using App by auto
   from appty have
     elim1:"\<exists>T0 T0'a T1 le eff' eff'' U.(x',T0')#\<Gamma>' \<turnstile> s1 :U;eff' \<and> (x',T0')# \<Gamma>'\<turnstile> s2 : T0'a;eff'' \<and> \<turnstile> U <: T0\<rightarrow>T1:le \<and> \<turnstile> T0'a <: T0 \<and> T1 = T'"
     using app_ty_elim by auto
@@ -3371,7 +3370,7 @@ next
   let ?ns1 = "s1[x'::=e'']" and ?ns2 = "s2[x'::=e'']"
   have sub2:"\<turnstile> S2 <: T0" using P S by auto
   have L1:"\<Gamma>' \<turnstile> App ?ns1 ?ns2 : T1 ; NE" using Q S sub1 sub2 by auto
-  have L2:"T1 = T'" .
+  have L2:"T1 = T'" by fact
   show ?case using appty
   proof (nominal_induct F' rule: eff.strong_induct)
     case NE thus ?case using L1 L2 by auto
@@ -3395,7 +3394,7 @@ next
     let ?ns1 = "s1[x'::=e'']" and ?ns2 = "s2[x'::=e'']"
     have noover: "\<turnstile> S2 <: leS" using `\<turnstile> S2 <: T0'a` `\<turnstile> T0'a <: leS` by auto
     have L1:"\<Gamma>' \<turnstile> App ?ns1 ?ns2 : T1 ; TT" using P Q R S noover T_AppPredFalse[of \<Gamma>' " s1[x'::=e'']" U] by auto
-    have L2:"T1 = T'" .
+    have L2:"T1 = T'" by fact
     from L1 L2 show ?case by auto
   next
     case FF
@@ -3417,7 +3416,7 @@ next
       using `(x',T0')#\<Gamma>' \<turnstile> s2 : T0'a ; eff''` fresh_weakening_cons `valid ((x',T0')#\<Gamma>')` `x' \<sharp> s2`
       by auto
 
-    have noover: "~(\<turnstile> T0'a <: leS)" .
+    have noover: "~(\<turnstile> T0'a <: leS)" by fact
     have T:"closed ?ns2" "?ns2 : values" using `s2 = ?ns2` `closed s2` `s2 : values` by auto
     have L1:"\<Gamma>' \<turnstile> App ?ns1 ?ns2 : T1 ; FF" using P Q R S' T noover  by auto
     have L2:"T1 = T'" by fact
@@ -3520,7 +3519,7 @@ next
 	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
 	have D:"\<turnstile> S2 <: T'" using prems B by auto
 	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B'  C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
+	from A B'  C' D E have " \<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
 	thus ?case using `F' = NE` by auto
       next
 	case TT
@@ -3537,7 +3536,7 @@ next
 	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
 	have D:"\<turnstile> S2 <: T'" using prems B by auto
 	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
+	from A B' C' D E have " \<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
 	thus ?case using `F' = NE` by auto
       next
 	case FF
@@ -3554,7 +3553,7 @@ next
 	have C':"\<Gamma>' |- G1 \<turnstile> t3[x'::=e''] : S3 ; G3" using C simple by auto
 	have D:"\<turnstile> S2 <: T'" using prems B by auto
 	have E:"\<turnstile> S3 <: T'" using prems C by auto
-	from A B' C' D E have " \<Gamma>' \<turnstile> Iff t1 t2 t3[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
+	from A B' C' D E have " \<Gamma>' \<turnstile> (Iff t1 t2 t3)[x'::=e''] : T' ; comb_eff G1 G2 G3" by (auto simp del: comb_eff.simps)
 	thus ?case using `F' = NE` by auto
       next
 	case (VE z)
@@ -3578,7 +3577,7 @@ next
           from A True have  "(Var z)[x'::=e''] = e''" by auto
           hence D:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : T0' ; G'" "closed ((Var z)[x'::=e''])" "((Var z)[x'::=e'']) : values"
 	    using Iff by auto
-          have "\<turnstile> T0' <: T1'" .
+          have "\<turnstile> T0' <: T1'" by fact
           note var_ty_elim[of ?\<Gamma> z _ "VE z"]
           hence "(x', T1') : set ?\<Gamma>" using A True by auto
           have "?\<Gamma> \<turnstile> (Var x') : T1' ; VE x'" using `valid ?\<Gamma>` by auto
@@ -3622,11 +3621,11 @@ next
 	    case False
 	    hence "(Var z)[x'::=e''] = e''" using `x' = z` by auto
 	    hence "t1[x'::=e''] = e''" using `t1 = Var z` by auto
-	    hence X1:"\<Gamma>' \<turnstile> t1[x'::=e''] : T0' ; G'" by auto
-	    have "\<Gamma>' \<turnstile> e'' : T0' ; G'" .
+	    hence X1:"\<Gamma>' \<turnstile> t1[x'::=e''] : T0' ; G'" using prems by auto
+	    have "\<Gamma>' \<turnstile> e'' : T0' ; G'" by fact
 	    hence "G' = TT" using value_effect_tt_or_ff[OF `e'' : values` `\<Gamma>' \<turnstile> e'' : T0' ; G'`] False by auto
 	    hence X2:"\<Gamma>' \<turnstile> t1[x'::=e''] : T0' ; TT" using X1 by auto
-	    have "\<turnstile> T0' <: T1'" .
+	    have "\<turnstile> T0' <: T1'" by fact
 
 	    have X3:"\<not> \<turnstile> T0' <: ty.FF"
 	    proof (rule ccontr)
@@ -3731,12 +3730,12 @@ next
           from A True have  "(Var z)[x'::=e''] = e''" by auto
           hence D:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : T0' ; G'" "closed ((Var z)[x'::=e''])" "((Var z)[x'::=e'']) : values"
 	    using Iff by auto
-          have "\<turnstile> T0' <: T1'" .
+          have "\<turnstile> T0' <: T1'" by fact
           note var_ty_elim[of ?\<Gamma> z A "VE z"]
           hence "(x', A) : set ?\<Gamma>" using A True by auto
           have "?\<Gamma> \<turnstile> (Var x') : T1' ; VE x'" using `valid ?\<Gamma>` by auto
           hence "T1' = A" using A unique_var_typing[of ] True by auto
-          have "\<turnstile> T0' <: T1'" .
+          have "\<turnstile> T0' <: T1'" by fact
           hence "\<turnstile> T0' <: A" using `T1' = A` by simp
 	  have "simple_ty T0'" using `\<Gamma>' \<turnstile> e'' : T0' ; G'` `e'' : values` value_simple_type by auto
           have or:"
@@ -3798,7 +3797,7 @@ next
 	  from A False have "(Var z)[x'::=e''] = (Var z)" by auto
 	  hence D:"\<Gamma>' \<turnstile> (Var z)[x'::=e''] : A ; VE z" using False A
           proof -
-            have q1:"?\<Gamma> \<turnstile> Var z : A ; VE z" .
+            have q1:"?\<Gamma> \<turnstile> Var z : A ; VE z" by fact
             have "x' \<sharp> Var z" using trm.fresh False fresh_atm by auto
             hence "\<Gamma>' \<turnstile> Var z : A ; VE z" using q1 fresh_weakening_cons `valid ((x',T1')# \<Gamma>')` by auto
             thus ?thesis using `(Var z)[x'::=e''] = Var z` by auto
@@ -3953,7 +3952,7 @@ lemma preserve_red:
     hence B:"le = LA \<or> le = latent_eff.NE" "\<turnstile> T0 <: A0" "\<turnstile> A1 <: T1" using arr_sub_arr_cases[of A0 A1 LA T0 T1 le] by auto
     have C1:" \<Gamma> \<turnstile> App (BI p) v' : T1 ; eff" using prems `T1 = T` by auto
     have C2:"\<turnstile> T0' <: A0" and C3:"\<turnstile> A1 <: T " using B A3 A4 by auto
-    have C4:"valid \<Gamma>" .
+    have C4:"valid \<Gamma>" by fact
     note delta_soundness[OF `\<Delta>\<^isub>\<tau> p = A0 \<rightarrow> A1 : LA` `v' : values` `\<Gamma> \<turnstile> v' : T0' ; eff''` C2 e_delta(3) C3 `\<Delta> p v' = Some v` C4]
     then obtain A1' eff' where "\<Gamma> \<turnstile> v : A1' ; eff' "" \<turnstile> eff' <e: eff" "\<turnstile> A1' <: A1" by auto
     thus ?case using C3 by auto
@@ -4492,7 +4491,7 @@ proof -
   thus ?thesis using A by auto
 qed
 
-declare envop_def[simp del]
+declare envop_d[simp del]
 
 lemma envplus_supp:
   assumes "valid \<Gamma>"
