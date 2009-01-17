@@ -11,6 +11,10 @@ imports Nominal
 
 begin
 
+section {* Datatypes *}
+
+subsection {* Datatype definitions and infrastructure *}
+
 atom_decl name
 
 datatype pe = Car | Cdr
@@ -66,6 +70,8 @@ primrec (unchecked perm_ty)
 declare perm_pe.simps[eqvt]
 declare perm_ty.simps[eqvt]
 declare perm_bi.simps[eqvt]
+
+subsection {* Trivial theorems about nominal-ness of basic data *}
 
 lemma perm_bi[simp]:
   fixes pi :: "name prm"
@@ -157,6 +163,8 @@ lemma supp_data[simp]:
   and "supp pe = ({}::name set)"
   by (simp_all add: supp_def)
 
+subsection {* Now we can define terms and filters *}
+
 nominal_datatype f = Bot | TE "ty" "pe list" "name" | NTE "ty" "pe list" "name"
 
 
@@ -211,7 +219,7 @@ declare less_trm_def[simp]
 declare less_eq_trm_def[simp]
 
 
-text {* complete induction on terms *}
+subsection {* complete induction on terms *}
 
 lemma trm_comp_induct[consumes 0, case_names Var App Lam BI Num Bool Iff CONS]:
   fixes P::"'a::fs_name \<Rightarrow> trm \<Rightarrow> bool"
@@ -234,7 +242,9 @@ proof (induct t arbitrary: x taking:"(% t :: trm. size t)" rule: measure_induct_
     by (nominal_induct s avoiding: x rule: trm.strong_induct) auto 
 qed  
 
-text {* closed terms *}
+section {* Free Variables and Closed Terms *}
+
+subsection {* closed terms *}
 
 constdefs
   fv :: "trm \<Rightarrow> name set"
@@ -265,56 +275,10 @@ proof -
   thus ?thesis .
 qed    
 
-text {* Values *}
 
-inductive values :: "trm \<Rightarrow> bool" ("_ : values" [80])
-where
-  abs_value[simp]: "Lam[x:t].b : values"
-|  bi_value[simp]: "BI c : values"
-|  num_value[simp]: "Num n : values"
-|  bool_value[simp]: "Bool b : values"
-|  cons_value[simp]: "\<lbrakk>v1 : values; v2 : values\<rbrakk> \<Longrightarrow> CONS v1 v2 : values"
+section {* Operational Semantics *}
 
-equivariance values
-nominal_inductive values by (simp add: abs_fresh)
-
-abbreviation
-  "in_values" :: "trm \<Rightarrow> bool" ("_ \<in> values" [100] 100) where
-  "e \<in> values \<equiv> (e : values)"
-
-abbreviation
-  "not_in_values" :: "trm \<Rightarrow> bool" ("_ \<notin>  values" [100] 100) where
-  "e \<notin> values \<equiv> (~ e : values)"
-
-text {* Typing Constants *}
-
-
-
-constdefs
-predty :: "ty \<Rightarrow> ty"
-"predty t == (Top \<rightarrow> B : (FH [(TEH t [])] [(NTEH t [])]) : None)"
-simplefun :: "ty \<Rightarrow> ty \<Rightarrow> ty" ("_ \<rightarrow> _")
-"simplefun t u == (t \<rightarrow> u : FH [] [] : None)"
-proctop :: "ty"
-"proctop == Union [] \<rightarrow> Top"
-
-
-fun
-  \<Delta>\<^isub>\<tau> :: "builtin \<Rightarrow> ty"
-  where
-  "\<Delta>\<^isub>\<tau> NUMBERP = predty N"
-  |"\<Delta>\<^isub>\<tau> BOOLEANP = predty B"
-  |"\<Delta>\<^isub>\<tau> PROCEDUREP = predty proctop"
-  |"\<Delta>\<^isub>\<tau> CONSP = predty <Top,Top>"
-  |"\<Delta>\<^isub>\<tau> ADD1 = (N \<rightarrow> N)"
-  |"\<Delta>\<^isub>\<tau> NOT = (Top \<rightarrow> B)"
-  |"\<Delta>\<^isub>\<tau> ZEROP = (N \<rightarrow> B)"
-
-lemma delta_t_eqvt[eqvt]:
-  fixes pi :: "name prm"
-  shows "pi \<bullet> \<Delta>\<^isub>\<tau> b = \<Delta>\<^isub>\<tau> (pi \<bullet> b)"
-  by (induct b) auto
-
+subsection {* Substitution *}
 
 nominal_primrec
   subst :: "trm \<Rightarrow> name \<Rightarrow> trm \<Rightarrow> trm" ("_[_::=_]")
@@ -338,28 +302,8 @@ lemma subst_eqvt[simp, eqvt]:
 by (nominal_induct t1 avoiding: b t2 rule: trm.strong_induct)
    (auto simp add: perm_bij fresh_prod fresh_atm fresh_bij)
 
-lemma subst_rename[rule_format]: 
-  shows "c\<sharp>t1 \<longrightarrow> (t1[a::=t2] = ([(c,a)]\<bullet>t1)[c::=t2])"
-by (nominal_induct t1 avoiding: a c t2 rule: trm.strong_induct)
-   (auto simp add: calc_atm fresh_atm abs_fresh fresh_nat trm.inject perm_nat_def perm_bool)
 
-
-lemma forget: 
-  assumes a: "a\<sharp>t1"
-  shows "t1[a::=t2] = t1"
-  using a
-by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
-   (auto simp add: abs_fresh fresh_atm)
-
-lemma fresh_fact':
-  fixes a::"name"
-  assumes a: "a\<sharp>t2"
-  shows "a\<sharp>t1[a::=t2]"
-  using a 
-  by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
-     (auto simp add: abs_fresh fresh_atm fresh_nat fresh_bool)  
-
-text {* Delta Function *}
+subsection {* Delta Function *}
 
 
 nominal_primrec
@@ -518,9 +462,7 @@ lemma delta_value:
   proof (induct b)
     qed (induct t rule: values.induct, auto)+
 
-
-text {* Evaluation contexts *}
-
+subsection {* Evaluation contexts *}
 
 inductive_set ctxt :: "(trm \<Rightarrow> trm) set"
 where
@@ -546,7 +488,6 @@ lemma ctxt_closed:
   shows "closed (C e) = closed e"
   using prems by auto
  
-
 lemma closed_in_ctxt:
   assumes "closed (C L)"
   and "C : ctxt"
@@ -611,6 +552,27 @@ constdefs
 reduce_forever :: "trm \<Rightarrow> bool"
 "reduce_forever e == \<forall>e' . (e \<longrightarrow>\<^sup>* e') \<longrightarrow> (EX e''. e' \<longrightarrow> e'')"
 
+lemma subst_rename[rule_format]: 
+  shows "c\<sharp>t1 \<longrightarrow> (t1[a::=t2] = ([(c,a)]\<bullet>t1)[c::=t2])"
+by (nominal_induct t1 avoiding: a c t2 rule: trm.strong_induct)
+   (auto simp add: calc_atm fresh_atm abs_fresh fresh_nat trm.inject perm_nat_def perm_bool)
+
+subsection {* Variables, Substitution and Reduction *}
+
+lemma forget: 
+  assumes a: "a\<sharp>t1"
+  shows "t1[a::=t2] = t1"
+  using a
+by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
+   (auto simp add: abs_fresh fresh_atm)
+
+lemma fresh_fact':
+  fixes a::"name"
+  assumes a: "a\<sharp>t2"
+  shows "a\<sharp>t1[a::=t2]"
+  using a 
+  by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
+     (auto simp add: abs_fresh fresh_atm fresh_nat fresh_bool)  
 
 lemma fv_lam:
   fixes name
@@ -685,6 +647,53 @@ lemma multi_step_closed:
   by induct auto
 
 
+section {* Values *}
+
+inductive values :: "trm \<Rightarrow> bool" ("_ : values" [80])
+where
+  abs_value[simp]: "Lam[x:t].b : values"
+|  bi_value[simp]: "BI c : values"
+|  num_value[simp]: "Num n : values"
+|  bool_value[simp]: "Bool b : values"
+|  cons_value[simp]: "\<lbrakk>v1 : values; v2 : values\<rbrakk> \<Longrightarrow> CONS v1 v2 : values"
+
+equivariance values
+nominal_inductive values by (simp add: abs_fresh)
+
+abbreviation
+  "in_values" :: "trm \<Rightarrow> bool" ("_ \<in> values" [100] 100) where
+  "e \<in> values \<equiv> (e : values)"
+
+abbreviation
+  "not_in_values" :: "trm \<Rightarrow> bool" ("_ \<notin>  values" [100] 100) where
+  "e \<notin> values \<equiv> (~ e : values)"
+
+section {* Typing Constants *}
+
+constdefs
+predty :: "ty \<Rightarrow> ty"
+"predty t == (Top \<rightarrow> B : (FH [(TEH t [])] [(NTEH t [])]) : None)"
+simplefun :: "ty \<Rightarrow> ty \<Rightarrow> ty" ("_ \<rightarrow> _")
+"simplefun t u == (t \<rightarrow> u : FH [] [] : None)"
+proctop :: "ty"
+"proctop == Union [] \<rightarrow> Top"
+
+
+fun
+  \<Delta>\<^isub>\<tau> :: "builtin \<Rightarrow> ty"
+  where
+  "\<Delta>\<^isub>\<tau> NUMBERP = predty N"
+  |"\<Delta>\<^isub>\<tau> BOOLEANP = predty B"
+  |"\<Delta>\<^isub>\<tau> PROCEDUREP = predty proctop"
+  |"\<Delta>\<^isub>\<tau> CONSP = predty <Top,Top>"
+  |"\<Delta>\<^isub>\<tau> ADD1 = (N \<rightarrow> N)"
+  |"\<Delta>\<^isub>\<tau> NOT = (Top \<rightarrow> B)"
+  |"\<Delta>\<^isub>\<tau> ZEROP = (N \<rightarrow> B)"
+
+lemma delta_t_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "pi \<bullet> \<Delta>\<^isub>\<tau> b = \<Delta>\<^isub>\<tau> (pi \<bullet> b)"
+  by (induct b) auto
 
 
 end
