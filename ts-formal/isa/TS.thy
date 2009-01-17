@@ -648,15 +648,10 @@ lemma subst_closed:
 
 lemma subst_only_var_closed:
   assumes "closed e0" and "fv e1 <= {x}"
-  shows "closed (e1[x::=e0])"
+  shows "closed (e1[x::=e0])" (is "closed ?e2")
 proof -
-  let ?e2 = "(e1[x::=e0])"
-  have a:"fv ?e2 <= {x}" using prems subst_closed[of e1 x e0 ?e2] by auto
-  have "x \<sharp> e0" using prems fresh_def[of x e0] closed_def[of e0] by auto
-  hence "x \<sharp> ?e2" using fresh_fact' by auto
-  hence b:"x \<notin> fv ?e2" using fresh_def[of x ?e2] closed_def[of ?e2] by auto
-  from a b have "fv ?e2 = {}" by auto
-  thus ?thesis using closed_def by simp
+  have "x \<sharp> ?e2" using prems fresh_def[of x e0] closed_def fresh_fact' by auto
+  thus "closed ?e2" using prems subst_closed[of e1 x e0 ?e2] fresh_def[of x ?e2] closed_def by auto
 qed
 
 lemma beta_closed_closed:
@@ -669,18 +664,27 @@ lemma beta_closed_closed:
 lemma reduce_closed:
   assumes "closed L" and "L \<hookrightarrow> R"
   shows "closed R"
-  using `L \<hookrightarrow> R` `closed L`
-  proof (induct)
-    case (e_beta v x t b) 
-    have a:"closed (Abs x b t)" using e_beta closed_def trm.supp by simp
-    have b:"closed v" using e_beta closed_def trm.supp by simp
-    from a b show ?case using e_beta beta_closed_closed by simp
-  next
-    case e_if_true thus ?case using closed_def trm.supp by auto
-  next
-    case e_if_false thus ?case using closed_def trm.supp by auto
-  next
-    case e_delta thus ?case using delta_closed by auto
-  qed
+  using `L \<hookrightarrow> R` `closed L` delta_closed beta_closed_closed
+  by (induct rule: reduce.induct) (auto simp add: closed_def trm.supp)
+
+
+lemma step_closed:
+  assumes A:"closed e" and B:"(e :: trm) \<longrightarrow> e'"
+  shows "closed e'"
+proof - 
+  from B obtain E L R where C:"E : ctxt"  "e = E L"  "L \<hookrightarrow> R"  "e' = E R" by induct auto
+  also hence D:"closed L" "closed_ctxt E" using A closed_in_ctxt_closed_ctxt[of e E L] by auto
+  ultimately show ?thesis using reduce_closed[of L R] ctxt_closed[of E R] by auto
+qed
+
+
+lemma multi_step_closed:
+  assumes A:"closed e" and B:"e \<longrightarrow>\<^sup>* e'"
+  shows "closed e'"
+  using B A step_closed
+  by induct auto
+
+
+
 
 end
