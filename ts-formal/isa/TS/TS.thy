@@ -275,6 +275,27 @@ proof -
   thus ?thesis .
 qed    
 
+section {* Values *}
+
+inductive values :: "trm \<Rightarrow> bool" ("_ : values" [80])
+where
+  abs_value[simp]: "Lam[x:t].b : values"
+|  bi_value[simp]: "BI c : values"
+|  num_value[simp]: "Num n : values"
+|  bool_value[simp]: "Bool b : values"
+|  cons_value[simp]: "\<lbrakk>v1 : values; v2 : values\<rbrakk> \<Longrightarrow> CONS v1 v2 : values"
+
+equivariance values
+nominal_inductive values by (simp add: abs_fresh)
+
+abbreviation
+  "in_values" :: "trm \<Rightarrow> bool" ("_ \<in> values" [100] 100) where
+  "e \<in> values \<equiv> (e : values)"
+
+abbreviation
+  "not_in_values" :: "trm \<Rightarrow> bool" ("_ \<notin>  values" [100] 100) where
+  "e \<notin> values \<equiv> (~ e : values)"
+
 
 section {* Operational Semantics *}
 
@@ -301,6 +322,69 @@ lemma subst_eqvt[simp, eqvt]:
   shows "pi\<bullet>(t1[b::=t2]) = (pi\<bullet>t1)[(pi\<bullet>b)::=(pi\<bullet>t2)]"
 by (nominal_induct t1 avoiding: b t2 rule: trm.strong_induct)
    (auto simp add: perm_bij fresh_prod fresh_atm fresh_bij)
+
+subsection {* Variables, Substitution and Reduction *}
+
+lemma subst_rename[rule_format]: 
+  shows "c\<sharp>t1 \<longrightarrow> (t1[a::=t2] = ([(c,a)]\<bullet>t1)[c::=t2])"
+by (nominal_induct t1 avoiding: a c t2 rule: trm.strong_induct)
+   (auto simp add: calc_atm fresh_atm abs_fresh fresh_nat trm.inject perm_nat_def perm_bool)
+
+lemma forget: 
+  assumes a: "a\<sharp>t1"
+  shows "t1[a::=t2] = t1"
+  using a
+by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
+   (auto simp add: abs_fresh fresh_atm)
+
+lemma fresh_fact: 
+  fixes a::"name"
+  assumes a: "a\<sharp>t1" "a\<sharp>t2"
+  shows "a\<sharp>t1[b::=t2]"
+using a
+by (nominal_induct t1 avoiding: a b t2 rule: trm.strong_induct)
+   (auto simp add: abs_fresh fresh_atm)
+
+lemma fresh_fact':
+  fixes a::"name"
+  assumes a: "a\<sharp>t2"
+  shows "a\<sharp>t1[a::=t2]"
+  using a 
+  by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
+     (auto simp add: abs_fresh fresh_atm fresh_nat fresh_bool)  
+
+lemma fv_lam:
+  fixes name
+  shows "fv (Lam[name:T].body) =  fv body - {name}"
+proof -
+  have sT:"supp T = ({} :: name set)" by auto
+  have "fv (Lam[name:T].body) = (supp ([name].body):: name set) \<union> supp T" using trm.supp by auto
+  also have "\<dots> = (supp ([name].body):: name set)" using sT by auto
+  also have "\<dots> = supp body - ({name} :: name set)" 
+    using  abs_fun_supp[of body name] at_name_inst pt_name_inst fs_name1[of body] by simp
+  also have "\<dots> = fv body - {name}" by simp
+  finally show "fv (Lam[name:T].body) = fv body - {name}" by simp
+qed
+
+lemma supp_elem_subst:
+  fixes x :: name  and b :: name
+  assumes a:"x : supp (t1[b::=t2]) "
+  shows "x : (supp t1) \<or>  x : (supp t2)" 
+  using fresh_fact  a 
+  by (auto simp add: fresh_def) 
+
+lemma subst_closed:
+  assumes a:"e1[x::=e0] = e2" and "closed e0"
+  shows "fv e2 <= fv e1"
+  using prems supp_elem_subst[of _ e1 x e0] closed_def fv_def fresh_def by auto
+
+lemma subst_only_var_closed:
+  assumes "closed e0" and "fv e1 <= {x}"
+  shows "closed (e1[x::=e0])" (is "closed ?e2")
+proof -
+  have "x \<sharp> ?e2" using prems fresh_def[of x e0] closed_def fresh_fact' by auto
+  thus "closed ?e2" using prems subst_closed[of e1 x e0 ?e2] fresh_def[of x ?e2] closed_def by auto
+qed
 
 
 subsection {* Delta Function *}
@@ -506,7 +590,7 @@ proof -
   from A and B show ?thesis by simp
 qed
 
-text{* Reduction *}
+subsection {* Reduction *}
 
 inductive reduce :: "trm \<Rightarrow> trm \<Rightarrow> bool" ("_ \<hookrightarrow> _" [200,200] 200)
   where
@@ -552,76 +636,13 @@ constdefs
 reduce_forever :: "trm \<Rightarrow> bool"
 "reduce_forever e == \<forall>e' . (e \<longrightarrow>\<^sup>* e') \<longrightarrow> (EX e''. e' \<longrightarrow> e'')"
 
-lemma subst_rename[rule_format]: 
-  shows "c\<sharp>t1 \<longrightarrow> (t1[a::=t2] = ([(c,a)]\<bullet>t1)[c::=t2])"
-by (nominal_induct t1 avoiding: a c t2 rule: trm.strong_induct)
-   (auto simp add: calc_atm fresh_atm abs_fresh fresh_nat trm.inject perm_nat_def perm_bool)
-
-subsection {* Variables, Substitution and Reduction *}
-
-lemma forget: 
-  assumes a: "a\<sharp>t1"
-  shows "t1[a::=t2] = t1"
-  using a
-by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
-   (auto simp add: abs_fresh fresh_atm)
-
-lemma fresh_fact':
-  fixes a::"name"
-  assumes a: "a\<sharp>t2"
-  shows "a\<sharp>t1[a::=t2]"
-  using a 
-  by (nominal_induct t1 avoiding: a t2 rule: trm.strong_induct)
-     (auto simp add: abs_fresh fresh_atm fresh_nat fresh_bool)  
-
-lemma fv_lam:
-  fixes name
-  shows "fv (Lam[name:T].body) =  fv body - {name}"
-proof -
-  have sT:"supp T = ({} :: name set)" by auto
-  have "fv (Lam[name:T].body) = (supp ([name].body):: name set) \<union> supp T" using trm.supp by auto
-  also have "\<dots> = (supp ([name].body):: name set)" using sT by auto
-  also have "\<dots> = supp body - ({name} :: name set)" 
-    using  abs_fun_supp[of body name] at_name_inst pt_name_inst fs_name1[of body] by simp
-  also have "\<dots> = fv body - {name}" by simp
-  finally show "fv (Lam[name:T].body) = fv body - {name}" by simp
-qed
-
-lemma fresh_fact: 
-  fixes a::"name"
-  assumes a: "a\<sharp>t1" "a\<sharp>t2"
-  shows "a\<sharp>t1[b::=t2]"
-using a
-by (nominal_induct t1 avoiding: a b t2 rule: trm.strong_induct)
-   (auto simp add: abs_fresh fresh_atm)
-
-lemma supp_elem_subst:
-  fixes x :: name  and b :: name
-  assumes a:"x : supp (t1[b::=t2]) "
-  shows "x : (supp t1) \<or>  x : (supp t2)" 
-  using fresh_fact  a 
-  by (auto simp add: fresh_def) 
-
-lemma subst_closed:
-  assumes a:"e1[x::=e0] = e2" and "closed e0"
-  shows "fv e2 <= fv e1"
-  using prems supp_elem_subst[of _ e1 x e0] closed_def fv_def fresh_def by auto
-
-
-lemma subst_only_var_closed:
-  assumes "closed e0" and "fv e1 <= {x}"
-  shows "closed (e1[x::=e0])" (is "closed ?e2")
-proof -
-  have "x \<sharp> ?e2" using prems fresh_def[of x e0] closed_def fresh_fact' by auto
-  thus "closed ?e2" using prems subst_closed[of e1 x e0 ?e2] fresh_def[of x ?e2] closed_def by auto
-qed
+subsection {* Reduction Closedness *}
 
 lemma beta_closed_closed:
   assumes "closed (Lam[x:T].b)" and "closed v"
   shows "closed (b[x::=v])"
   using prems closed_lam subst_only_var_closed
   by auto
-
 
 lemma reduce_closed:
   assumes "closed L" and "L \<hookrightarrow> R"
@@ -647,26 +668,6 @@ lemma multi_step_closed:
   by induct auto
 
 
-section {* Values *}
-
-inductive values :: "trm \<Rightarrow> bool" ("_ : values" [80])
-where
-  abs_value[simp]: "Lam[x:t].b : values"
-|  bi_value[simp]: "BI c : values"
-|  num_value[simp]: "Num n : values"
-|  bool_value[simp]: "Bool b : values"
-|  cons_value[simp]: "\<lbrakk>v1 : values; v2 : values\<rbrakk> \<Longrightarrow> CONS v1 v2 : values"
-
-equivariance values
-nominal_inductive values by (simp add: abs_fresh)
-
-abbreviation
-  "in_values" :: "trm \<Rightarrow> bool" ("_ \<in> values" [100] 100) where
-  "e \<in> values \<equiv> (e : values)"
-
-abbreviation
-  "not_in_values" :: "trm \<Rightarrow> bool" ("_ \<notin>  values" [100] 100) where
-  "e \<notin> values \<equiv> (~ e : values)"
 
 section {* Typing Constants *}
 
