@@ -674,10 +674,10 @@ section {* Typing Constants *}
 constdefs
 predty :: "ty \<Rightarrow> ty"
 [simp]:"predty t == (Top \<rightarrow> B : (FH [(TEH t [])] [(NTEH t [])]) : None)"
-simplefun :: "ty \<Rightarrow> ty \<Rightarrow> ty" ("_ \<rightarrow> _" 99)
+simplefun :: "ty \<Rightarrow> ty \<Rightarrow> ty" ("_ \<rightarrow>s _" 999)
 [simp]:"simplefun t u == (t \<rightarrow> u : FH [] [] : None)"
 proctop :: "ty"
-[simp]:"proctop == Union [] \<rightarrow> Top"
+[simp]:"proctop == Union [] \<rightarrow>s Top"
 
 
 fun
@@ -687,9 +687,9 @@ fun
   |"\<Delta>\<^isub>\<tau> BOOLEANP = predty B"
   |"\<Delta>\<^isub>\<tau> PROCEDUREP = predty proctop"
   |"\<Delta>\<^isub>\<tau> CONSP = predty <Top,Top>"
-  |"\<Delta>\<^isub>\<tau> ADD1 = (N \<rightarrow> N)"
-  |"\<Delta>\<^isub>\<tau> NOT = (Top \<rightarrow> B)"
-  |"\<Delta>\<^isub>\<tau> ZEROP = (N \<rightarrow> B)"
+  |"\<Delta>\<^isub>\<tau> ADD1 = (N \<rightarrow>s N)"
+  |"\<Delta>\<^isub>\<tau> NOT = (Top \<rightarrow>s B)"
+  |"\<Delta>\<^isub>\<tau> ZEROP = (N \<rightarrow>s B)"
 
 lemma delta_t_eqvt[eqvt]:
   fixes pi :: "name prm"
@@ -795,11 +795,66 @@ proof (induct "X"=="(T1,?S,T)"  arbitrary: T1 Ts T taking: "size_ty3" rule: meas
   qed (auto)
 qed
 
+declare S_Refl[simp]
+
+lemma sh_refl[simp]:
+  "\<turnstile> sh <sh: sh"
+  by (auto simp add: sub_subjh_def)
+
+lemma fh_refl[simp]:
+  "\<turnstile> fh <fh: fh"
+  by (cases fh) (auto)
+
+lemma S_ArrowE_left':
+  fixes fh :: fh and sh :: sh and S\<^isub>1 S\<^isub>2 :: ty
+  and T :: ty
+  assumes a: "\<turnstile> (S\<^isub>1 \<rightarrow> S\<^isub>2 : fh : sh) <: T" (is "\<turnstile> ?S <: T")
+  obtains
+  "T = Top \<or> 
+  (EX T\<^isub>1 T\<^isub>2 fh' sh' . T = ((T\<^isub>1 \<rightarrow> T\<^isub>2  : fh' : sh') :: ty) & \<turnstile> T\<^isub>1 <: S\<^isub>1 & \<turnstile> S\<^isub>2 <: T\<^isub>2
+                  & \<turnstile> fh <fh: fh' & \<turnstile> sh <sh: sh')  \<or> 
+  (EX Ts T\<^isub>1 . T = Union Ts & T\<^isub>1 : set Ts & \<turnstile> ?S <: T\<^isub>1)"
+  using a by cases (auto simp add: ty.inject)
+
+lemma S_UnionE_left:
+  fixes S\<^isub>1 S\<^isub>2 T :: ty
+  assumes a: "\<turnstile> <S\<^isub>1, S\<^isub>2> <: T" (is "\<turnstile> ?S <: T")
+  obtains
+  (top) "T = Top" |
+  (fn) T\<^isub>1 T\<^isub>2  where "T = <T\<^isub>1, T\<^isub>2>" and "\<turnstile> S\<^isub>1 <: T\<^isub>1" and "\<turnstile> S\<^isub>2 <: T\<^isub>2" |
+  (union) Ts T\<^isub>1 where "T = Union Ts" and "T\<^isub>1 : set Ts" and "\<turnstile> ?S <: T\<^isub>1"
+using a by cases auto
+
+lemma S_ArrowE_left[case_names Top Fun Union]:
+  fixes fh :: fh and sh :: sh and S\<^isub>1 S\<^isub>2 :: ty
+  and T :: ty
+  assumes a: "\<turnstile> (S\<^isub>1 \<rightarrow> S\<^isub>2 : fh : sh) <: T" (is "\<turnstile> ?S <: T")
+  obtains
+  (top) "T = Top" |
+  (fn) T\<^isub>1 T\<^isub>2 fh' sh' where "T = ((T\<^isub>1 \<rightarrow> T\<^isub>2  : fh' : sh') :: ty)" and "\<turnstile> T\<^isub>1 <: S\<^isub>1" and "\<turnstile> S\<^isub>2 <: T\<^isub>2" 
+                 and "\<turnstile> fh <fh: fh'" and "\<turnstile> sh <sh: sh'" |
+  (union) Ts T\<^isub>1 where "T = Union Ts" and "T\<^isub>1 : set Ts" and "\<turnstile> ?S <: T\<^isub>1"
+  using a
+proof (cases,simp_all add: ty.inject)
+  fix Ta
+  assume
+    X:"\<And>T\<^isub>1 T\<^isub>2 fh' sh'. \<lbrakk>Ta = T\<^isub>1 \<rightarrow> T\<^isub>2 : fh' : sh'; \<turnstile> T\<^isub>1 <: S\<^isub>1; \<turnstile> S\<^isub>2 <: T\<^isub>2; \<turnstile> fh <fh: fh'; \<turnstile> sh <sh: sh'\<rbrakk> \<Longrightarrow> thesis"
+    and "S\<^isub>1 \<rightarrow> S\<^isub>2 : fh : sh = Ta" and  "T = Ta"
+  thus ?thesis using X[of S\<^isub>1 S\<^isub>2 fh sh] by (auto simp add: ty.inject)
+next
+  fix S1 T1 T2 S2 fha fh' sha sh'
+  assume 
+    X:"\<And>T\<^isub>1 T\<^isub>2 fh'a sh'a.
+    \<lbrakk>S1 = T\<^isub>1 \<and> S2 = T\<^isub>2 \<and> fh' = fh'a \<and> sh' = sh'a; \<turnstile> T\<^isub>1 <: T1; \<turnstile> T2 <: T\<^isub>2; \<turnstile> fha <fh: fh'a; \<turnstile> sha <sh: sh'a\<rbrakk>
+    \<Longrightarrow> thesis" and 
+    "\<turnstile> S1 <: T1" and "\<turnstile> T2 <: S2" and " \<turnstile> fha <fh: fh'" and " \<turnstile> sha <sh: sh'"
+  thus ?thesis by auto
+qed
 
 lemma S_Trans[intro]:
   assumes "\<turnstile>S<:Q" and " \<turnstile>Q<:T"
   shows "\<turnstile>S<:T" 
-using prems
+  using prems
 proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T taking: "size_ty3" rule: measure_induct_rule)
   case (less X S Q T)
   show " \<turnstile> S <: T" using `\<turnstile> S <: Q` less 
@@ -808,7 +863,7 @@ proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T taking: "size_ty3" rule: measure_
   next
     case (S_Top A)
     have X_inst:"X = (A,Q,T)" by fact
-    show ?case  
+    show ?case using S_Top  
     proof -
       {
 	assume "EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> \<turnstile> Q <: T'"
@@ -823,85 +878,302 @@ proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T taking: "size_ty3" rule: measure_
   next
     case (S_Fun Q1 S1 S2 Q2 F F' S S') 
     hence rh_drv: " \<turnstile> Q1 \<rightarrow> Q2 : F' : S' <: T" by simp
+    let ?S = "S1 \<rightarrow> S2 : F : S"
     have X_inst:"X = (S1 \<rightarrow> S2 : F : S, Q1 \<rightarrow> Q2 : F' : S', T)" using S_Fun by auto
     note `Q1 \<rightarrow> Q2 : F' : S' = Q`  
     hence Q12_less: "size Q1 < size Q" "size Q2 < size Q"  by auto
     have lh_drv_prm1: " \<turnstile> Q1 <: S1" by fact
-    have lh_drv_prm2: " \<turnstile> S2 <: Q2" by fact      
-    have "T=Top \<or> (\<exists>T1 T2 LL. T=T1\<rightarrow>T2 : LL \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2 \<and> LL = L') \<or> 
-      (\<exists>T1 T2. T=T1\<rightarrow>T2 : latent_eff.NE \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2) \<or>
-      (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> \<turnstile> Q1 \<rightarrow> Q2 : L' <: T1)" 
-      using S_ArrowE_left[OF rh_drv] by auto
-    moreover
-    { 
-      assume "\<exists>T1 T2 LL. T=T1\<rightarrow>T2:LL \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2 \<and> LL = L'"
-      then obtain T1 T2 LL
-	where T_inst: "T = T1 \<rightarrow> T2 : L'" 
-	and   rh_drv_prm1: " \<turnstile> T1 <: Q1"
-	and   rh_drv_prm2: " \<turnstile> Q2 <: T2"
-	and   LL': "LL = L'" by auto
-      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T1 \<rightarrow> T2 : L')" by simp
-      hence "size_ty3 (T1, Q1, S1) < size_ty3 X" using size_ty_pos by auto     
-      from X_inst' lh_drv_prm1  rh_drv_prm1 have  " \<turnstile> T1 <: S1" using S_Fun(6)[of _ T1 Q1 S1] size_ty_pos by auto
-      moreover
-      from X_inst' lh_drv_prm2  rh_drv_prm2 have " \<turnstile> S2 <: T2" using S_Fun(6)[of _ S2 Q2   T2] size_ty_pos by auto
-      ultimately have " \<turnstile> S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : LL" using LL' S_Fun by (simp add: subtype.S_Fun)
-      hence " \<turnstile> S1 \<rightarrow> S2 : L <: T" using T_inst LL' by simp
-    }
-    moreover 
-    { 
-      assume "EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> \<turnstile> Q1 \<rightarrow> Q2 : L' <: T1"
-      then obtain Ts T1
-	where T_inst: "T = Union Ts"
-	and elem: "T1 : set Ts"
-	and sub:"\<turnstile> Q1 \<rightarrow> Q2 : L' <: T1"
-	by auto
-      have sub':"\<turnstile> S1 \<rightarrow> S2 : L <:  Q1 \<rightarrow> Q2 : L'" using S_Fun by simp
+    have lh_drv_prm2: " \<turnstile> S2 <: Q2" by fact
+    show " \<turnstile> S1 \<rightarrow> S2 : F : S <: T"
+    proof (induct rule: S_ArrowE_left[OF rh_drv])
+      case 1 thus ?case by simp
+    next
+      case (2 T1 T2 fh' sh')
+      have T_inst: "T = T1 \<rightarrow> T2 : fh' : sh'"
+	and  rh_drv_prm1: " \<turnstile> T1 <: Q1"
+	and  rh_drv_prm2: " \<turnstile> Q2 <: T2"
+        and  C:"\<turnstile> F' <fh: fh'" and D:"\<turnstile> S' <sh: sh'" by fact+
+      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : F : S, Q1 \<rightarrow> Q2 : F' : S', T1 \<rightarrow> T2 : fh' : sh')" by simp
+      from X_inst' lh_drv_prm1  rh_drv_prm1 have  A:" \<turnstile> T1 <: S1" using S_Fun.prems(1)[of _ T1 Q1 S1] by auto
+      from X_inst' lh_drv_prm2  rh_drv_prm2 have B:" \<turnstile> S2 <: T2" using S_Fun.prems(1)[of _ S2 Q2 T2] by auto
+      have " \<turnstile> S1 \<rightarrow> S2 : F : S <: T1 \<rightarrow> T2 : fh' : sh'" using A B C D `\<turnstile> F <fh: F'``\<turnstile> S <sh: S'` by auto
+      thus " \<turnstile> S1 \<rightarrow> S2 : F : S <: T" using T_inst by auto
+    next
+      case (3 Ts T1)
+      have T_inst: "T = Union Ts"
+	and  elem: "T1 : set Ts"
+	and  sub:"\<turnstile> Q1 \<rightarrow> Q2 : F' : S' <: T1" by fact+
+      have sub':"\<turnstile> S1 \<rightarrow> S2 : F : S <:  Q1 \<rightarrow> Q2 : F' : S'" using S_Fun by simp
       have sz:"size T1 < size T" using T_inst elem union_size_ty by auto
-      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', Union Ts)" by simp
+      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : F : S, Q1 \<rightarrow> Q2 : F' : S', Union Ts)" by simp
       from sub sub' X_inst' 
-      have " \<turnstile> S1 \<rightarrow> S2 : L <: T1"  using S_Fun(6)[OF _ sub' sub]  sz T_inst by auto
-      hence " \<turnstile> S1 \<rightarrow> S2 : L <: T"  using T_inst elem S_UnionAbove by auto      
-    }
-    moreover
-    {
-      assume "\<exists>T1 T2. T=T1\<rightarrow>T2:latent_eff.NE \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2 "
-      then obtain T1 T2 LL
-	where T_inst: "T = T1 \<rightarrow> T2 : latent_eff.NE" 
-	and   rh_drv_prm1: " \<turnstile> T1 <: Q1"
-	and   rh_drv_prm2: " \<turnstile> Q2 <: T2"
-	 by auto
-      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T1 \<rightarrow> T2 : latent_eff.NE)" by simp
-      hence "size_ty3 (T1, Q1, S1) < size_ty3 X" using size_ty_pos by auto     
-      from X_inst' lh_drv_prm1  rh_drv_prm1 have  " \<turnstile> T1 <: S1" using S_Fun(6)[of _ T1 Q1 S1] size_ty_pos by auto
-      moreover
-      from X_inst' lh_drv_prm2  rh_drv_prm2 have " \<turnstile> S2 <: T2" using S_Fun(6)[of _ S2 Q2   T2] size_ty_pos by auto
-      ultimately have " \<turnstile> S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : latent_eff.NE" using  S_Fun by (simp add: subtype.S_Fun)
-      hence " \<turnstile> S1 \<rightarrow> S2 : L <: T" using T_inst  by simp
-    }
-    ultimately show " \<turnstile> S1 \<rightarrow> S2 : L <: T" by blast
+      have " \<turnstile> S1 \<rightarrow> S2 : F : S <: T1"  using S_Fun.prems(1)[OF _ sub' sub] sz T_inst by auto
+      thus " \<turnstile> S1 \<rightarrow> S2 : F : S <: T" using T_inst elem by auto     
+    qed
   next
-    case (S_UnionAbove T1 Ts S)
+    case (S_UnionSuper T1 Ts S)
     have sub1:"\<turnstile> S <: T1" by fact
-    hence sub2:"\<turnstile> T1 <: T" using S_UnionAbove union_sub_elim[of Ts T T1] by auto
-    have sz:"size T1 < size Q" using S_UnionAbove union_size_ty by auto
-    hence "\<turnstile> S <: T" using S_UnionAbove(4)[OF _ sub1 sub2] sz S_UnionAbove(7) by auto
+    hence sub2:"\<turnstile> T1 <: T" using S_UnionSuper union_sub_elim[of Ts T T1] by auto
+    have sz:"size T1 < size Q" using S_UnionSuper union_size_ty by auto
+    hence "\<turnstile> S <: T" using S_UnionSuper(4)[OF _ sub1 sub2] sz S_UnionSuper(7) by auto
     thus ?case .
   next
-    case (S_UnionBelow Ts S)
+    case (S_UnionSub Ts S)
     have "!! T0. T0 : set Ts \<Longrightarrow> \<turnstile> T0 <: T"
-      proof -
-	fix T0
-	assume "T0 : set Ts"
-	hence sz:"size T0 < size (Union Ts)" using union_size_ty by auto
-	have s1:"\<turnstile> T0 <: S" using S_UnionBelow `T0 : set Ts` by auto
-	have s2:"\<turnstile> S <: T" using S_UnionBelow by auto
-	note S_UnionBelow(6)
-	thus "\<turnstile> T0 <: T" using S_UnionBelow(3)[OF _ s1 s2] sz `S = Q` by auto
-      qed
+    proof -
+      fix T0
+      assume "T0 : set Ts"
+      hence sz:"size T0 < size (Union Ts)" using union_size_ty by auto
+      have s1:"\<turnstile> T0 <: S" using S_UnionSub `T0 : set Ts` by auto
+      have s2:"\<turnstile> S <: T" using S_UnionSub by auto
+      note S_UnionSub(6)
+      thus "\<turnstile> T0 <: T" using S_UnionSub(3)[OF _ s1 s2] sz `S = Q` by auto
+    qed
     thus ?case ..
+  next
+    case (S_Pair S1 Q1 S2 Q2)
+    hence rh_drv: " \<turnstile> <Q1, Q2> <: T" by simp
+    have X_inst:"X = (<S1,S2>, <Q1, Q2>, T)" (is "X = (?S,?Q,T)") using S_Pair by auto
+    note `?Q = Q`  
+    hence Q12_less: "size Q1 < size Q" "size Q2 < size Q"  by auto
+    have lh_drv_prm1: " \<turnstile> S1 <: Q1" by fact
+    have lh_drv_prm2: " \<turnstile> S2 <: Q2" by fact
+    show ?case
+    proof (induct rule: S_UnionE_left[OF rh_drv])
+      case 1 thus ?case by simp
+    next
+      case (2 T1 T2)
+      note S_Pair.prems(1)[OF _ `\<turnstile> S1 <: Q1` `\<turnstile> Q1 <: T1`] S_Pair.prems(1)[OF _ `\<turnstile> S2 <: Q2` `\<turnstile> Q2 <: T2`]
+      hence "\<turnstile> S1 <: T1" "\<turnstile> S2 <: T2" using X_inst 2 by auto
+      thus ?case using `T = <T1,T2>` by auto
+    next
+      case (3 Ts T1)      
+      have sub':"\<turnstile> <S1,S2> <:  <Q1, Q2>" using S_Pair by simp
+      have sz:"size T1 < size T" using 3 union_size_ty by auto
+      from X_inst 3 have X_inst':"X = (?S, ?Q, Union Ts)" by simp
+      from 3 sub'
+      have " \<turnstile> ?S <: T1"  using S_Pair.prems(1)[of _ "?S" "?Q" T1] sz 3 S_Pair by simp
+      thus " \<turnstile> ?S <: T" using 3 by auto     
+    qed
   qed
 qed
+
+
+section {* type environments *}
+
+types varEnv = "(name*ty) list"
+
+text {* valid contexts *}
+inductive
+  valid :: "varEnv \<Rightarrow> bool"
+where
+    v1[intro]: "valid []"
+  | v2[intro]: "\<lbrakk>valid \<Gamma>;a\<sharp>\<Gamma>\<rbrakk>\<Longrightarrow> valid ((a,\<sigma>)#\<Gamma>)"
+
+equivariance valid
+
+nominal_inductive valid done
+
+lemma fresh_context[rule_format]: 
+  fixes  \<Gamma> :: "(name\<times>ty)list"
+  and    a :: "name"
+  assumes a: "a\<sharp>\<Gamma>"
+  shows "\<not>(\<exists>\<tau>::ty. (a,\<tau>)\<in>set \<Gamma>)"
+using a
+by (induct \<Gamma>)
+   (auto simp add: fresh_prod fresh_list_cons fresh_atm)
+
+lemma valid_elim: 
+  fixes  \<Gamma> :: "(name\<times>ty)list"
+  and    pi:: "name prm"
+  and    a :: "name"
+  and    \<tau> :: "ty"
+  shows "valid ((a,\<tau>)#\<Gamma>) \<Longrightarrow> valid \<Gamma> \<and> a\<sharp>\<Gamma>"
+  by (ind_cases "valid ((a,\<tau>)#\<Gamma>)") simp
+
+lemma valid_unicity[rule_format]: 
+  assumes a: "valid \<Gamma>"
+  and     b: "(c,\<sigma>)\<in>set \<Gamma>"
+  and     c: "(c,\<tau>)\<in>set \<Gamma>"
+  shows "\<sigma>=\<tau>" 
+  using a b c
+  by (induct \<Gamma>) (auto dest!: valid_elim fresh_context)
+
+declare fresh_list_cons[simp]
+declare fresh_list_nil[simp]
+
+subsection {* no-overlap metafunction *}
+
+subsubsection {* definition *}
+
+fun
+  no_overlap :: "ty \<Rightarrow> ty \<Rightarrow> bool"
+where
+"no_overlap t s = False"
+
+lemma no_overlap_eqvt[eqvt]:
+  "pi \<bullet> (no_overlap t s) = no_overlap (pi \<bullet> t) (pi \<bullet> s)"
+  by (auto)
+
+subsubsection {* Soundness theorem *}
+
+lemma no_overlap_soundness1:
+  assumes "no_overlap T U"
+  and "\<turnstile> t <: T"
+  shows "~ \<turnstile> t <: U"
+  using prems by simp
+  
+
+constdefs
+  unionp :: "ty \<Rightarrow> bool"
+[simp]:"unionp T == EX ls. T = Union ls"
+
+lemma unionp_eqvt[eqvt]:
+  "pi \<bullet> (unionp s) = unionp (pi \<bullet> s)"
+  by (cases s) auto
+
+
+function
+  restrict :: "ty \<Rightarrow> ty \<Rightarrow> ty"
+where
+  restrict_no_overlap: "no_overlap t s \<Longrightarrow> restrict t s = Union []"
+| restrict_subtype:"~no_overlap t s \<Longrightarrow> \<turnstile> t <: s \<Longrightarrow> restrict t s = t"
+| restrict_union: "~no_overlap t (Union ls) \<Longrightarrow> unionp (Union ls) \<Longrightarrow> ~(\<turnstile> t <: (Union ls)) \<Longrightarrow> restrict t (Union ls) = Union (map (restrict t) ls)"
+| restrict_other:"~no_overlap t s \<Longrightarrow>~(\<turnstile> t <: s) \<Longrightarrow> ~unionp s \<Longrightarrow> restrict t s = s"
+
+proof (atomize_elim, simp_all)
+  fix x:: "ty * ty"
+  obtain t s where X:"x = (t,s)" by (cases x)
+  {
+    assume "\<turnstile> t <: s"
+    hence "\<exists>t s. \<turnstile> t <: s \<and> x = (t, s)" using X by simp
+  }
+  moreover
+  {
+    assume "~ \<turnstile> t <: s" and "unionp s"
+    then obtain ls where "s = Union ls" by (cases s) auto
+    hence "(\<exists>t ls. \<not> \<turnstile> t <: ty.Union ls \<and> x = (t, ty.Union ls))" using prems X by auto
+  }
+  moreover
+  {
+    assume "~ \<turnstile> t <: s" and "~ unionp s"
+    hence "\<exists>t s. \<not> \<turnstile> t <: s \<and> (\<forall>ls. s \<noteq> ty.Union ls) \<and> x = (t, s)" using X by auto
+  }
+  ultimately show "(\<exists>t s. \<turnstile> t <: s \<and> x = (t, s)) \<or>
+        (\<exists>t ls. \<not> \<turnstile> t <: ty.Union ls \<and> x = (t, ty.Union ls)) \<or> (\<exists>t s. \<not> \<turnstile> t <: s \<and> (\<forall>ls. s \<noteq> ty.Union ls) \<and> x = (t, s))"
+    by auto
+next
+  fix t ls ta s
+  show "\<lbrakk>\<not> \<turnstile> ta <: s; \<not> unionp s; t = ta \<and> ty.Union ls = s\<rbrakk> \<Longrightarrow> ty.Union (map (\<lambda>x1. restrict_sumC (ta, x1)) ls) = s"
+    by (cases s) auto
+qed (auto)
+
+termination by lexicographic_order
+
+lemma restrict_eqvt[eqvt]:
+  fixes pi::"name prm"
+  shows "pi\<bullet>(restrict T1 T2) = restrict (pi\<bullet>T1) (pi\<bullet>T2)"
+by (induct T2) (auto)
+
+
+lemma ty_cases[consumes 0, case_names Top N TT FF Arr Union Pair]:
+  fixes P :: "ty \<Rightarrow> bool"
+  and T :: ty
+  assumes a1:"P Top"
+  and a2:"P N"
+  and a3:"P TT"
+  and a3':"P FF"
+  and a4:"!! t1 t2 f s. P (t1 \<rightarrow> t2 : f : s)"
+  and a5:"!! Ts . P (Union Ts)"
+  and a6:"!! T1 T2 . P <T1,T2>"
+  shows "P T"
+  using  prems
+  by (cases T) auto
+
+inductive_cases top_below: "\<turnstile> Top <: T"
+
+lemma restrict_top:
+  "restrict Top T = T"
+proof (induct T taking: size rule: measure_induct_rule)
+  case (less T) thus ?case
+    proof (induct T rule: ty_cases)
+      case Top thus ?case by simp
+    next
+      case N
+      have "~no_overlap Top N" by simp
+      also have "~\<turnstile> Top <: N" using top_below[of N] by auto
+      moreover have "~unionp N" by auto
+      ultimately show ?case by auto
+
+ thus ?case by simp
+apply auto
+
+lemma restrict_soundness:
+  assumes A:"\<turnstile> T0 <: T"
+  and B:"\<turnstile> T0 <: S"
+  shows "\<turnstile> T0 <: restrict S T"
+  using prems
+  proof (induct T arbitrary: S T0 taking: size rule: measure_induct_rule)
+  case (less T S T0)
+  have C:"~no_overlap S T" using A B no_overlap_soundness1 by auto
+  from less C show ?case
+  proof (induct T==T rule: ty_cases)
+    case Arr thus ?case by (cases "\<turnstile> S <: T", auto)
+  next
+    case Top thus ?case by (cases "\<turnstile> S <: T", auto)
+  next
+    case N thus ?case by (cases "\<turnstile> S <: T", auto)
+  next
+    case TT thus ?case by (cases "\<turnstile> S <: T", auto)
+  next
+    case FF thus ?case by (cases "\<turnstile> S <: T", auto)
+  next
+    case Pair thus ?case by (cases "\<turnstile> S <: T", auto)
+  next
+    case (Union Ts) thus ?case
+    proof (cases "\<turnstile> S <: T")
+      case True thus ?thesis using Union by auto
+    next
+      case False
+      hence r:"restrict S T = Union (map (restrict S) Ts)" 
+	using prems restrict_union[of S Ts] C by auto
+      thus ?thesis using prems
+      proof -
+	have T:"\<turnstile> T0 <: Union Ts" using prems by simp
+	have "?this \<Longrightarrow> ?thesis"
+	proof (ind_cases "\<turnstile> T0 <: Union Ts")
+	  assume 0:"Union Ts = T0"
+	  hence "\<turnstile> T <: S" using prems by auto
+	  hence "\<turnstile> Union Ts <: S" using prems by auto
+	  have "?this \<Longrightarrow> ?thesis"
+	  proof (ind_cases "\<turnstile> Union Ts <: S")
+	    assume "S = Union Ts" thus ?thesis using prems by auto
+	  next
+	    assume "S = Top" thus ?thesis using prems by auto
+	      
+	      
+	  thus ?thesis using C by auto
+	next
+	  fix Ts'
+	  assume "T0 = ty.Union Ts'" thus ?thesis using `simple_ty T0` by (induct T0 rule: simple_ty.induct) auto
+        next
+	  fix T'
+	  assume "T' : set Ts" "\<turnstile> T0 <: T'"
+	  have 1:"\<turnstile> T0 <: restrict S T'" using union_size_ty prems by auto
+	  have 2:"set (map (restrict S) Ts) =  (restrict S) ` set Ts" by auto
+	  have 3:"T' : set Ts" using prems by auto
+	  have 4:"restrict S T' : set (map (restrict S) Ts)" using 2 3 by auto
+	  hence "\<turnstile> T0 <: Union (map (restrict S) Ts)" using subtype.S_UnionAbove[OF 4 1] by auto
+	  thus ?thesis using req by auto
+	qed
+	hence ?thesis using T by simp
+      }
+      ultimately show ?thesis by auto
+    qed
+  qed
+qed
+    
+       
 
 
 
