@@ -52,7 +52,6 @@
 (define enable-union-> (make-parameter #t))
 
 ;; JUNK - remove
-(define enable-T-IfTrue (make-parameter #t))
-(define enable-T-IfFalse (make-parameter #t))
+(define enable-ProofTheoretic (make-parameter #t))
 
 

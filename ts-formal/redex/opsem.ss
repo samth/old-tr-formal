@@ -18,7 +18,8 @@
      v]
   ;; values
   [v (lambda ([x : t] ...) e) number #t #f c (cons v v)]
-  [(n i) number]
+  [n number]
+  [i (side-condition n (exact-nonnegative-integer? (term n)))]
   [b boolean]
   [boolean #t #f]
   ;; constants
@@ -40,7 +41,7 @@
   
   ;; subjects
   [s 0 (pi x)]
-  [sh 0 (pi number)]
+  [sh 0 (pi n)]
   
   ;; paths
   [pi (pe ...)]

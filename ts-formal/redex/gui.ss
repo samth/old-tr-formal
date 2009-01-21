@@ -10,8 +10,7 @@
                   [T-Not #f]
                   [enable-T-IfAnd #f]
                   [enable-T-IfOr #f]
-                  [enable-T-IfTrue #f]
-                  [enable-T-IfFalse #f])
+                  [enable-ProofTheoretic #f])
      (tc-fun e))))
 
 ;; turn on the middle rules, but not the experimental ones
@@ -41,6 +40,7 @@
          [plain-type (check/plain e)]
          [preserve? (if parent-types
                         (*term-let occur-lang ([(any_pt ...) parent-types])
+                          (printf "~a parent-types: ~a~n" e parent-types)
                           (term (all (check-sub any_pt (,cur-type)) ...)))
                         #t)])
     (cond      

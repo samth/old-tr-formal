@@ -7,7 +7,7 @@ Using Isabelle repository snapshot 2eadbc24de8c (13-Jan-2009)
 *)
 
 theory TS
-imports Nominal
+imports Nominal  AssocList
 
 begin
 
@@ -1214,14 +1214,6 @@ proof (induct T arbitrary: S T0 taking:"size" rule: measure_induct_rule)
   qed
 qed
 
-fun remove_from :: "varEnv \<Rightarrow> name \<Rightarrow> varEnv"
-where
-"remove_from [] x = []"
-| "remove_from ((y,t)#G) x = (if x = y then G else (y,t)#(remove_from G x))"
-
-fun update_list :: "varEnv \<Rightarrow> name \<Rightarrow> ty \<Rightarrow> varEnv" ("_ (_\<mapsto>_)")
-where  "update_list G x t = (x,t)#(remove_from G x)"
-
 fun lookup :: "varEnv \<Rightarrow> name => ty option"
 where 
 "lookup [] x = None"
@@ -1237,7 +1229,7 @@ where
 
 fun do_update :: "varEnv \<Rightarrow> name \<Rightarrow> (bool * ty * pe list) \<Rightarrow> varEnv"
 where
-"do_update G x f = (case (lookup G x) of None \<Rightarrow> G | (Some T) \<Rightarrow> (x,(update T f))#(remove_from G x))"
+"do_update G x f = (case (lookup G x) of None \<Rightarrow> G | (Some T) \<Rightarrow> AssocList.update x (update T f) G)"
 
 function env_plus :: "varEnv \<Rightarrow> p list \<Rightarrow> varEnv"
 where
@@ -1307,6 +1299,8 @@ proof (atomize_elim, simp_all)
   qed
 qed
 
+termination by lexicographic_order
+
 fun applyfilter :: "fh \<Rightarrow> ty \<Rightarrow> s \<Rightarrow> f"
 where
 "applyfilter (FH ph_plus ph_minus) t s = 
@@ -1314,9 +1308,9 @@ where
 
 function abo :: "name \<Rightarrow> p \<Rightarrow> ph option"
 where
-"abo x Bot = Some BotH"
-| "abo x (TE  T pi y) = (if x = y then Some (TEH  T pi) else None)"
-| "abo x (NTE T pi y) = (if x = y then Some (NTEH T pi) else None)"
+  abo_bot:"abo x Bot = Some BotH"
+| abo_te: "abo x (TE  T pi y) = (if x = y then Some (TEH  T pi) else None)"
+| abo_nte:"abo x (NTE T pi y) = (if x = y then Some (NTEH T pi) else None)"
 proof (atomize_elim, auto simp add: p.inject)
   fix b
   assume "b \<noteq> Bot"and" \<forall>T pi y. b \<noteq> NTE T pi y"
@@ -1324,9 +1318,52 @@ proof (atomize_elim, auto simp add: p.inject)
   by (induct b rule: p.induct) (auto simp add: p.inject)
 qed
   
+termination by lexicographic_order
+
 
 fun abstractfilter :: "name \<Rightarrow> f \<Rightarrow> fh"
 where
-"abstractfilter x (F p1 p2) = FH (filtermap (abo x) p1) (filtermap (abo x) p1)"
+"abstractfilter x (F p1 p2) = FH (filtermap (abo x) p1) (filtermap (abo x) p2)"
 
+lemma apo_abo_id:
+  fixes ph :: ph and p :: p 
+  assumes A:"abo x p = Some ph"
+  shows "apo ph Top (Some ([], x)) = Some p"
+  using A
+  proof (cases ph)
+    case BotH
+    have "p = Bot" using A BotH
+    proof (induct p rule: p.induct)
+      case (TE _ _ n) thus ?case by (cases "x = n") auto
+    next
+      case (NTE _ _ n) thus ?case by (cases "x = n") auto
+    qed (auto)
+    thus ?thesis using A BotH by auto
+	case Bot thus ?c
+ apply auto
+ 
+      thm abo.simps
+
+apply auto
+    thus ?thesis using A apply simp
+  apply (simp_all add: S_Top)
+
+lemma "applyfilter (abstractfilter x f) Top (Some ([], x)) = f"
+proof (induct f, simp)
+  fix ps1 ps2
+  have "filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps1) = ps1" 
+  proof (induct ps1)
+    case Nil thus ?case by auto
+  next
+    case (Cons p ps) thus ?case
+    proof (induct p rule: p.induct)
+      case Bot thus ?case apply simp
+    
+  also have "filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps2) = ps2" sorry
+  ultimately show 
+    "filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps1) = ps1 \<and>
+    filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps2) = ps2"
+    by simp
+qed
+   
 end

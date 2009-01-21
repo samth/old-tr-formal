@@ -54,8 +54,12 @@
 (define-metafunction occur-lang
   apo : ph t s -> (p ...)  
   [(apo both t s) (bot)]
-  [(apo (! t ()) u s) (bot) (side-condition (term (u . <: . t)))]
-  [(apo (t ()) u s) (bot) (side-condition (term (no-overlap u t)))]
+  ;; are these two cases needed?  
+  [(apo (! t ()) u s) (bot) (side-condition (and (enable-ProofTheoretic)
+                                                 (term (u . <: . t))))]
+  [(apo (t ()) u s) (bot) (side-condition (and (enable-ProofTheoretic) 
+                                               (term (no-overlap u t))))]
+  
   [(apo ph u 0) ()]
   [(apo (t (pe_1 ...)) u ((pe_2 ...) x)) ((t (pe_1 ... pe_2 ...) x))]
   [(apo (! t (pe_1 ...)) u ((pe_2 ...) x)) ((! t (pe_1 ... pe_2 ...) x))])
@@ -297,11 +301,11 @@
 
 
 (define-metafunction occur-lang 
-  check-sub : any any -> boolean
+  check-sub : any (any ...) -> boolean
   ;; the first term failed, so everything's ok
   [(check-sub #f any) #t]
-  ;; the second term failed, so we have an error:
-  [(check-sub any #f) #f]
+  ;; a second term failed, so we have an error:
+  [(check-sub any (any_1 ... #f any_2 ...)) #f]
   ;; the real case
   [(check-sub (t f s) ((t_s f_s s_s) ...))
    (all 
