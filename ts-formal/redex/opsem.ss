@@ -209,7 +209,7 @@
   [(delta (number? v_1)) #f]
   [(delta (boolean? boolean_1)) #t]
   [(delta (boolean? v_1)) #f]
-  [(delta (c_1 v_1)) wrong])
+  [(delta (c_1 v ...)) wrong])
 
 
 

@@ -105,6 +105,7 @@
   
   [(comb-filter f_1 f_2 f_3) (() ())])
 
+;; first-arg restricted to second arg
 (define-metafunction occur-lang
   restrict : t t -> t
   [(restrict t u) (U) (side-condition (term (no-overlap t u)))]
@@ -112,6 +113,7 @@
   [(restrict t u) t (side-condition (term (t . <: . u)))]
   [(restrict t u) u])
 
+;; first arg - second arg
 (define-metafunction occur-lang
   remove : t t -> t
   [(remove t u) (U) (side-condition (term (t . <: . u)))]

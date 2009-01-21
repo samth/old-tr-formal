@@ -165,7 +165,7 @@ lemma supp_data[simp]:
 
 subsection {* Now we can define terms and filters *}
 
-nominal_datatype f = Bot | TE "ty" "pe list" "name" | NTE "ty" "pe list" "name"
+nominal_datatype p = Bot | TE "ty" "pe list" "name" | NTE "ty" "pe list" "name"
 
 
 nominal_datatype trm = 
@@ -1037,8 +1037,8 @@ function
   restrict :: "ty \<Rightarrow> ty \<Rightarrow> ty"
 where
   restrict_no_overlap: "no_overlap t s \<Longrightarrow> restrict t s = Union []"
-| restrict_subtype:"~no_overlap t s \<Longrightarrow> \<turnstile> t <: s \<Longrightarrow> restrict t s = t"
-| restrict_union: "~no_overlap t (Union ls) \<Longrightarrow> unionp (Union ls) \<Longrightarrow> ~(\<turnstile> t <: (Union ls)) \<Longrightarrow> restrict t (Union ls) = Union (map (restrict t) ls)"
+| restrict_subtype':"~no_overlap t s \<Longrightarrow> \<turnstile> t <: s \<Longrightarrow> restrict t s = t"
+| restrict_union': "~no_overlap t (Union ls) \<Longrightarrow> unionp (Union ls) \<Longrightarrow> ~(\<turnstile> t <: (Union ls)) \<Longrightarrow> restrict t (Union ls) = Union (map (restrict t) ls)"
 | restrict_other:"~no_overlap t s \<Longrightarrow>~(\<turnstile> t <: s) \<Longrightarrow> ~unionp s \<Longrightarrow> restrict t s = s"
 
 proof (atomize_elim, simp_all)
@@ -1075,6 +1075,16 @@ lemma restrict_eqvt[eqvt]:
   shows "pi\<bullet>(restrict T1 T2) = restrict (pi\<bullet>T1) (pi\<bullet>T2)"
 by (induct T2) (auto)
 
+lemma restrict_subtype:
+  assumes "\<turnstile> t <: s"
+  shows "restrict t s = t"
+  using prems restrict_subtype' no_overlap_soundness1 by auto
+
+lemma restrict_union:
+  assumes "\<not> no_overlap t (ty.Union ls)" and  "\<not> \<turnstile> t <: ty.Union ls"
+  shows "restrict t (ty.Union ls) = ty.Union (map (restrict t) ls)"
+  using prems restrict_union' by auto
+
 
 lemma ty_cases[consumes 0, case_names Top N TT FF Arr Union Pair]:
   fixes P :: "ty \<Rightarrow> bool"
@@ -1091,29 +1101,16 @@ lemma ty_cases[consumes 0, case_names Top N TT FF Arr Union Pair]:
   by (cases T) auto
 
 inductive_cases top_below: "\<turnstile> Top <: T"
-
-lemma restrict_top:
-  "restrict Top T = T"
-proof (induct T taking: size rule: measure_induct_rule)
-  case (less T) thus ?case
-    proof (induct T rule: ty_cases)
-      case Top thus ?case by simp
-    next
-      case N
-      have "~no_overlap Top N" by simp
-      also have "~\<turnstile> Top <: N" using top_below[of N] by auto
-      moreover have "~unionp N" by auto
-      ultimately show ?case by auto
-
- thus ?case by simp
-apply auto
+inductive_cases top_below_pair: "\<turnstile> Top <: <T,S>"
+inductive_cases top_below_fn: "\<turnstile> Top <: T \<rightarrow> S : F : sh"
 
 lemma restrict_soundness:
   assumes A:"\<turnstile> T0 <: T"
   and B:"\<turnstile> T0 <: S"
+  and nu:"~ unionp T0"
   shows "\<turnstile> T0 <: restrict S T"
   using prems
-  proof (induct T arbitrary: S T0 taking: size rule: measure_induct_rule)
+proof (induct T arbitrary: S T0 taking: size rule: measure_induct_rule)
   case (less T S T0)
   have C:"~no_overlap S T" using A B no_overlap_soundness1 by auto
   from less C show ?case
@@ -1132,52 +1129,204 @@ lemma restrict_soundness:
   next
     case (Union Ts) thus ?case
     proof (cases "\<turnstile> S <: T")
-      case True thus ?thesis using Union by auto
-    next
       case False
       hence r:"restrict S T = Union (map (restrict S) Ts)" 
 	using prems restrict_union[of S Ts] C by auto
-      thus ?thesis using prems
-      proof -
-	have T:"\<turnstile> T0 <: Union Ts" using prems by simp
-	have "?this \<Longrightarrow> ?thesis"
-	proof (ind_cases "\<turnstile> T0 <: Union Ts")
-	  assume 0:"Union Ts = T0"
-	  hence "\<turnstile> T <: S" using prems by auto
-	  hence "\<turnstile> Union Ts <: S" using prems by auto
-	  have "?this \<Longrightarrow> ?thesis"
-	  proof (ind_cases "\<turnstile> Union Ts <: S")
-	    assume "S = Union Ts" thus ?thesis using prems by auto
-	  next
-	    assume "S = Top" thus ?thesis using prems by auto
-	      
-	      
-	  thus ?thesis using C by auto
-	next
-	  fix Ts'
-	  assume "T0 = ty.Union Ts'" thus ?thesis using `simple_ty T0` by (induct T0 rule: simple_ty.induct) auto
-        next
-	  fix T'
-	  assume "T' : set Ts" "\<turnstile> T0 <: T'"
-	  have 1:"\<turnstile> T0 <: restrict S T'" using union_size_ty prems by auto
-	  have 2:"set (map (restrict S) Ts) =  (restrict S) ` set Ts" by auto
-	  have 3:"T' : set Ts" using prems by auto
-	  have 4:"restrict S T' : set (map (restrict S) Ts)" using 2 3 by auto
-	  hence "\<turnstile> T0 <: Union (map (restrict S) Ts)" using subtype.S_UnionAbove[OF 4 1] by auto
-	  thus ?thesis using req by auto
-	qed
-	hence ?thesis using T by simp
-      }
-      ultimately show ?thesis by auto
+      have T:"\<turnstile> T0 <: Union Ts" using prems by simp
+      have "?this \<Longrightarrow> ?thesis"
+      proof (ind_cases "\<turnstile> T0 <: Union Ts")
+	assume 0:"Union Ts = T0" thus ?thesis using `~ unionp T0` by auto
+      next
+	fix Ts'
+	assume "T0 = ty.Union Ts'" thus ?thesis using `~ unionp T0` by auto
+      next
+	fix T'
+	assume "T' : set Ts" "\<turnstile> T0 <: T'"
+	have 1:"\<turnstile> T0 <: restrict S T'" using union_size_ty prems by auto
+	have 2:"set (map (restrict S) Ts) =  (restrict S) ` set Ts" by auto
+	have 3:"T' : set Ts" using prems by auto
+	have 4:"restrict S T' : set (map (restrict S) Ts)" using 2 3 by auto
+	hence "\<turnstile> T0 <: Union (map (restrict S) Ts)" using subtype.S_UnionSuper[OF 4 1] by auto
+	thus ?thesis using r by auto
+      qed
+      thus ?thesis using T by simp
+    qed (auto)
+  qed
+qed
+
+function
+  remove :: "ty \<Rightarrow> ty \<Rightarrow> ty"
+where
+  remove_subtype:"\<turnstile> t <: s \<Longrightarrow>                         remove t s          = Union []"
+| remove_union:"~(\<turnstile> (Union ls) <: s) \<Longrightarrow>               remove (Union ls) s = Union (map (% t. remove t s) ls)"
+| remove_other:"~(\<turnstile> t <: s) \<Longrightarrow>          ~unionp t \<Longrightarrow> remove t s          = t"
+by (atomize_elim, auto)
+
+termination by lexicographic_order
+
+lemma remove_soundness:
+  assumes A:"\<turnstile> T0 <: T" and B:"~ (\<turnstile> T0 <: S)" and C:"~ unionp T0"
+  shows "\<turnstile> T0 <: remove T S"
+  using prems
+proof (induct T arbitrary: S T0 taking:"size" rule: measure_induct_rule)
+  case (less T S T0)
+  thus ?case
+  proof (induct T==T rule: ty_cases)
+   case (Union Ts) thus ?case
+    proof (cases "\<turnstile> T <: S")
+      case True thus ?thesis using remove_subtype[of T S] prems by auto
+    next
+      case False
+      hence req:"remove T S =  Union (map (% t. remove t S) Ts)" using Union by auto
+      have T:"\<turnstile> T0 <: Union Ts" using prems by simp
+      have "?this \<Longrightarrow> ?thesis"
+      proof (ind_cases "\<turnstile> T0 <: Union Ts")
+	assume 0:"Union Ts = T0" thus ?thesis using `~ unionp T0` by auto
+      next
+	fix Ts'
+	assume "T0 = ty.Union Ts'"
+	thus ?thesis using `~ unionp T0` by auto
+      next
+	fix T'
+	assume "T' : set Ts" "\<turnstile> T0 <: T'"
+	have 1:"\<turnstile> T0 <: remove T' S" using union_size_ty[of T' Ts] prems(4)[of T'] prems by simp 
+	have 2:"set (map (% t. remove t S) Ts) =  (% t. remove t S) ` set Ts" by auto
+	have 3:"T' : set Ts" using prems by auto
+	have 4:"remove T' S : set (map (% t. remove t S) Ts)" using 2 3 by auto
+	hence "\<turnstile> T0 <: Union (map (% t. remove t S) Ts)" using subtype.S_UnionSuper[OF 4 1] by auto
+	thus ?thesis using req by auto
+      qed
+      thus ?thesis using T by simp
+    qed      
+ next
+   case Top thus ?case using S_Trans[of T0 T S]
+     by (cases "\<turnstile> T <: S") auto
+  next
+    case N thus ?case by (cases "\<turnstile> T <: S", auto)
+  next
+    case TT thus ?case by (cases "\<turnstile> T <: S", auto)
+  next
+    case FF thus ?case by (cases "\<turnstile> T <: S", auto)
+  next
+    case Arr thus ?case by (cases "\<turnstile> T <: S", auto)
+  next
+    case Pair thus ?case by (cases "\<turnstile> T <: S", auto)
+  qed
+qed
+
+fun remove_from :: "varEnv \<Rightarrow> name \<Rightarrow> varEnv"
+where
+"remove_from [] x = []"
+| "remove_from ((y,t)#G) x = (if x = y then G else (y,t)#(remove_from G x))"
+
+fun update_list :: "varEnv \<Rightarrow> name \<Rightarrow> ty \<Rightarrow> varEnv" ("_ (_\<mapsto>_)")
+where  "update_list G x t = (x,t)#(remove_from G x)"
+
+fun lookup :: "varEnv \<Rightarrow> name => ty option"
+where 
+"lookup [] x = None"
+| "lookup ((y,t)#G) x = (if x = y then Some t else lookup G x)"
+
+fun update :: "ty \<Rightarrow> (bool * ty * pe list) \<Rightarrow> ty"
+where
+ "update T (True,  U, []) = restrict T U"
+| "update T (False, U, []) = remove T U"
+| "update <T,S> (b, U, Car # pi) = <(update T (b, U, pi)), S>"
+| "update <T,S> (b, U, Cdr # pi) = <T, (update S (b, U, pi))>"
+| "update T _ = undefined"
+
+fun do_update :: "varEnv \<Rightarrow> name \<Rightarrow> (bool * ty * pe list) \<Rightarrow> varEnv"
+where
+"do_update G x f = (case (lookup G x) of None \<Rightarrow> G | (Some T) \<Rightarrow> (x,(update T f))#(remove_from G x))"
+
+function env_plus :: "varEnv \<Rightarrow> p list \<Rightarrow> varEnv"
+where
+  "env_plus G ((TE t pi x)  # Fs) = (env_plus (do_update G x (True,  t, pi)) Fs)"
+| "env_plus G ((NTE t pi x) # Fs) = (env_plus (do_update G x (False, t, pi)) Fs)"
+| "env_plus G (Bot # Fs) = map (% (x,t). (x,Union [])) G"
+| "env_plus G [] = G"
+proof (atomize_elim, auto simp add: p.inject)
+  fix b
+  assume "\<forall>t pi x Fs. b \<noteq> TE t pi x # Fs"" \<forall>t pi x Fs. b \<noteq> NTE t pi x # Fs"" b \<noteq> []"
+  thus "\<exists>Fs. b = Bot # Fs"
+  proof (induct b)
+    case (Cons F Fs) thus ?case  by (induct F rule: p.induct) (auto)
+  qed (auto)
+qed
+
+datatype f = F "p list" "p list"
+
+primrec (unchecked perm_f)
+"pi \<bullet> (F ps1 ps2) = F (pi \<bullet> ps1) (pi \<bullet> ps2)"
+
+declare perm_f.simps[eqvt]
+
+fun combfilter :: "f \<Rightarrow> f \<Rightarrow> f \<Rightarrow> f"
+where
+"combfilter _ _ _ = F [] []"
+
+function apo :: "ph \<Rightarrow> ty \<Rightarrow> s \<Rightarrow> (p option)"
+where
+"apo BotH S s = Some Bot"
+
+| "~no_overlap S T \<Longrightarrow> apo (TEH  T pi) S None = None"
+| "~\<turnstile> S <: T       \<Longrightarrow> apo (NTEH T pi) S None = None"
+
+| "no_overlap S T \<Longrightarrow> apo (TEH  T (pe#pi')) S None = None"
+| "\<turnstile> S <: T       \<Longrightarrow> apo (NTEH T (pe#pi')) S None = None"
+
+
+| "no_overlap S T  \<Longrightarrow> apo (TEH T [])       S s              = Some Bot"
+| "no_overlap S T  \<Longrightarrow> apo (TEH T (pe#pi')) S (Some (pi, x)) = Some (TE T ((pe#pi')@pi) x)"    
+| "~no_overlap S T \<Longrightarrow> apo (TEH T pi')      S (Some (pi, x)) = Some (TE T (pi'@pi) x)"    
+
+| "\<turnstile> S <: T  \<Longrightarrow> apo (NTEH T [])       S s              = Some Bot"
+| "\<turnstile> S <: T  \<Longrightarrow> apo (NTEH T (pe#pi')) S (Some (pi, x)) = Some (NTE T ((pe#pi')@pi) x)"    
+| "~\<turnstile> S <: T \<Longrightarrow> apo (NTEH T pi')      S (Some (pi, x)) = Some (NTE T (pi'@pi)      x)"
+proof (atomize_elim, simp_all)
+  fix x :: "ph \<times> ty \<times> (pe list \<times> name) option"
+  show "(\<exists>S s. x = (BotH, S, s)) \<or>
+        (\<exists>S T pi. x = (TEH T pi, S, None)) \<or>
+        (\<exists>S T. \<not> \<turnstile> S <: T \<and> (\<exists>pi. x = (NTEH T pi, S, None))) \<or>
+        (\<exists>S T. \<turnstile> S <: T \<and> (\<exists>pe pi'. x = (NTEH T (pe # pi'), S, None))) \<or>
+        (\<exists>S T pi' pi xa. x = (TEH T pi', S, Some (pi, xa))) \<or>
+        (\<exists>S T. \<turnstile> S <: T \<and> (\<exists>s. x = (NTEH T [], S, s))) \<or>
+        (\<exists>S T. \<turnstile> S <: T \<and> (\<exists>pe pi' pi xa. x = (NTEH T (pe # pi'), S, Some (pi, xa)))) \<or>
+        (\<exists>S T. \<not> \<turnstile> S <: T \<and> (\<exists>pi' pi xa. x = (NTEH T pi', S, Some (pi, xa))))"
+  proof (cases x)
+    fix a b c
+    assume A: "x = (a, b, c)"
+    thus ?thesis
+    proof (cases a)
+      case BotH thus ?thesis using A by auto
+    next
+      case (TEH T pi) thus ?thesis using A TEH by (cases c) auto
+    next
+      case (NTEH T pi) thus ?thesis using A NTEH by (cases c) (cases "\<turnstile> b <: T ", cases pi, auto)+
     qed
   qed
 qed
-    
-       
 
+fun applyfilter :: "fh \<Rightarrow> ty \<Rightarrow> s \<Rightarrow> f"
+where
+"applyfilter (FH ph_plus ph_minus) t s = 
+  F (filtermap (% ph. apo ph t s) ph_plus) (filtermap (% ph. apo ph t s) ph_minus)"
 
+function abo :: "name \<Rightarrow> p \<Rightarrow> ph option"
+where
+"abo x Bot = Some BotH"
+| "abo x (TE  T pi y) = (if x = y then Some (TEH  T pi) else None)"
+| "abo x (NTE T pi y) = (if x = y then Some (NTEH T pi) else None)"
+proof (atomize_elim, auto simp add: p.inject)
+  fix b
+  assume "b \<noteq> Bot"and" \<forall>T pi y. b \<noteq> NTE T pi y"
+  thus "\<exists>T pi y. b = TE T pi y"
+  by (induct b rule: p.induct) (auto simp add: p.inject)
+qed
+  
 
-
-
+fun abstractfilter :: "name \<Rightarrow> f \<Rightarrow> fh"
+where
+"abstractfilter x (F p1 p2) = FH (filtermap (abo x) p1) (filtermap (abo x) p1)"
 
 end
