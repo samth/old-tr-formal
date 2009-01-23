@@ -18,7 +18,7 @@
   [(delta-t cons?) (predty (pr top top) ())]
   [(delta-t add1) (simplefun N N)]
   [(delta-t zero?) (simplefun N (U #t #f))]
-  [(delta-t not) (simplefun (U #t #f) (U #t #f))])
+  [(delta-t not) (simplefun top (U #t #f))])
 
 
 (define-metafunction occur-lang
@@ -301,10 +301,11 @@
 
 
 (define-metafunction occur-lang 
-  check-sub : any (any ...) -> boolean
+  check-sub : any any -> boolean
   ;; the first term failed, so everything's ok
   [(check-sub #f any) #t]
   ;; a second term failed, so we have an error:
+  [(check-sub any #f) #f]
   [(check-sub any (any_1 ... #f any_2 ...)) #f]
   ;; the real case
   [(check-sub (t f s) ((t_s f_s s_s) ...))

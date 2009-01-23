@@ -197,9 +197,9 @@
   delta : e -> any
   [(delta (add1 number_1)) ,(+ 1 (term number_1))]
   [(delta (zero? 0)) #t]
-  [(delta (zero? number_1)) #f]
-  [(delta (not #t)) #f]
+  [(delta (zero? number_1)) #f]  
   [(delta (not #f)) #t]
+  [(delta (not v)) #f]
   [(delta (car (cons v_1 v_2))) v_1]
   [(delta (cdr (cons v_1 v_2))) v_2]
   [(delta (cons? (cons v_1 v_2))) #t]

@@ -1,6 +1,6 @@
 #lang scheme/base
 
-(require (for-syntax scheme/base) redex/reduction-semantics)
+(require (for-syntax scheme/base stxclass) redex/reduction-semantics)
 (provide (all-defined-out))
 
 (define-syntax no-fail
@@ -14,15 +14,20 @@
     [(term-let* (cl . rest) . e) (term-let (cl) (term-let* rest . e))]))
 
 (define-syntax (match/redex stx)
-  (syntax-case stx ()
-    [(_ lang e clauses ...)
-     (quasisyntax/loc stx
-       (let ([r (term e)])
-         ((term-match/single 
-           lang
-           clauses ... 
-           [any #,(syntax/loc stx (error 'match/redex "no match for term ~a" r))])
-          r)))]))
+  (define-syntax-class clause
+    #:transparent
+    #:description "match/redex clause"
+    (pattern [pat ((e:expr) #:min 1) ...*]))
+  (syntax-parse stx
+   [(_ lang e:expr cl:clause ...)
+    #:declare lang static
+    (quasisyntax/loc stx
+      (let ([r (term e)])
+        ((term-match/single 
+          lang
+          [cl.pat (begin cl.e ...)] ... 
+          [any #,(syntax/loc stx (error 'match/redex "no match for term ~a" r))])
+         r)))]))
 
 (define-syntax (*term-let-one stx)
   (syntax-case stx ()

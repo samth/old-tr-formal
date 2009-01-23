@@ -1246,6 +1246,8 @@ proof (atomize_elim, auto simp add: p.inject)
   qed (auto)
 qed
 
+termination by lexicographic_order
+
 datatype f = F "p list" "p list"
 
 primrec (unchecked perm_f)
@@ -1328,42 +1330,186 @@ where
 lemma apo_abo_id:
   fixes ph :: ph and p :: p 
   assumes A:"abo x p = Some ph"
-  shows "apo ph Top (Some ([], x)) = Some p"
+  shows "apo ph Top (Some ([], x)) = Some p \<or> (EX t. ph = NTEH t [] \<and> \<turnstile> Top <: t \<and> apo ph Top (Some ([], x)) = Some Bot)"
   using A
-  proof (cases ph)
-    case BotH
-    have "p = Bot" using A BotH
-    proof (induct p rule: p.induct)
-      case (TE _ _ n) thus ?case by (cases "x = n") auto
-    next
-      case (NTE _ _ n) thus ?case by (cases "x = n") auto
-    qed (auto)
-    thus ?thesis using A BotH by auto
-	case Bot thus ?c
- apply auto
- 
-      thm abo.simps
-
-apply auto
-    thus ?thesis using A apply simp
-  apply (simp_all add: S_Top)
-
-lemma "applyfilter (abstractfilter x f) Top (Some ([], x)) = f"
-proof (induct f, simp)
-  fix ps1 ps2
-  have "filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps1) = ps1" 
-  proof (induct ps1)
-    case Nil thus ?case by auto
+proof (cases ph)
+  case BotH
+  hence "p = Bot" using A
+  proof (induct p rule: p.induct)
+    case (TE _ _ n) thus ?case by (cases "x = n") auto
   next
-    case (Cons p ps) thus ?case
-    proof (induct p rule: p.induct)
-      case Bot thus ?case apply simp
-    
-  also have "filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps2) = ps2" sorry
-  ultimately show 
-    "filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps1) = ps1 \<and>
-    filtermap (\<lambda>ph. apo ph Top (Some ([], x))) (filtermap (abo x) ps2) = ps2"
-    by simp
+    case (NTE _ _ n) thus ?case by (cases "x = n") auto
+  qed (auto)
+  thus ?thesis using A by auto
+next
+  case (TEH t l)
+  hence "p = TE t l x" using A
+  proof (induct p rule: p.induct)
+    case (TE _ _ n) thus ?case by (cases "x = n") auto
+  next
+    case (NTE _ _ n) thus ?case by (cases "x = n") auto
+  qed (auto)
+  thus ?thesis using A by auto
+next
+  case (NTEH t l)
+  hence "p = NTE t l x" using A
+  proof (induct p rule: p.induct) 
+    case (TE _ _ n) thus ?case by (cases "x = n") auto
+  next
+    case (NTE _ _ n) thus ?case by (cases "x = n") auto
+  qed (auto)
+  thus ?thesis using A
+  proof (cases "\<turnstile> Top <: t")
+    case True thus ?thesis using NTEH A `p = NTE t l x`
+    by (cases l) (auto)
+  qed (auto)
 qed
+
+
+-- "NOT TRUE"
+lemma "applyfilter (abstractfilter x f) Top (Some ([], x)) = f"
+oops
+
+lemma restrict_remove_soundness:
+  assumes A:"\<turnstile> T0 <: T" and B:"~ unionp T0"
+  shows
+  "(\<turnstile> T0 <: S \<and> \<turnstile> T0 <: restrict S T) \<or> (~ (\<turnstile> T0 <: S) \<and> \<turnstile> T0 <: remove T S)"
+using restrict_soundness[OF A _ B] remove_soundness[OF A _ B]
+by auto
+
+lemma al_update_fresh:
+  fixes v::name and n::name
+  assumes a:"v \<sharp> \<Gamma>"  and c:"valid \<Gamma>" and d:"lookup \<Gamma> n = Some t'"
+  shows "v \<sharp> (AssocList.update n t \<Gamma>)"
+  using a d c 
+proof (induct \<Gamma>)
+  case (Cons a G) thus ?case using valid_elim[of _ _ G] by (cases a) auto
+qed (simp)
+
+lemma do_update_fresh:
+  fixes v::name
+  assumes a:"v \<sharp> \<Gamma>"  and c:"valid \<Gamma>" 
+  shows "v \<sharp> (do_update \<Gamma> n fh)"
+  using a c al_update_fresh[OF a c]
+proof (cases "EX x. lookup \<Gamma> n = Some x")
+  case True
+  then obtain t' where b:"lookup \<Gamma> n = Some t'" by auto
+  thus ?thesis using al_update_fresh[OF a c b] by auto
+next
+  case False thus ?thesis using a by auto
+qed
+
+lemma al_update_valid:
+  assumes a:"valid \<Gamma>" and d:"lookup \<Gamma> n = Some t'"
+  shows "valid (AssocList.update n t \<Gamma>)"
+  using  a d al_update_fresh
+by (induct \<Gamma> rule: valid.induct) auto  
+
+lemma do_update_valid:
+  assumes "valid \<Gamma>"
+  shows "valid (do_update \<Gamma> n fh)"
+  using assms
+proof (induct)
+  case (v2 G a S)
+  hence "valid ((a,S)#G)" (is "valid ?G'") by auto
+  thus ?case using v2
+  proof (cases "EX x. lookup ?G' n = Some x")
+    case True 
+    then obtain t' where "lookup ?G' n = Some t'" by auto
+    thus ?thesis using v2 al_update_valid[OF `valid ?G'` `lookup ?G' n = Some t'`]
+      by (cases "a = n") auto
+  qed (auto)
+qed (auto)
+
+lemma map_fresh:
+  assumes "v \<sharp> \<Gamma>" "v \<sharp> x"
+  shows "v \<sharp> map (% (a,b). (a,x)) \<Gamma>"
+  using prems by (induct \<Gamma>) auto
+
+lemma map_valid:
+  fixes x :: ty
+  assumes a:"valid \<Gamma>" 
+  shows "valid (map (% (a,b). (a,x)) \<Gamma>)"
+  using prems
+proof (induct \<Gamma> arbitrary: v rule: valid.induct)
+  case (v2 G a S)
+  thus ?case using fresh_data map_fresh[of a G x] by auto
+qed (auto)
+  
+lemma env_plus_fresh:
+  fixes v::name
+  assumes a:"v \<sharp> \<Gamma>"  and c:"valid \<Gamma>" 
+  shows "v \<sharp> (env_plus \<Gamma> ps)"
+  using a c 
+proof (induct ps arbitrary: \<Gamma>)
+  case (Cons a ps) thus ?case 
+    using map_fresh[OF `v \<sharp> \<Gamma>`, of "Union []"] do_update_valid do_update_fresh
+    by (induct a rule: p.induct) (auto)
+qed (auto)
+
+lemma env_plus_nil[simp]:
+  "env_plus [] ps = []"
+proof (induct ps)
+  case (Cons a ps') thus ?case
+    by (induct a rule: p.induct) auto
+qed (auto)
+
+lemma env_plus_valid:
+  assumes c:"valid G" 
+  shows "valid (env_plus G ps)"
+  using c map_valid do_update_valid
+proof (induct ps arbitrary: G)
+  case (Cons p ps') thus ?case by (induct p rule: p.induct) auto
+qed auto
+
+
+lemma do_update_forget:
+  assumes "valid \<Gamma>" and "x \<sharp> \<Gamma>"
+  shows "do_update \<Gamma> x t = \<Gamma>"
+  using prems
+proof -
+  have "lookup \<Gamma> x = None" using prems
+  proof (induct \<Gamma>)
+    case (v2 G a S) thus ?case using fresh_list_cons fresh_atm[of x a] by auto
+  qed auto
+  thus ?thesis by auto
+qed
+
+lemma lookup_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "pi \<bullet> (lookup G x) = lookup (pi \<bullet> G) (pi \<bullet> x)"
+  using at_bij[of pi] at_name_inst
+  by (induct G) auto
+
+lemma update_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "pi \<bullet> (update t f) = (update (pi \<bullet> t) (pi \<bullet> f))"
+  by (cases f) auto
+
+lemma al_update_eqvt[eqvt]:
+  fixes pi :: "name prm" and k :: name
+  shows "pi \<bullet> (AssocList.update k v L) = (AssocList.update (pi \<bullet> k) (pi \<bullet> v) (pi \<bullet> L))"
+proof (induct L)
+  case (Cons kv L') thus ?case
+  proof (cases kv)
+    case (Pair k' v')
+    thus ?thesis using Cons 
+    proof (cases "k' = k") 
+      case False
+      thus ?thesis using Cons Pair pt_name_inst at_name_inst pt_bij4[of pi k' k] by auto
+    qed (auto)
+  qed
+qed auto  
+
+lemma do_update_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "pi \<bullet> (update t f) = (update (pi \<bullet> t) (pi \<bullet> f))"
+  by (cases f) auto
+
+  
+
+
+      
+
    
 end
