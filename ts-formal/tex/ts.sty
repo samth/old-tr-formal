@@ -161,6 +161,17 @@
 \end{center}}
 \newcommand{\mathsc}[1]{\mbox{\textsc{#1}}}
 
+\newcommand{\latentmvar}[1]{
+  {\ifthenelse{\equal{#1}{\phi}}
+    {\Phi}
+    {\ifthenelse{\equal{#1}{\psi}}
+      {\Psi}
+      {\ifthenelse{\equal{#1}{s}}
+        {S}
+        {\ifthenelse{\equal{#1}{\bot}}
+          {\mbox{\boldmath$\bot$}}
+          {\doesnotexist}}}}}}
+
 \newmeta\e{e}
 \newmeta\y{y}
 \newmeta\G{\Gamma}
@@ -176,18 +187,18 @@
 \newmeta\n{n}
 \newmeta\i{i}
 \newmeta\pe{pe}
-\newmeta\ph{\hat{\p{}}}
+\newmeta\ph{\latentmvar{\psi}}
 \newmeta\sig{\sigma}
 \newmeta\s{s}
-\newmeta\sh{\hat{s}}
+\newmeta\sh{\latentmvar{s}}
 \newmeta\phii{{\phi}}
-\newmeta\phih{\hat{\phi}}
+\newmeta\phih{\latentmvar{\phi}}
 
 \newcommand{\comp}[1]{\overline{#1}}
 \newmeta\compt{\comp{\tau}}
 \newmeta\ups{\upsilon}
 
-\newcommand{\both}{\hat{\bot}}
+\newcommand{\both}{\latentmvar{\bot}}
 
 %\newcommand\v{\vv{}}
 
@@ -195,7 +206,7 @@
 
 
 \newometa\op{\psi}
-\newometa\oph{\hat{\psi}}
+\newometa\oph{\latentmvar{\psi}}
 
 \newcommand{\abstractfilter}[2]{\ma{\mathrm{abstractfilter}({#1}, {#2})}}
 \newcommand{\nooverlap}[2]{\ma{\mbox{no-overlap}({#1}, {#2})}}
