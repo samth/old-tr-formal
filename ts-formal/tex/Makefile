@@ -14,3 +14,6 @@ model.pdf: model.tex ts.sty
 clean:
 	rm -f model.pdf model-multi.pdf
 	rm -f *.aux *.log
+
+one: model.tex ts.sty
+	pdflatex '\newcommand{\multiargs}{$(MULTI)}\input{model.tex}'

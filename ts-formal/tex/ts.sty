@@ -1,5 +1,7 @@
 %\usepackage{newif}
 
+\usepackage{upgreek}
+
 \newif\ifmarg
 \margtrue
 
@@ -163,9 +165,9 @@
 
 \newcommand{\latentmvar}[1]{
   {\ifthenelse{\equal{#1}{\phi}}
-    {\Phi}
+    {\upphi}
     {\ifthenelse{\equal{#1}{\psi}}
-      {\Psi}
+      {\uppsi}
       {\ifthenelse{\equal{#1}{s}}
         {S}
         {\ifthenelse{\equal{#1}{\bot}}
