@@ -55,8 +55,6 @@
 (define enable-T-IfAnd (make-parameter #t))
 (define enable-T-IfOr (make-parameter #t))
 (define enable-union-> (make-parameter #t))
-
-;; JUNK - remove
 (define enable-ProofTheoretic (make-parameter #t))
 
 

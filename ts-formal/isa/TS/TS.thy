@@ -1506,6 +1506,33 @@ lemma do_update_eqvt[eqvt]:
   shows "pi \<bullet> (update t f) = (update (pi \<bullet> t) (pi \<bullet> f))"
   by (cases f) auto
 
+lemma map_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "pi \<bullet> (map (% (a,b). x) l) = (map (% (a,b). pi \<bullet> x) (pi \<bullet> l))"
+  by (induct l) auto
+
+lemma env_plus_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  assumes "valid G"
+  shows "pi \<bullet> (env_plus G ps) = (env_plus (pi \<bullet> G) (pi \<bullet> ps))"
+  proof (induct ps) 
+    case Nil thus ?case by auto
+  next
+    case (Cons p ps)
+    show ?case using `valid G` Cons
+    proof (induct G rule: valid.induct)
+      case v1 thus ?case by auto
+    next
+      case (v2 G a S) thus ?case
+      apply (induct p rule: p.induct)
+      apply (simp add: eqvt)
+      apply (simp only: ty.perms map_eqvt)
+  apply simp
+  apply simp
+  apply (cases G)
+  apply auto
+
+
   
 
 

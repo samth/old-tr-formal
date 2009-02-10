@@ -3,7 +3,7 @@
 (require mzlib/trace
          (except-in scheme/list flatten)
          (only-in srfi/1 lset= lset<=)
-         redex/reduction-semantics
+         redex/reduction-semantics redex/pict
          "utils.ss"
          (for-syntax scheme/base))
 
@@ -11,13 +11,9 @@
 
 (define-language occur-lang
   ;; expressions
-  [e x
-     (e e ...) 
-     (if e e e)
-     wrong
-     v]
+  [(d e) x (e e ...) (if e e e) (cons e e) v]
   ;; values
-  [v (lambda ([x : t] ...) e) number #t #f c (cons v v)]
+  [v c #t #f n (lambda ([x : t] ...) e) (cons v v)]
   [n number]
   [i (side-condition n (exact-nonnegative-integer? (term n)))]
   [b boolean]
