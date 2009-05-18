@@ -5,7 +5,7 @@
 
 (define-syntax no-fail
   (syntax-rules ()
-    [(_ e r) (with-handlers ([exn:fail? (lambda _ r)]) e)]
+    [(_ e r) (with-handlers ([exn:fail? (lambda (exn) r)]) e)]
     [(_ e) (no-fail e #f)]))
 
 (define-syntax term-let*
@@ -17,7 +17,7 @@
   (define-syntax-class clause
     #:transparent
     #:description "match/redex clause"
-    (pattern [pat ((e:expr) #:min 1) ...*]))
+    (pattern [pat (~or (e:expr) #:min 1) ...]))
   (syntax-parse stx
    [(_ lang e:expr cl:clause ...)
     #:declare lang static

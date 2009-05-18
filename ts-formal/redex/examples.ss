@@ -141,6 +141,13 @@
                #f))
          (cons #f 10))))
 
+(define t-cons-8
+  (term ((lambda ([a : (pr top top)])
+           (if (cons? (car a)) 
+               (cons? (cdr (car a)))
+               #f))
+         (cons #f 10))))
+
 (define fail-not-wrong
   (term ((lambda ([a : top])
            (zero? a))
@@ -149,7 +156,7 @@
 (define fail-not-proc
   (term (1 1)))
 
-(define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4 t-cons-5 t-cons-6))
+(define cons-terms (list t-cons-1 t-cons-2 t-cons-3 t-cons-4 t-cons-5 t-cons-6 t-cons-8))
 
 (define terms (append (list t1 t2 t3 t4 t5 t6 t7 t9 t10 t10* t11 t12 t13 t14 t15 t16 t17 t18 bad)
                       cons-terms))

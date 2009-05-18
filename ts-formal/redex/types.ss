@@ -148,13 +148,13 @@
 
 (define-metafunction occur-lang
   update : t ph -> t
-  [(update (pr t_1 t_2) (u (car pe ...)))
+  [(update (pr t_1 t_2) (u (pe ... car)))
    (pr (update t_1 (u (pe ...))) t_2)]
-  [(update (pr t_1 t_2) (u (cdr pe ...)))
+  [(update (pr t_1 t_2) (u (pe ... cdr)))
    (pr t_1 (update t_2 (u (pe ...))))]
-  [(update (pr t_1 t_2) (! u (car pe ...)))
+  [(update (pr t_1 t_2) (! u (pe ... car)))
    (pr (update t_1 (! u (pe ...))) t_2)]
-  [(update (pr t_1 t_2) (! u (cdr pe ...)))
+  [(update (pr t_1 t_2) (! u (pe ... cdr)))
    (pr t_1 (update t_2 (! u (pe ...))))]
   [(update t (u ())) (restrict t u)]
   [(update t (! u ())) (remove t u)])
@@ -290,8 +290,7 @@
                 [(t_thn f_thn s_thn) (term (tc (env+ G (p_tst+ ...)) e_thn))]
                 [(t_els f_els s_els) (term (tc (env+ G (p_tst- ...)) e_els))]
                 [f (term (comb-filter f_tst f_thn f_els))])
-               (term ((U t_thn t_els) f 0)))] 
-  )
+               (term ((U t_thn t_els) f 0)))])
 
 
 (define (tc-fun ex [env '()])
