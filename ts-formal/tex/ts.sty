@@ -172,7 +172,9 @@
         {S}
         {\ifthenelse{\equal{#1}{\bot}}
           {\mbox{\boldmath$\bot$}}
-          {\doesnotexist}}}}}}
+          {\ifthenelse{\equal{#1}{o}}
+            {O}
+            {\doesnotexist{#1}}}}}}}}
 
 \newmeta\e{e}
 \newmeta\y{y}

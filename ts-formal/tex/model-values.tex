@@ -1,0 +1,763 @@
+\documentclass{article}[12pt]
+
+\usepackage{ifthen}
+\usepackage{mmm}
+\usepackage{ts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{fullpage}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{define}{Definition}
+\usepackage{mathpartir}
+\usepackage{rotating}
+
+\newcommand\red{\to^*} 
+\newcommand{\sembrack}[1]{[\![#1]\!]}
+
+\def\multiargs{true}
+
+\ifthenelse{\equal{\multiargs}{true}}{
+\margtrue
+}
+{
+\margfalse
+}
+
+
+\ifmarg
+\title{Typed Scheme with Multiple Arguments}
+\else
+\title{Typed Scheme}
+\fi
+\date{\today}
+
+\begin{document}
+
+
+\maketitle
+
+\section{Syntax}
+
+
+\[
+  \begin{altgrammar}
+    \d{}, \e{}, \dots &::=& \x{}  \alt \comb{\e{op}}{\movervec{\e{a}}} 
+    \alt \cond{\e1}{\e2}{\e3} \alt \cons{\e{}}{\e{}} \alt \vv{}  &\mbox{Expressions} \\
+    \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \abs{\x{}}{\t{}}{\e{}} \alt \cons{\vv{}}{\vv{}}  & \mbox{Values} \\
+    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym \alt \\
+    &   & \conssym \alt \consp \alt \car \alt \cdr & \mbox{Primitive Operations} 
+    \vspace{1mm}
+    \\
+    \E{} &::=& [] \alt 
+    \marg
+        {\comb{\overvec{\vv{}}}{\E{}\ {\overvec{\e{}}}}} % general multi-arg contexts
+        {\comb{\E{}}{\e{}} \alt \comb{\vv{}}{\E{}}} % one-arg contexts
+        \alt \cond{\E{}}{\e{}}{\e{}} 
+        & \mbox{Evaluation Contexts} \vspace{1mm} \\
+  \end{altgrammar}
+  \]
+\hrule
+\[
+  \begin{altgrammar}
+    \sig{},\t{} &::= & \top \alt \marg{\proctop \alt}{} \num \alt \ttt \alt \fft 
+    \alt \consty{\t{}}{\t{}} \alt
+         {\proctype {\movervec[i]{\t{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}} 
+         \alt (\usym\ \overvec{\t{}})     &\mbox{Types} \\
+
+
+
+         \p{} &::=&  \t{\pi(\x{})} \alt \compt{\pi(\x{})} \alt \bot & \mbox{Filters} \\
+
+         \ph{} & ::=& \t{\pi} \alt \compt{\pi}  \alt \both & \mbox{Latent Filters} \\
+
+         \phii{} & ::= & \overvec{\p{}}|\overvec{\p{}} & \mbox{Filter Sets} \\
+
+         \phih{} & ::= & \overvec{\ph{}}|\overvec{\ph{}} & \mbox{Latent Filter Sets} \\
+
+         \s{} & ::= &   \pi(\x{}) \alt \noeffect &\mbox{Objects} \\
+         
+         \sh{} & ::= & \pii \alt \noeffect  & \mbox{Projections (Latent Objects)} \\
+
+         \pi & ::= & \overvec{\pe{}} & \mbox{Paths} \\
+
+         \pe{} & :: = & \pecar \alt \pecdr & \mbox{Path Elements} \\
+         
+         \Gamma & ::= & \overvec{\x{}:\t{}} & \mbox{Type Environments} \\
+  \end{altgrammar}
+  \]
+
+\paragraph{Notation}
+We write \bool for $(\usym \ttt\ \fft)$ and $\bot$ for $(\usym)$ in
+type contexts and $\bullet$ for the empty sequence.  We also
+abbreviate $\bullet(\x{})$ as $\x{}$.  Sequences are assumed to be
+automatically flattened, so $\overvec{\t1},\overvec{\t2}$ is a sequence 
+of types with $|\overvec{\t1}| + |\overvec{\t2}|$ elements, not a two
+element sequence of sequences. 
+When $\bot$ is an element of a sequence, we
+will treat it as absorbing all the other elements, so 
+$\op1,\bot,\op2 = \bot$.
+ Finally, note that if we have $\op{}|\bot$, $\op{}$
+cannot contain any information we don't already know.  So we will
+assume that $\op{} = \bullet$ (and similarly for $\bot|\op{}$).
+
+\ifmarg
+The type $\proctop$ represents the supertype of all procedures, so
+$\subtype{\proctype {\movervec[i]{\t{}}}{\sig}{\movervec[i]{\phih{}}}
+  {\sh{}}}{\proctop}$ for any $\movervec[i]{\t{}}$, \sig{},
+${\movervec[i]{\phih{}}}$  and $\sh{}$.  Note that this type is not
+otherwise representable.
+\else
+\fi
+
+\section{Type Judgement}
+
+\huge
+\begin{displaymath}
+  \hastyeffphi{\e{}}{\t{}}{\phii{}}{\s{}}
+\end{displaymath}
+\normalsize
+
+This means that in environment $\Gamma$, \e{} has the type \t{}, that
+evaluating \e{} and gives us information \phii{} based on whether \e{}
+evaluates to \ff or not, and that testing \e{} is the same as testing
+the object \s{}.
+
+\newpage
+
+\section{Type Rules}
+
+\paragraph{Core Type Rules}
+
+\[
+\inferrule[T-Var]{}{\hastyvar {\x{}} {\G{}(\x{})} {\x{}}}
+\qquad\qquad
+\inferrule[T-Num]{}{\hastytrue{\n{}}{\num}} 
+\qquad\qquad
+\inferrule[T-Const]{}{\hastytrue{\c{}}{\dt{\c{}}}}
+\]
+
+
+
+\[
+\inferrule[T-True]{}{\hastytrue{\tt}{\ttt}}
+\qquad\qquad
+\inferrule[T-False]{}{\hastyfalse{\ff}{\fft}}
+\]
+
+
+\newcommand{\msubi}[1]{\marg{{#1}_i}{#1}}
+
+\renewcommand{\xi}{\msubi{\x{}}}
+\newcommand{\sai}{\msubi{\s{a}}}
+
+
+\[
+\inferrule[T-Abs]
+{\hastyeffphi [\G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}} \\\\
+\movervec[i]{\phih{} = \abstractfilter {\xi} {\phii{}}} \\
+\sh{} = \left\{
+ \protect{\begin{array}{ll}
+  \pii     & \text{if } \s{} = \pi(\xi) \\
+  \noeffect  & \text{otherwise}
+ \end{array}} \right.
+}
+{\hastytrue
+  {\abs[i]{\x{}}{\sig{}}{\e{}}} 
+  {\proctype {\movervec[i]{\sig{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}}
+}
+\qquad\qquad
+\inferrule[T-App]
+{ \hastyeffphi {\e{op}} {\t{op}}   {\phii{op}} {\s{op}}\\  
+  \movervec[i]{\hastyeffphi {\e{a}} {\t{a}}  {\phii{a}} {\s{a}}}\\\\ 
+  \movervec[i]{\subtype {\t{a}}{\t{f}}} \\
+  {\subtype {\t{op}} {\proctype{\movervec[i]{\t{f}}}{\t{r}}{\movervec[i]{\phih{f}}}{\sh{}}}} \\\\
+\phii{r} = \movervec[i]{\applyfilter{\phih{f}}{\t{a}}{\s{a}}} \\\\
+\s{r} = \left\{
+  \protect{\begin{array}{ll}
+      \pi'(\pi(x))     & \text{if } \sh{} = \pipi \text{ and } {\sai} = \pi(\x{}) \\
+      \noeffect  & \text{otherwise}
+    \end{array}} \right.
+}
+{\hastyeffphi {\comb{\e{op}}{\movervec[i]{\e{a}}}} {\t{r}} {\phii{r}} {\s{r}}}
+\]
+
+\[
+\inferrule[T-If]
+{
+  \hastyeff{\e1}{\t1}{\op1}{\op2}{\s1}
+  \\\\
+  \hastyeffphi[\G{} + \op1]{\e2}{\t2}{\phii2} {\s2}
+  \\\\
+  \hastyeffphi[\G{} + \op2]{\e3}{\t3}{\phii3} {\s3}
+  \\\\
+  \subtype{\t2}{\t{}} \\
+  \subtype{\t3}{\t{}} \\\\
+  \phii{} = \combfilter{\op1|\op2}{\phii2}{\phii3}
+}
+{\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
+\]
+
+\paragraph{Rules for Pairs}
+
+\begin{displaymath}
+  \inferrule[T-Cons]
+  {
+    \hastyeffphi{\e1}{\t1}{\phii1}{\s1} \\\\ \hastyeffphi{\e2}{\t2}{\phii2}{\s2} 
+  }
+  {
+    \hastytrue{\cons{\e1}{\e2}} {\consty{\t1}{\t2}}
+  }
+\end{displaymath}
+
+\begin{displaymath}
+\inferrule[T-Car]
+  {
+    \hastyeffphi{\e{}} {\consty{\t1}{\t2}} {\phii{}} {\s{}} \\\\
+    \phii{r} = \applyfilter{\comp{\fft}_{\pecar}|{\fft}_{\pecar}}{\consty{\t1}{\t2}} {\s{}} \\\\
+    \s{r} = \left\{
+      \protect{\begin{array}{ll}
+          \pecar(\pi(x))     & \text{if } {\s{}} = \pi(\x{}) \\
+          \noeffect  & \text{otherwise}
+        \end{array}} \right.
+  }
+  {
+    \hastyeffphi{\comb{\car}{\e{}}}{\t1}{\phii{r}}{\s{r}}
+  }
+  \qquad\qquad
+  \inferrule[T-Cdr]
+  {
+    \hastyeffphi{\e{}} {\consty{\t1}{\t2}} {\phii{}} {\s{}} \\\\
+    \phii{r} = \applyfilter{\comp{\fft}_{\pecdr}|{\fft}_{\pecdr}}{\consty{\t1}{\t2}} {\s{}} \\\\
+    \s{r} = \left\{
+      \protect{\begin{array}{ll}
+          \pecdr(\pi(x))     & \text{if } {\s{}} = \pi(\x{}) \\
+          \noeffect  & \text{otherwise}
+        \end{array}} \right.
+  }
+  {
+    \hastyeffphi{\comb{\cdr}{\e{}}}{\t2}{\phii{r}}{\s{r}} 
+  }
+\end{displaymath}
+
+\paragraph{Auxilliary Type Rules}
+
+\begin{displaymath}
+  \inferrule[T-Not]
+  {
+    \hastyeff{\e{}}{\t{}}{\op1}{\op2}{\s{}}      
+  }
+  {
+    \hastyeff{\nott{\e{}}}{\bool}{\op2}{\op1}{\noeffect}      
+  }
+  \qquad\qquad
+  \inferrule[T-Bot]
+  {
+    \Gamma(\x{}) = \bot
+  }
+  {
+    \hastyeffphi{\e{}}{\bot}{\bullet|\bullet}{\noeffect}
+  }
+\end{displaymath}
+
+{\sc T-Bot} is needed to avoid complaints about spurious unreachable code.
+
+\paragraph{Proof-theoretic Type Rules}
+
+\[
+\inferrule[T-IfTrue]
+{
+  \hastyeff{\e1}{\t1}{\op1}{\bot}{\s1}
+  \\\\
+  \hastyeffphi[\G{} + \op1]{\e2}{\t2}{\phii2} {\s2}
+  \\\\
+  \subtype{\t2}{\t{}} \\\\
+  \phii{} = \combfilter{\op1|\bot}{\phii2}{\bullet|\bullet}
+}
+{\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
+\qquad\qquad
+\inferrule[T-IfFalse]
+{
+  \hastyeff{\e1}{\t1}{\bot}{\op2}{\s1}
+  \\\\
+  \hastyeffphi[\G{} + \op2]{\e3}{\t3}{\phii3} {\s3}
+  \\\\
+  \subtype{\t3}{\t{}} \\\\
+  \phii{} = \combfilter{\bot|\op2}{\bullet|\bullet}{\phii3}
+}
+{\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
+\]
+
+\newpage
+
+\section{Subtyping}
+
+
+\[
+\inferrule[S-Refl]{ }{\subtype{\t{}}{\t{}}}
+\ifmarg
+\qquad\qquad
+\inferrule[S-ProcTop]
+{ }{\subtype {\proctype {\movervec[i]{\sig{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}} {\proctop}}
+\else
+\fi
+\qquad\qquad
+\inferrule[S-Top]{ }{\subtype{\t{}}{\top}}
+\]
+
+\[
+\inferrule[S-Pair]
+{
+  \subtype{\t1}{\t2} \\
+  \subtype{\sig1}{\sig2}
+}
+{
+  \subtype{\consty{\t1}{\sig1}}{\consty{\t2}{\sig2}}
+}
+\qquad\qquad
+\inferrule[S-Fun]
+{
+  \movervec[i]{\subtype{\sig{a}}{\t{a}}} \\ 
+  \subtype{\t{r}}{\sig{r}} \\\\ 
+  \movervec[i]{\phih{}' \subseteq \phih{}} \\ \sh{} = \sh{}' \text{ or } \sh{}' = \noeffect
+}
+{
+  \subtype
+  {\proctype{\movervec[i]{\t{a}}}{\t{r}}{\movervec[i]{\phih{}}}{\sh{}}}
+  {\proctype{\movervec[i]{\sig{a}}}{\sig{r}}{\movervec[i]{\phih{}'}}{\sh{}'}}
+}
+\]
+
+\[
+\inferrule[S-UnionSuper]
+{\exists i.\ {\subtype{\t{}}{\sig{i}}}}
+{\subtype{\t{}}{(\usym\ \overvec[i]{\sig{}})}}
+\qquad\qquad
+\inferrule[S-UnionSub]
+{\overvec[i]{\subtype{\t{i}}{\sig{}}}}
+{\subtype{(\usym\ \overvec[i]{\t{}})}{\sig{}}}
+\]
+
+\vspace{5mm}
+
+There's still a problem here: 
+\notsubtype 
+{\consty{\uniontwo{\t{}}{\sig{}}}{\ups{}}}
+{\uniontwo {\consty{\t{}} {\ups{}}} {\consty{\sig{}} {\ups{}}}  } 
+
+I don't know how to fix this at the moment, short of a \usym-normalization step.
+
+%% Unclear if we need a subeffecting relation - it was only used in the proof
+
+% \[
+% \inferrule[SE-Refl]{}{\subeff{\p{}}{\p{}}}
+% \qquad\qquad
+% \inferrule[SE-None]{}{\subeff{\p{}}{\noeffect}}
+% \]
+
+% \[
+% \inferrule[SE-True]{\p{} \neq \ff}{\subeff{\tt}{\p{}}}
+% \qquad\qquad
+% \inferrule[SE-False]{\p{} \neq \tt}{\subeff{\ff}{\p{}}}
+% \]
+
+
+\newpage
+
+\section{Metafunctions}
+
+\newcommand{\af}[3]{\abstractfilter{#1}{#2} & {#3}}
+\newcommand{\apf}[4]{\applyfilter{#1}{#2}{#3} & {#4}}
+
+\subsection{Abstract}
+
+$$
+  \begin{array}{l@{\ =\ }l@{\qquad}l}
+    \af{\x{}}{\op1|\op2}{\overvec{\abstractone{\x{}}{\p1}}|\overvec{\abstractone{\x{}}{\p2}}} &  \vspace{2mm}\\
+
+    \abstractone{\x{}}{\bot}& {\both} & \\
+    \abstractone{\x{}}{{\t{}}_{\pi(\x{})}}& {{\t{}}_{\pi}} & \\
+    \abstractone{\x{}}{\comp{\t{}}_{\pi(\x{})}}& {\comp{\t{}}_{\pi}} & \\
+    \abstractone{\x{}}{{\t{}}_{\pi(\y{})}}& {\bullet} &  \text{ where } \x{} \neq \y{} \\
+    \abstractone{\x{}}{\comp{\t{}}_{\pi(\y{})}}& {\bullet} & \text{ where } \x{} \neq \y{} \\
+%    \text{ where }
+%    \ph{} = \left\{
+%      \protect{\begin{array}{ll}
+%          \both             & \text{if } \bot \in \op{i} \\
+%          \bullet        & \text{otherwise}
+%        \end{array}} \right.
+   \end{array}
+$$
+%
+\subsection{Apply}
+
+
+$$
+  \begin{array}{l@{\ =\ }l@{\qquad}l}
+    \apf{\oph{+}|\oph{-}}{\t{}}{\s{}}{\overvec{\applyone{\ph+}{\t{}}{\s{}}}|\overvec{\applyone{\ph-}{\t{}}{\s{}}}} &
+%    {\overvec[i]{\p{+_+}},\overvec[j]{\p{-_-}}|
+%     \overvec[i]{\p{-_+}},\overvec[j]{\p{+_-}}} & 
+%   \text{ where } \overvec[i]{\p{+_+},{\p{+_-}}}  = \overvec[i]{\applyone{\ph+}{\t{}}{\s{}}} \\
+%   & & & \text{ and } \overvec[j]{\p{-_+},{\p{-_-}}}  = \overvec[j]{\applyone{\ph-}{\t{}}{\s{}}} \\
+\vspace{2mm}\\
+
+
+
+    \applyone{\both}{\sig{}}{\s{}} & \bot & \\
+    \applyone{\comp{\t{}}_{\bullet}} {\sig{}} {\s{}} & \bot & \text{ where } \subtype{\sig{}}{\t{}}\\
+    \applyone{{\t{}}_{\bullet}} {\sig{}} {\s{}} & \bot & \text{ where } \nooverlap{\sig{}}{\t{}}\\
+    \applyone{\ph{}}{\sig{}}{\noeffect} & \bullet & \\
+    \applyone{\t{\pi'}} {\sig{}} {\pi(\x{})} & \t{{\pi'(\pi(\x{}))}} & \\
+    \applyone{\comp{\t{}}_{\pi'}} {\sig{}} {\pi(\x{})} & \comp{\t{}}_{{\pi'(\pi(\x{}))}} & \\
+   \end{array}
+$$
+
+Cases 2 and 3 of {\applyone{-}{-}{-}} are redundant with the {\sc
+  T-Bot} type rule.  Probably one one of them is needed.
+
+\subsection{Combine}
+
+There are many possibilities for $\combfilter{-}{-}{-}$.  One is the
+very conservative
+
+$$%
+\begin{array}{l@{\ =\ }l@{\qquad}l}
+\combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & 
+\end{array}
+$$
+
+\noindent
+A more sophisticated version is:
+
+
+\newcommand{\ts}{\uniontwo{\t{}}{\s{}}}
+
+$$
+\begin{array}{l@{\ =\ }l@{\qquad}l}
+\combfilter{\phii{}}{\bullet|\bot}{\bot|\bullet} & \phii{}
+& \text{  the student expansion}\\
+
+\combfilter{\bullet|\bot}{\phii2}{\phii3} & \phii2 & \\
+
+\combfilter{\bot|\bullet}{\phii2}{\phii3} & \phii3 & \vspace{3mm}\\
+
+\multicolumn{2}{l}{\combfilter 
+{\t{\pi(\x{})}::\op{1_+}|\comp{\t{}}_{\pi(\x{})}::\op{1_-}}
+{\bullet|\bot}
+{{\sig{\pi(\x{})}::\op{3_+}|\comp{\sig{}}_{\pi(\x{})}::\op{3_-}}} 
+}
+  & \text{ or with predicates} \\
+& \ts_{\pi(\x{})}::\op+|{\comp{\ts}}_{\pi(\x{})}::\op- & \\
+\multicolumn{3}{c}{\text{where } \op+|\op- = \combfilter{\op1_+|\op1_-}{\bullet|\bot}{\op3_+|\op3_-}} \vspace{3mm}\\
+
+\combfilter{\op{1_+}|\op{1_-}} {\bullet|\bot} {\op{3_+}|\op{3_-}} & {\bullet|\op{1_-},\op{3_-}}& \text{ or} \vspace{3mm}\\
+
+\combfilter{\op{1_+}|\op{1_-}} {\op{2_+}|\op{2_-}} {\bot|\bullet} & \op{1_+},\op{2_+}|\bullet & \text{ and} \vspace{3mm}\\
+
+\combfilter{\phii{}}{\phii{}'}{\phii{}'} & \phii{}' & \\
+
+\combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & \text{ otherwise}
+\end{array}
+$$
+
+Rules 2 and 3 might only be needed in the proof.
+
+
+\newpage
+
+\section{Operational Semantics}
+
+\[
+\inferrule*[lab={E-Delta}]
+        {\del{\c{}}{\vv{}} = \vv{}'}
+        {\step{\comb{\c{}}{\vv{}}}{\vv{}'}}
+\qquad\qquad
+\inferrule[E-Beta]{}
+      {\step{\comb{\abs[i]{\x{}}{\t{}}{\e{b}}}{\movervec[i]{\e{a}}}}{\subsmulti{\e{b}}{\x{}}{\e{a}}{i}}}
+\]
+
+\[
+\inferrule[E-IfFalse]{}
+      {\step{\cond{\ff}{\e2}{\e3}}{\e3}}
+\qquad\qquad
+\inferrule[E-IfTrue]{\vv{} \neq \ff}
+      {\step{\cond{\vv{}}{\e2}{\e3}}{\e2}}
+\]
+
+\[
+\inferrule*
+        {\step{L}{R}}
+        {\reduce{\E{}[L]}{\E{}[R]}}
+\]
+
+
+\newpage
+
+\section{Constants}
+
+
+\[
+\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
+  \dt{\numberp} & {\predty{\bullet}{\num}} & \\
+  \dt{\procp} & {\predty{\bullet}{\proctop}} & \\
+  \dt{\boolp} & {\predty{\bullet}{\bool}} & \\
+  \dt{\consp} & {\predty{\bullet}{\consty{\top}{\top}}} & \\
+  \dt{\addone} & {\simpleproc{\num}{\num}} & \\
+  \dt{\notsym} & {\simpleproc{\top}{\bool}} & \\
+  \dt{\zerop} & {\simpleproc{\num}{\bool}} & \\
+\end{array}
+\]
+
+\vspace{5mm}
+
+\[
+\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
+  \del{\addone}{\n{}} & \n{} + 1 & \vspace{2mm}\\
+
+  \del{\notsym}{\ff} & \tt & \\
+  \del{\notsym}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
+
+  \del{\zerop}{0} & \tt & \\
+  \del{\zerop}{\n{}} & \ff & \text{ otherwise} \vspace{2mm}\\
+
+  \del{\numberp}{\n{}} & \tt & \\
+  \del{\numberp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
+
+  \del{\boolp}{\tt} & \tt & \\
+  \del{\boolp}{\ff} & \tt & \\
+  \del{\boolp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
+
+  \del{\procp}{\abs{\x{}}{\t{}}{\e{}}} & \tt & \\
+  \del{\procp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
+
+  \del{\car}{\cons{\vv1}{\vv2}} & \vv1 & \\
+  \del{\cdr}{\cons{\vv1}{\vv2}} & \vv2 & \\
+\end{array}
+\]
+
+\newpage
+\section{Environment Operations}
+
+\newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}_{#2})}
+\newcommand{\updatesimp}[2]{\mathrm{update}({#1},{#2})}
+
+$$
+\begin{array}{@{\Gamma\ +\ }l@{\ =\ }l@{\qquad}l}
+  \t{\pi(\x{})},\op{} & (\Gamma,\x{}:\update{\pi}{\t{}}) + \op{}& \\
+  \comp{\t{}}_{\pi(\x{})},\op{} & (\Gamma,\x{}:\update{\pi}{\comp{\t{}}}) + \op{}& \\
+  \bot,\op{} & \Gamma' & \text{ where } {\forall \x{}}.\Gamma'(\x{}) = \bot\ \\ %
+  \bullet & \Gamma & \\
+%  \p{} & \Gamma,\x{}:\updatesimp{\Gamma(\x{})}{\p{}} & \\
+%  \comp{\t{}}_{\pi(\x{})} & \Gamma,\x{}:\update{\pi}{\comp{\t{}}} & \\
+%  \bot & \Gamma' & \text{ where } {\forall \x{}}.\Gamma'(\x{}) = \bot\ \\ %
+\end{array}
+$$
+
+$$
+\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
+  \update[\consty{\t{}}{\sig{}}]{\pecar::\pi}{\ups{}} & \consty{\update[\t{}]{\pi}{\ups{}}}{\sig{}}  & \\
+  \update[\consty{\t{}}{\sig{}}]{\pecar::\pi}{\comp{\ups{}}} & \consty{\update[\t{}]{\pi}{\comp{\ups{}}}}{\sig{}}  & \\
+
+  \update[\consty{\t{}}{\sig{}}]{\pecdr::\pi}{\ups{}} & \consty{\t{}}{\update[\sig{}]{\pi}{\ups{}}}  & \\
+  \update[\consty{\t{}}{\sig{}}]{\pecdr::\pi}{\comp{\ups{}}} & \consty{\t{}}{\update[\sig{}]{\pi}{\comp{\ups{}}}}  & \\
+
+  \update[\t{}]{\bullet}{\ups{}} & \restrict{\t{}}{\ups{}}& \\
+
+  \update[\t{}]{\bullet}{\comp{\ups{}}} & \remove{\t{}}{\ups{}}& \\
+%  \updatesimp{\t{}}{\both} & {\bot} & \\
+\end{array}
+%
+$$
+
+\vspace{5mm}
+$$
+\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
+  \restrict{\t{}}{\sig{}} & \bot & \text{ if } {\nooverlap{\t{}}{\sig{}}} \\
+  \restrict{(\usym\ \overvec{\t{}})}{\sig{}} & (\usym\ \overvec{\restrict{\t{}}{\sig{}}})& \\
+  \restrict{\t{}}{\sig{}} & \t{} & \text{ if } {\subtype{\t{}}{\sig{}}} \\
+  \restrict{\t{}}{\sig{}} & \sig{} & \text{ otherwise} \vspace{5mm}\\
+
+
+  \remove{\t{}}{\sig{}} & \bot & \text{ if } {\subtype{\t{}}{\sig{}}} \\
+  \remove{(\usym\ \overvec{\t{}})}{\sig{}} & (\usym\ \overvec{\remove{\t{}}{\sig{}}})& \\
+  \remove{\t{}}{\sig{}} & \t{} & \text{ otherwise} \vspace{5mm}\\
+
+  \nooverlap{\num}{\bool} & \mathrm{true} & \\
+  \nooverlap{\num}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
+  \nooverlap{\bool}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
+  \nooverlap{\num}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phih{}}}{\sh{}}} & \mathrm{true} & \\
+  \nooverlap{\bool}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phih{}}}{\sh{}}} & \mathrm{true} & \\
+  \nooverlap
+  {\consty{\t{}}{\sig{}}}
+  {\proctype{\movervec[i]{\ups{a}}}{\ups{r}}{\movervec[i]{\phih{}}}{\sh{}}} & 
+  \mathrm{true} & \\
+  \nooverlap{(\usym\ \overvec{\t{}})}{\sig{}} & \bigwedge
+  \overvec{\nooverlap{\t{}}{\sig{}}} & \\
+  \nooverlap{\t{}}{\sig{}} & \mathrm{true} & \text{ if } \nooverlap{\sig{}}{\t{}}\\
+  \nooverlap{\t{}}{\sig{}} & \mathrm{false} & \text{ otherwise}\\
+\end{array}
+$$
+
+\newpage
+\section{Examples}
+
+\subsection{Expression Examples}
+
+\newcommand{\nump}[1]{\ma{\comb{\numberp}{#1}}}
+
+\newcommand{\carx}{\ma{\comb{\car}{\x{ }}}}
+
+\newcommand{\pecarx}{\ma{\pecar(\x{})}}
+\newcommand{\pecarcarx}{\ma{\pecar(\pecar(\x{}))}}
+
+\newcommand{\xenv}[1]{\x{}:{#1}}
+\newcommand{\xenvtop}{\xenv{\top}}
+\newcommand{\xyenv}{\xenvtop,\y{}:\top}
+
+
+\newcommand{\numpx}{\nump{\x{}}}
+\newcommand{\boolpx}{\comb{\boolp}{\x{}}}
+\newcommand{\boolpy}{\comb{\boolp}{\y{}}}
+
+\newcommand{\cand}[2]{\comb{\andsym}{{#1}\ {#2}}}
+\newcommand{\cor}[2]{\comb{\orsym}{{#1}\ {#2}}}
+
+\newcommand{\numbool}{{(\usym\ \num\ \bool)}}
+\newcommand{\inumbool}{{(\isym\ \num\ \bool)}}
+
+
+\begin{displaymath}
+  \hastyvar[\xenvtop]{\x{}}{\top}{\x{}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastyvar[{\xenv{\consty{\top}{\top}}{}}]{\carx{}}{\top}{\pecarx{}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastypred [\xenvtop] {\numpx} {\num} {\x{}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastypred [\xenv{\consty{\top}{\top}}] {\nump{\carx}} {\num} {\pecarx}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastyfalse[\empty]{\ff}{\fft}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue[\empty]{3}{\num}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastyeff[\xyenv] {\cand{\numpx}{\boolpy}} {\bool} {\num_{x{}},\bool_{\y{}}}  {\bullet} {\noeffect}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastyeff[\xyenv] {\cor{\numpx}{\boolpy}} {\bool} {\bullet} {\comp{\num}_{x{}},\comp{\bool}_{\y{}}}  {\noeffect}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastyeff[\xenvtop] {\cand{\numpx}{\boolpx}} {\bool} {\num_{x{}},\bool_{\x{}}}  {\bullet} {\noeffect}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastypred[\xenvtop] {\cor{\numpx}{\boolpx}} {\numbool} {\x{}}
+\end{displaymath}
+
+or alternatively, if we had intersection types:
+
+\begin{displaymath}
+  \hastypred[\xenvtop] {\cand{\numpx}{\boolpx}} {\inumbool} {\x{}}
+\end{displaymath}
+
+\newpage
+
+\subsection{Function Examples}
+
+\newcommand{\consab}{\consty{\a{}}{\b{}}}
+
+\begin{displaymath}
+  \hastytrue {\car} {\latentvarty{\consab}{\a{}}{\pecar}{\pecar(0)}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue{\abssingle{\x{}}{\a{}}{\x{}}} {\latentvarty{\a{}}{\a{}}{\bullet}{0}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue {\numberp} {\predty{\bullet}{\num}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue {\abssingle{\x{}}{\top}{\nump{\x{}}}} {\predty{\bullet}{\num}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue {\abssingle{\x{}}{\consab}{\nump{\carx}}} {\predty[{\consab}]{\pecar}{\num}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue {\abssingle{\x{}} {\consab} {\nott{\nump{\carx}}}}
+  {\proctype{{\consab}}{\bool}{{\comp{\num}_{\pecar}|{{\num}}_{\pecar}}}{\noeffect}}
+\end{displaymath}
+
+\begin{displaymath}
+  \hastytrue {\abssingle{\x{}}{\a{}}{\ff}} {\proctype{\a{}}{\bool}{\both|\bullet}{\noeffect}}
+\end{displaymath}
+
+
+\ifmarg
+\begin{displaymath}
+  \hastytrue
+  {\absgeneral {\x{} : \top, \y{} : \top} {\nump{\x{}}}} 
+  {\proctype{\top, \top}{\bool}{{\num}_{\bullet}|{\comp{\num}}_{\bullet},\bullet|\bullet}{\noeffect}}
+\end{displaymath}
+\else
+\fi
+
+\newpage
+
+\section{Larger Example}
+
+\def\prty{\consty{\consty{\top}{\top}}{\top}}
+\def\prtyf{\consty{\consty{\fft}{\top}}{\top}}
+\def\env{\x{}:\prty}
+\def\app{\comb{\car}{\carx}}
+\def\concl{\hastyeffphi{\cond{\app}{\tt}{\app}}{\bool}{\bullet|\bullet}{\noeffect}}
+
+
+
+Let $\Gamma = \env$.
+
+\vspace{1cm}
+
+%begin{turn}{270}
+
+\small
+$
+\inferrule*
+{
+  \framebox{\(\inferrule*{
+      \inferrule*{\hastyvar{\x{}}{\prty}{\x{}}}{\hastyvar{\carx}{\consty{\top}{\top}}{\pecarx}}}
+    {\hastyvar{\app}{\top}{\pecarcarx}}\)
+  }
+\and
+\framebox{\(
+\inferrule*{
+  {\framebox{\(
+      \inferrule*
+      {\hastytrue[{\x{}:\prtyf}]{\x{}}{\prtyf}}
+      {\hastytrue[{\x{}:\prtyf}]{\carx}{\consty{\top}{\fft}}} \)}}\\\\
+  \Gamma + {{\fft}_{\pecarcarx}} = {\x{}:\prtyf} }
+ {\hastyfalse[\Gamma + {{\fft}}_{\pecarcarx}]{\app}{\fft}}\)} \\
+ \hastytrue[\Gamma + \comp{\fft}_{\pecarcarx}]{\tt}{\ttt} \\
+ {\bullet|\bullet} = \combfilter{\fft_{\pecarcarx}|{\comp{\fft}}_{\pecarcarx}}{\bullet|\bot}{\bot|\bullet}}
+{\concl}
+$
+%end{turn}
+
+\normalsize
+\end{document}
+
