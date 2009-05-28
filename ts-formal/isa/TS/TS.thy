@@ -406,7 +406,7 @@ nominal_primrec
 nominal_primrec
   zerop_fun :: "trm \<Rightarrow> trm option"
   where
-  "zerop_fun (Num n) = Some (Bool True)"
+  "zerop_fun (Num n) = Some (Bool (n=0))"
   |"zerop_fun (Lam[x:ty].b) = None"
   |"zerop_fun (Iff a b c) = None"
   |"zerop_fun (App a b) = None"
@@ -440,7 +440,7 @@ nominal_primrec
   |"booleanp_fun (BI c) = False"
   |"booleanp_fun (Var v) = False"
   |"booleanp_fun (Iff a b c) = False"
-  |"booleanp_fun (CONS a b) = True"
+  |"booleanp_fun (CONS a b) = False"
   by (auto, finite_guess+, fresh_guess+)
 
 nominal_primrec
@@ -453,7 +453,7 @@ nominal_primrec
   |"procp_fun (BI c) = True"
   |"procp_fun (Var v) = False"
   |"procp_fun (Iff a b c) = False"
-  |"procp_fun (CONS a b) = True"
+  |"procp_fun (CONS a b) = False"
   by (auto, finite_guess+, fresh_guess+)
 
 nominal_primrec
@@ -1511,6 +1511,7 @@ lemma map_eqvt[eqvt]:
   shows "pi \<bullet> (map (% (a,b). x) l) = (map (% (a,b). pi \<bullet> x) (pi \<bullet> l))"
   by (induct l) auto
 
+(*
 lemma env_plus_eqvt[eqvt]:
   fixes pi :: "name prm"
   assumes "valid G"
@@ -1533,10 +1534,516 @@ lemma env_plus_eqvt[eqvt]:
   apply auto
 
 
-  
+*)
+
+abbreviation "tfil ==  F [] [Bot] "
+
+inductive
+  typing :: "varEnv \<Rightarrow> trm \<Rightarrow> ty \<Rightarrow> f \<Rightarrow> s \<Rightarrow> bool" (" _ \<turnstile> _ : _ ; _ ; _ " [60,60,60,60,60] 60) 
+where
+  T_True[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> Bool True : TT ; tfil ; None"
+| T_False[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> Bool False : FF ; F [Bot] [] ; None"
+| T_Const[intro]: "valid \<Gamma> \<Longrightarrow>  c \<noteq> CAR \<and> c \<noteq> CDR \<Longrightarrow> \<Gamma> \<turnstile> BI c : \<Delta>\<^isub>\<tau> c ; tfil ; None"
+| T_Num[intro]: "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> Num n : N ; tfil ; None"
+| T_Var[intro]: "valid \<Gamma> \<Longrightarrow> lookup \<Gamma> v = Some T \<Longrightarrow> \<Gamma> \<turnstile> Var v : T ; F [NTE FF [] v] [TE FF [] v] ; Some ([],v)"
+| T_Abs[intro]: "valid \<Gamma> \<Longrightarrow> (x,S)#\<Gamma> \<turnstile> e : T ; \<Phi> ; obj \<Longrightarrow> \<phi> = abstractfilter x \<Phi> \<Longrightarrow> 
+  Obj = (case obj of None \<Rightarrow> None | Some (pi,x') \<Rightarrow> (if x = x' then Some pi else None)) \<Longrightarrow> 
+  \<Gamma> \<turnstile> (Lam[x:S].e) : (S \<rightarrow> T : \<phi> : Obj) ; tfil ; None"
+| T_App[intro]:
+  "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> e_op : t_op ; \<Phi>_op ; o_op \<Longrightarrow> \<Gamma> \<turnstile> e_a : t_a ; \<Phi>_a ; o_a \<Longrightarrow>
+  \<turnstile> t_a <: t_f \<Longrightarrow> \<turnstile> t_op <: t_f \<rightarrow> t_r : \<phi>_f : O_f \<Longrightarrow>
+  \<Phi>_r = applyfilter \<phi>_f t_a o_a \<Longrightarrow>
+  o_r = (case O_f of None \<Rightarrow> None | Some pi' \<Rightarrow> (case o_a of None \<Rightarrow> None | Some (pi,x) \<Rightarrow> Some (pi' @ pi, x))) \<Longrightarrow>
+  \<Gamma> \<turnstile> App e_op e_a : t_r ; \<Phi>_r ; o_r"
+| T_If[intro]:
+  "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> e1 : t1 ; (F ps_p ps_m) ; o1 \<Longrightarrow>
+  env_plus \<Gamma> ps_p \<turnstile> e2 : t2 ; f2 ; o2 \<Longrightarrow>
+  env_plus \<Gamma> ps_m \<turnstile> e3 : t3 ; f3 ; o3 \<Longrightarrow> 
+  \<turnstile> t2 <: t \<Longrightarrow> \<turnstile> t3 <: t \<Longrightarrow> f = combfilter (F ps_p ps_m) f2 f3 \<Longrightarrow>
+  \<Gamma> \<turnstile> (Iff e1 e2 e3) : t ; f ; None"
+| T_Cons[intro]:
+  "valid \<Gamma> \<Longrightarrow>  \<Gamma> \<turnstile> e1 : t1 ; f1 ; o1 \<Longrightarrow>   \<Gamma> \<turnstile> e2 : t2 ; f2 ; o2 \<Longrightarrow>
+   \<Gamma> \<turnstile> CONS e1 e2 : Pr t1 t2 ; tfil ; None"
+| T_Car[intro]:
+  "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> e_a : t_a ; \<Phi>_a ; o_a \<Longrightarrow>
+  \<turnstile> t_a <: Pr t1 t2 \<Longrightarrow>
+  \<Phi>_r = applyfilter (FH [NTEH FF [Car]] [TEH FF [Car]]) t_a o_a \<Longrightarrow>
+  o_r = (case o_a of None \<Rightarrow> None | Some (pi,x) \<Rightarrow> Some ([Car] @ pi, x)) \<Longrightarrow>
+  \<Gamma> \<turnstile> App (BI CAR) e_a : t_1 ; \<Phi>_r ; o_r"
+
+| T_Cdr[intro]:
+  "valid \<Gamma> \<Longrightarrow> \<Gamma> \<turnstile> e_a : t_a ; \<Phi>_a ; o_a \<Longrightarrow>
+  \<turnstile> t_a <: Pr t1 t2 \<Longrightarrow>
+  \<Phi>_r = applyfilter (FH [NTEH FF [Cdr]] [TEH FF [Cdr]]) t_a o_a \<Longrightarrow>
+  o_r = (case o_a of None \<Rightarrow> None | Some (pi,x) \<Rightarrow> Some ([Cdr] @ pi, x)) \<Longrightarrow>
+  \<Gamma> \<turnstile> App (BI CDR) e_a : t_2 ; \<Phi>_r ; o_r"
+
+inductive_cases lam_ty2: "G \<turnstile> Lam[x:T].e : T' ; fil ; obj"
+
+lemma lam_ty: assumes a:"G \<turnstile> Lam[x:T].e : T' ; fil ; obj" shows b:"EX A B C D. T' = A \<rightarrow> B : C : D"
+  using lam_ty2[OF a, of "\<exists>A B C D. T' = A \<rightarrow> B : C : D"] by auto
+
+inductive_cases fun_sub_pair2: "\<turnstile> S \<rightarrow> T : A : b <: <T1,T2>"
+inductive_cases sub_pair_cases: "\<turnstile> T <: <T1,T2>"
+
+lemma fun_sub_pair: "\<turnstile> S \<rightarrow> T : A : b <: <T1,T2> \<Longrightarrow> False"
+  using fun_sub_pair2 by auto
+
+inductive_cases fun_sub_num: "\<turnstile> S \<rightarrow> T : A : b <: N"
+
+lemma sub_pair:
+  assumes a:"v : values" and b:"\<Gamma> \<turnstile> v : T ; f ; obj" and c:"\<turnstile> T <: <T1,T2>"
+  shows "EX v1 v2. v = CONS v1 v2"
+using b prems
+proof (induct \<Gamma> v T f obj rule: typing.induct)
+  case T_Abs thus ?case using fun_sub_pair2 by auto
+next
+  case (T_Var _ v) thus ?case using values.cases[of "Var v"] by auto
+next
+  case (T_App _ a _ _ _ b) thus ?case using values.cases[of "App a b"] by auto
+next
+  case (T_Car _ a _ _ _ b) thus ?case using values.cases[of "App (BI CAR) a"] by auto
+next
+  case (T_Cdr _ a _ _ _ b) thus ?case using values.cases[of "App (BI CDR) a"] by auto
+next
+  case T_If thus ?case using values.cases[OF T_If(11)] by auto
+next
+  case T_Cons thus ?case by auto
+next
+  case T_Num 
+  have "\<turnstile> N <: <T1,T2> \<Longrightarrow> False" by (ind_cases "\<turnstile> N <: <T1,T2>")
+  thus ?case using T_Num by auto
+next
+  case T_True 
+  have "\<turnstile> TT <: <T1,T2> \<Longrightarrow> False" by (ind_cases "\<turnstile> TT <: <T1,T2>")
+  thus ?case using T_True by auto
+next
+  case T_False
+  have "\<turnstile> FF <: <T1,T2> \<Longrightarrow> False" by (ind_cases "\<turnstile> FF <: <T1,T2>")
+  thus ?case using T_False by auto
+next
+  case (T_Const _ c)
+  thus ?case using fun_sub_pair[of _ _ _ _ T1 T2] by (induct c) auto
+qed
 
 
-      
+lemma sub_fun:
+  fixes A B C D
+  assumes a:"v : values" (is "?vv : values") and b:"\<Gamma> \<turnstile> v : T ; f ; obj" and c:"\<turnstile> T <: A \<rightarrow> B : C : D" (is "\<turnstile> _ <: ?TT")
+  shows "(EX c. v = BI c) \<or> (EX x S e. v = Lam[x:S].e)"
+using b prems
+proof (induct \<Gamma> v T f obj rule: typing.induct)
+  case T_Abs thus ?case by auto
+next
+  case (T_Var _ v) thus ?case using values.cases[of "Var v"] by auto
+next
+  case (T_App _ a _ _ _ b) thus ?case using values.cases[of "App a b"] by auto
+next
+  case (T_Car _ a _ _ _ b) thus ?case using values.cases[of "App (BI CAR) a"] by auto
+next
+  case (T_Cdr _ a _ _ _ b) thus ?case using values.cases[of "App (BI CDR) a"] by auto
+next
+  case T_If thus ?case using values.cases[OF T_If(11)] by auto
+next
+  case (T_Cons _ _ T1 _ _ _ T2) have "\<turnstile> <T1,T2> <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> <T1,T2> <: ?TT ") auto
+  thus ?case using T_Cons by auto
+next
+  case T_Num 
+  have "\<turnstile> N <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> N <: ?TT")
+  thus ?case using T_Num by auto
+next
+  case T_True 
+  have "\<turnstile> TT <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> TT <: ?TT")
+  thus ?case using T_True by auto
+next
+  case T_False
+  have "\<turnstile> FF <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> FF <: ?TT")
+  thus ?case using T_False by auto
+next
+  case (T_Const _ c) thus ?case by auto
+qed
 
-   
+inductive_cases add1_ty_cases: "G \<turnstile> BI ADD1 : t1 ; f1 ; o1"
+inductive_cases zerop_ty_cases: "G \<turnstile> BI ZEROP : t1 ; f1 ; o1"
+inductive_cases sub_n: "\<turnstile> T <: N"
+
+lemma sub_num:
+  fixes A v
+  assumes a:"v : values" (is "?vv : values") and b:"\<Gamma> \<turnstile> v : T ; f ; obj" and c:"\<turnstile> T <: N" (is "\<turnstile> _ <: ?TT") 
+  obtains c where "v = Num c"
+using b prems
+proof (induct \<Gamma> v T f obj rule: typing.induct)
+  case (T_Var _ v) thus ?case using values.cases[of "Var v"] by auto
+next
+  case (T_App _ a _ _ _ b) thus ?case using values.cases[of "App a b"] by auto
+next
+  case (T_Car _ a _ _ _ b) thus ?case using values.cases[of "App (BI CAR) a"] by auto
+next
+  case (T_Cdr _ a _ _ _ b) thus ?case using values.cases[of "App (BI CDR) a"] by auto
+next
+  case T_If thus ?case using values.cases[OF T_If(12)] by auto
+next
+  case (T_Abs _ _ T1 _ T2 _ _ F1 Obj) have "(\<turnstile> (T1 \<rightarrow> T2 : F1 : Obj) <: N) \<Longrightarrow> False" 
+    by (ind_cases "\<turnstile> (T1 \<rightarrow> T2 : F1 : Obj) <: N ") 
+  thus ?case using T_Abs by auto
+next
+  case (T_Cons _ _ T1 _ _ _ T2) have "\<turnstile> <T1,T2> <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> <T1,T2> <: ?TT ") 
+  thus ?case using T_Cons by auto
+next
+  case T_Num thus ?case by auto
+next
+  case T_True 
+  have "\<turnstile> TT <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> TT <: ?TT")
+  thus ?case using T_True by auto
+next
+  case T_False
+  have "\<turnstile> FF <: ?TT \<Longrightarrow> False" by (ind_cases "\<turnstile> FF <: ?TT")
+  thus ?case using T_False by auto
+next
+  case (T_Const _ c) 
+  thus ?case using fun_sub_num by (induct c) auto
+qed
+
+
+
+	
+theorem progress:
+  assumes a:"\<Gamma> \<turnstile> e : T ; \<Phi> ; obj" and b:"\<Gamma> = []"
+  shows "e : values \<or> (EX E e' e''. e = E e' \<and> e' \<hookrightarrow> e'' \<and> E : ctxt)"
+using a b
+proof (induct _ e T \<Phi> obj)
+  case T_Var thus ?case by auto
+next
+  case T_Abs thus ?case by auto
+next
+  case T_Const thus ?case by auto
+next
+  case T_Num thus ?case by auto
+next
+  case T_True thus ?case by auto
+next
+  case T_False thus ?case by auto
+next
+  case (T_Car G e_a t_a f_a o_a t1 t2 o_r)
+  let ?trm = "App (BI CAR) e_a"
+  {
+    assume "e_a : values"    
+    then obtain v1 v2 where "e_a = CONS v1 v2" using T_Car sub_pair by blast
+    hence "?trm \<hookrightarrow> v1" using `e_a : values` by auto
+    hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> v1 \<and> (%x. x) \<in> ctxt"
+      by auto
+    hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> v1 \<and> E \<in> ctxt" by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume "~ (e_a : values)"    
+    then obtain E e' e'' where "e_a = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_Car by blast
+    let ?E' = "(%t. App (BI CAR) (E t))"
+    from `E : ctxt` have B:"?E' : ctxt" by auto
+    from `e_a = E e'` have C:"App (BI CAR) e_a = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  ultimately show ?case by auto
+next
+  case (T_Cdr G e_a t_a f_a o_a t1 t2 o_r)
+  let ?trm = "App (BI CDR) e_a"
+  {
+    assume "e_a : values"    
+    then obtain v1 v2 where "e_a = CONS v1 v2" using T_Cdr sub_pair by blast
+    hence "?trm \<hookrightarrow> v2" using `e_a : values` by auto
+    hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> v2 \<and> (%x. x) \<in> ctxt"
+      by auto
+    hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> v2 \<and> E \<in> ctxt" by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume "~ (e_a : values)"    
+    then obtain E e' e'' where "e_a = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_Cdr by blast
+    let ?E' = "(%t. App (BI CDR) (E t))"
+    from `E : ctxt` have B:"?E' : ctxt" by auto
+    from `e_a = E e'` have C:"App (BI CDR) e_a = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  ultimately show ?case by auto
+next
+  case (T_If G e1 t1 f1p f1m o1 e2 t2 f2 o2 e3)  
+  let ?trm = "Iff e1 e2 e3"
+  {
+    assume "~ (e1 : values)"    
+    then obtain E e' e'' where "e1 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_If by blast
+    let ?E' = "(%t. Iff (E t) e2 e3)"
+    from `E : ctxt` have B:"?E' : ctxt" by auto
+    from `e1 = E e'` have C:"?trm = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume v:"e1 : values" and b:"e1 = Bool False"
+    hence "?trm \<hookrightarrow> e3" by simp
+    hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> e3 \<and> (%x. x) \<in> ctxt"
+      by auto
+    hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> e3 \<and> E \<in> ctxt" by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume v:"e1 : values" and b:"e1 \<noteq> Bool False"
+    hence "?trm \<hookrightarrow> e2" by simp
+    hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> e2 \<and> (%x. x) \<in> ctxt"
+      by auto
+    hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> e2 \<and> E \<in> ctxt" by auto
+    hence ?case by auto
+  }
+  ultimately show ?case by blast
+next
+  case (T_App G e1 t1 f1 o1 e2 t2 f2 o2 t_f t_r f_f O_f) 
+  let ?trm = "App e1 e2"
+  {
+    assume "~ (e1 : values)"    
+    then obtain E e' e'' where "e1 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_App by blast
+    let ?E' = "(%t. App (E t) e2)"
+    from `E : ctxt` have B:"?E' : ctxt" by auto
+    from `e1 = E e'` have C:"?trm = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume "e1 : values" and "~ e2 : values"
+    then obtain E e' e'' where "e2 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_App by blast
+    let ?E' = "(%t. App e1 (E t))"
+    from `E : ctxt` `e1 : values` have B:"?E' : ctxt" by auto
+    from `e2 = E e'` have C:"?trm = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume "e1 : values" and "e2 : values"
+    {
+      assume "\<exists>x S e. e1 = Lam [x:S].e"      
+      then obtain x S body where e1def:"e1 = Lam[x:S].body" by auto
+      let ?r = "body[x::=e2]"
+      have "closed e2" using `G \<turnstile> e2 : t2 ; f2 ; o2` `G = []` sorry
+      hence "x \<sharp> e2" using closed_def fresh_def[of x e2] by auto
+      hence "?trm \<hookrightarrow> ?r" using e1def `e2 : values` by simp
+      hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	by auto
+      hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+      hence ?case by auto
+    }
+    moreover 
+    {
+      assume "EX c. e1 = BI c"
+      then obtain c where e1def:"e1 = BI c" by auto
+      hence ?case using T_App
+      proof (induct c)
+	case CAR
+	hence A:"G \<turnstile> BI CAR : t1 ; f1 ; o1" by simp
+	have "G \<turnstile> BI CAR : t1 ; f1 ; o1 \<Longrightarrow> False"
+	  by (ind_cases "G \<turnstile> BI CAR : t1 ; f1 ; o1") (simp add: trm.inject) 
+	thus ?case using A by auto
+      next
+	case CDR
+	hence A:"G \<turnstile> BI CDR : t1 ; f1 ; o1" by simp
+	have "G \<turnstile> BI CDR : t1 ; f1 ; o1 \<Longrightarrow> False"
+	  by (ind_cases "G \<turnstile> BI CDR : t1 ; f1 ; o1") (simp add: trm.inject) 
+	thus ?case using A by auto
+      next
+	case NOT 
+	{
+	  assume "e2 = Bool False" 
+	  hence "?trm \<hookrightarrow> Bool True" (is "_ \<hookrightarrow> ?r") using NOT by auto	  
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	moreover 
+	{
+	  assume "e2 \<noteq> Bool False" 
+	  hence "?trm \<hookrightarrow> Bool False" (is "_ \<hookrightarrow> ?r") using `e1 = BI NOT` `e2 : values` 
+	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	ultimately show ?case by auto
+      next
+	case CONSP
+	{
+	  assume "EX v1 v2. e2 = CONS v1 v2"
+	  then obtain v1 v2 where "e2 = CONS v1 v2" by auto
+	  hence "?trm \<hookrightarrow> Bool True" (is "_ \<hookrightarrow> ?r") using CONSP `e2 : values` by auto	  
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	moreover 
+	{
+	  assume "~(EX v1 v2. e2 = CONS v1 v2)"
+	  hence "?trm \<hookrightarrow> Bool False" (is "_ \<hookrightarrow> ?r") using `e1 = BI CONSP` `e2 : values` 
+	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	ultimately show ?case by auto
+      next
+	case NUMBERP 
+	{
+	  assume "EX n. e2 = Num n"
+	  then obtain n where "e2 = Num n" by auto
+	  hence "?trm \<hookrightarrow> Bool True" (is "_ \<hookrightarrow> ?r") using NUMBERP `e2 : values` by auto	  
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	moreover 
+	{
+	  assume "~(EX n. e2 = Num n)"
+	  hence "?trm \<hookrightarrow> Bool False" (is "_ \<hookrightarrow> ?r") using `e1 = BI NUMBERP` `e2 : values` 
+	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	ultimately show ?case by auto
+      next
+	case BOOLEANP
+	{
+	  assume "EX n. e2 = Bool n"
+	  then obtain n where "e2 = Bool n" by auto
+	  hence "?trm \<hookrightarrow> Bool True" (is "_ \<hookrightarrow> ?r") using BOOLEANP `e2 : values` by auto	  
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	moreover 
+	{
+	  assume "~(EX n. e2 = Bool n)"
+	  hence "?trm \<hookrightarrow> Bool False" (is "_ \<hookrightarrow> ?r") using `e1 = BI BOOLEANP` `e2 : values` 
+	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	ultimately show ?case by auto
+
+      next
+	case PROCEDUREP
+	{
+	  assume "EX n. e2 = BI n"
+	  then obtain n where "e2 = BI n" by auto
+	  hence "?trm \<hookrightarrow> Bool True" (is "_ \<hookrightarrow> ?r") using PROCEDUREP `e2 : values` by auto	  
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	moreover 
+	{
+	  assume "EX x S b. e2 = Lam[x:S].b"
+	  then obtain x S b where "e2 = Lam[x:S].b" by auto
+	  hence "?trm \<hookrightarrow> Bool True" (is "_ \<hookrightarrow> ?r") using PROCEDUREP `e2 : values` by auto	  
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	moreover 
+	{
+	  assume "~(EX n. e2 = BI n)" and "~(EX x S b. e2 = Lam[x:S].b)"
+	  hence "?trm \<hookrightarrow> Bool False" (is "_ \<hookrightarrow> ?r") using `e1 = BI PROCEDUREP` `e2 : values` 
+	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
+	  hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt"
+	    by auto
+	  hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	  hence ?case by auto
+	}
+	ultimately show ?case by auto
+
+	-- "hard cases"
+      next
+	case ADD1
+	have A:"G \<turnstile> BI ADD1 : t1 ; f1 ; o1" using ADD1 by simp
+	note add1_ty_cases[OF A]
+	hence B:"t1 = N \<rightarrow> N : FH [] [] : None" using trm.inject by auto	
+	thm ADD1
+	have "\<turnstile> N \<rightarrow> N : FH [] [] : None <: t_f \<rightarrow> t_r : f_f : O_f \<Longrightarrow> \<turnstile> t_f <: N"
+	  by (ind_cases "\<turnstile> N \<rightarrow> N : FH [] [] : None <: t_f \<rightarrow> t_r : f_f : O_f")
+	    auto
+	hence "\<turnstile> t_f <: N" using ADD1(8) B by simp
+	hence "\<turnstile> t2 <: N" using S_Trans ADD1 by blast
+	then obtain n where "e2 = Num n" using sub_num[OF `e2 : values`] ADD1 by blast
+	hence "?trm \<hookrightarrow> Num (n+1)" (is "_ \<hookrightarrow> ?r") using ADD1 by auto
+	hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt" by auto
+	hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	thus ?case by auto
+      next
+	case ZEROP 
+	have A:"G \<turnstile> BI ZEROP : t1 ; f1 ; o1" using ZEROP by simp
+	note zerop_ty_cases[OF A]
+	hence B:"t1 = N \<rightarrow> B : FH [] [] : None" using trm.inject by auto	
+	have "\<turnstile> N \<rightarrow> B : FH [] [] : None <: t_f \<rightarrow> t_r : f_f : O_f \<Longrightarrow> \<turnstile> t_f <: N"
+	  by (ind_cases "\<turnstile> N \<rightarrow> B : FH [] [] : None <: t_f \<rightarrow> t_r : f_f : O_f")
+	    auto
+	hence "\<turnstile> t_f <: N" using ZEROP(8) B by simp
+	hence "\<turnstile> t2 <: N" using S_Trans ZEROP by blast
+	then obtain n where "e2 = Num n" using sub_num[OF `e2 : values`] ZEROP by blast
+	hence "?trm \<hookrightarrow> Bool (n=0)" (is "_ \<hookrightarrow> ?r") using ZEROP by auto
+	hence "?trm = (%x. x) ?trm \<and> ?trm \<hookrightarrow> ?r \<and> (%x. x) \<in> ctxt" by auto
+	hence "EX E. ?trm = E ?trm \<and> ?trm \<hookrightarrow> ?r \<and> E \<in> ctxt" by auto
+	thus ?case by auto
+      qed
+    }
+    ultimately have ?case using sub_fun[OF `e1 : values`  T_App(2) T_App(7)] by auto
+  }
+  ultimately show ?case by blast
+next
+  case (T_Cons G e1 t1 f1 o1 e2 t2 f2 o2) 
+  let ?trm = "CONS e1 e2"
+  {
+    assume "~ (e1 : values)"    
+    then obtain E e' e'' where "e1 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_Cons by blast
+    let ?E' = "(%t. CONS (E t) e2)"
+    from `E : ctxt` have B:"?E' : ctxt" by auto
+    from `e1 = E e'` have C:"?trm = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume "e1 : values" and "~ e2 : values"
+    then obtain E e' e'' where "e2 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_Cons by blast
+    let ?E' = "(%t. CONS e1 (E t))"
+    from `E : ctxt` `e1 : values` have B:"?E' : ctxt" by auto
+    from `e2 = E e'` have C:"?trm = ?E' e'" by auto
+    hence "EX E. ?trm = E e' \<and> e' \<hookrightarrow> e'' \<and> E \<in> ctxt" using A B C by auto
+    hence ?case by auto
+  }
+  moreover
+  {
+    assume "e1 : values" and "e2 : values"
+    hence "?trm : values" by auto
+    hence ?case by auto
+  }
+  ultimately show ?case by blast
+qed
+
+
+thm typing.induct
+
 end
