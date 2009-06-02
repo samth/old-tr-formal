@@ -1257,7 +1257,29 @@ declare perm_f.simps[eqvt]
 
 fun combfilter :: "f \<Rightarrow> f \<Rightarrow> f \<Rightarrow> f"
 where
-"combfilter _ _ _ = F [] []"
+ "combfilter (F x y) f2 f3 = (if y = [Bot] then f2 else (if x = [Bot] then f3 else (F [] [])))"
+
+
+inductive valid_filter :: "f \<Rightarrow> bool"
+where
+[intro]: "valid_filter (F [Bot] [])"
+| [intro]: "valid_filter (F [] [Bot])"
+| [intro]:"Bot \<notin> set ps \<Longrightarrow> Bot \<notin> set ps' \<Longrightarrow> valid_filter (F ps ps')"
+
+lemma combfilter_valid:
+  assumes "valid_filter f1" and "valid_filter f2" and "valid_filter f3"
+  shows "valid_filter (combfilter f1 f2 f3)"
+using prems
+by (cases f1, cases "y = [Bot]", cases "x = [Bot]") auto
+
+inductive valid_lfilter :: "fh \<Rightarrow> bool"
+where
+[intro]: "valid_lfilter (FH [BotH] [])"
+| [intro]: "valid_lfilter (FH [] [BotH])"
+| [intro]:"BotH \<notin> set ps \<Longrightarrow> BotH \<notin> set ps' \<Longrightarrow> valid_lfilter (FH ps ps')"
+
+  
+  
 
 function apo :: "ph \<Rightarrow> ty \<Rightarrow> s \<Rightarrow> (p option)"
 where
@@ -1369,6 +1391,17 @@ qed
 -- "NOT TRUE"
 lemma "applyfilter (abstractfilter x f) Top (Some ([], x)) = f"
 oops
+
+lemma valid_lfilter_applyfilter:
+  fixes oo x y
+  assumes "valid_lfilter f"
+  shows "valid_filter (applyfilter f t oo)"
+proof (cases f)
+  case (FH x y)
+    have "ph \<noteq> BotH \<Longrightarrow> apo ph a b \<noteq> Some Bot" apply (cases ph, auto simp add: fh.inject)
+      oops
+-- "not true"
+  
 
 lemma restrict_remove_soundness:
   assumes A:"\<turnstile> T0 <: T" and B:"~ unionp T0"
@@ -1853,100 +1886,44 @@ next
       hence ?case using T_App
       proof (induct c)
 	case CAR
-	hence A:"G \<turnstile> BI CAR : t1 ; f1 ; o1" by simp
 	have "G \<turnstile> BI CAR : t1 ; f1 ; o1 \<Longrightarrow> False"
 	  by (ind_cases "G \<turnstile> BI CAR : t1 ; f1 ; o1") (simp add: trm.inject) 
-	thus ?case using A by auto
+	thus ?case using CAR by auto
       next
 	case CDR
-	hence A:"G \<turnstile> BI CDR : t1 ; f1 ; o1" by simp
 	have "G \<turnstile> BI CDR : t1 ; f1 ; o1 \<Longrightarrow> False"
 	  by (ind_cases "G \<turnstile> BI CDR : t1 ; f1 ; o1") (simp add: trm.inject) 
-	thus ?case using A by auto
+	thus ?case using CDR by auto
       next
-	case NOT 
-	{
-	  assume "e2 = Bool False"
-	  hence ?case using red_helper[of _ "Bool True"] using NOT by auto
-	}
-	moreover 
-	{
-	  assume "e2 \<noteq> Bool False" 
-	  hence ?case using `e1 = BI NOT` `e2 : values` red_helper[of _ "Bool False"]
+	case NOT thus ?case
+	proof (cases "e2 = Bool False")
+	  case True thus ?thesis using red_helper[of _ "Bool True"] NOT by auto
+	next
+	  case False thus ?thesis using `e1 = BI NOT` `e2 : values` red_helper[of _ "Bool False"]
 	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
-	}
-	ultimately show ?case by auto
+	qed
       next
 	case CONSP
-	{
-	  assume "EX v1 v2. e2 = CONS v1 v2"
-	  then obtain v1 v2 where "e2 = CONS v1 v2" by auto
-	  hence ?case using red_helper[of _ "Bool True"] using CONSP `e2 : values` by auto
-	}
-	moreover 
-	{
-	  assume "~(EX v1 v2. e2 = CONS v1 v2)"
-	  hence ?case using `e1 = BI CONSP` `e2 : values` red_helper[of _ "Bool False"]
-	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
-	}
-	ultimately show ?case by auto
+	thus ?case using red_helper[of _ "Bool True"] red_helper[of _ "Bool False"] `e2 : values`
+	  by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
       next
 	case NUMBERP 
-	{
-	  assume "EX n. e2 = Num n"
-	  then obtain n where "e2 = Num n" by auto
-	  hence ?case using red_helper[of _ "Bool True"] using NUMBERP `e2 : values` by auto
-	}
-	moreover 
-	{
-	  assume "~(EX n. e2 = Num n)"
-	  hence ?case using `e1 = BI NUMBERP` `e2 : values` red_helper[of _ "Bool False"]
-	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
-	}
-	ultimately show ?case by auto
+	thus ?case using red_helper[of _ "Bool True"] red_helper[of _ "Bool False"] `e2 : values`
+	  by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
       next
 	case BOOLEANP
-	{
-	  assume "EX n. e2 = Bool n"
-	  then obtain n where "e2 = Bool n" by auto
-	  hence ?case using red_helper[of _ "Bool True"] using BOOLEANP `e2 : values` by auto
-	}
-	moreover 
-	{
-	  assume "~(EX n. e2 = Bool n)"
-	  hence ?case using `e1 = BI BOOLEANP` `e2 : values` red_helper[of _ "Bool False"]
-	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
-	}
-	ultimately show ?case by auto
-
+	thus ?case using red_helper[of _ "Bool True"] red_helper[of _ "Bool False"] `e2 : values`
+	  by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
       next
 	case PROCEDUREP
-	{
-	  assume "EX n. e2 = BI n"
-	  then obtain n where "e2 = BI n" by auto
-	  hence ?case using red_helper[of _ "Bool True"] using PROCEDUREP `e2 : values` by auto
-	}
-	moreover 
-	{
-	  assume "EX x S b. e2 = Lam[x:S].b"
-	  then obtain x S b where "e2 = Lam[x:S].b" by auto
-	  hence ?case using red_helper[of _ "Bool True"] using PROCEDUREP `e2 : values` by auto
-	}
-	moreover 
-	{
-	  assume "~(EX n. e2 = BI n)" and "~(EX x S b. e2 = Lam[x:S].b)"
-	  hence ?case using `e1 = BI PROCEDUREP` `e2 : values` red_helper[of _ "Bool False"]
-	    by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
-	}
-	ultimately show ?case by auto
-
+	thus ?case using red_helper[of _ "Bool True"] red_helper[of _ "Bool False"] `e2 : values`
+	  by (induct e2 rule: trm.induct) (auto simp add: trm.inject)
 	-- "hard cases"
       next
 	case ADD1
 	have A:"G \<turnstile> BI ADD1 : t1 ; f1 ; o1" using ADD1 by simp
 	note add1_ty_cases[OF A]
 	hence B:"t1 = N \<rightarrow> N : FH [] [] : None" using trm.inject by auto	
-	thm ADD1
 	have "\<turnstile> N \<rightarrow> N : FH [] [] : None <: t_f \<rightarrow> t_r : f_f : O_f \<Longrightarrow> \<turnstile> t_f <: N"
 	  by (ind_cases "\<turnstile> N \<rightarrow> N : FH [] [] : None <: t_f \<rightarrow> t_r : f_f : O_f")
 	    auto
@@ -1995,47 +1972,221 @@ next
   }
   ultimately show ?case by blast
 next
-  case (T_IfTrue G e1 t1 f1p f1m e2 _  t2 f2 o2 _ e3)  
-  let ?trm = "Iff e1 e2 e3"
-  {
-    assume "~ (e1 : values)"    
+  case (T_IfTrue G e1 t1 f1p f1m e2 _  t2 f2 o2 _ e3) 
+  thus ?case
+  proof (cases "e1 : values")
+    case False
     then obtain E e' e'' where "e1 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_IfTrue
       unfolding closed_def fv_def trm.supp by blast
-    hence ?case using ctxt_helper by auto
-  }
-  moreover
-  {
-    assume v:"e1 : values" and b:"e1 = Bool False"
-    hence ?case using red_helper[of _ e3] by auto
-  }
-  moreover
-  {
-    assume v:"e1 : values" and b:"e1 \<noteq> Bool False"
-    hence ?case using red_helper[of _ e2] by auto
-  }
-  ultimately show ?case by blast
+    thus ?thesis using ctxt_helper by auto
+  next
+    case True thus ?thesis using red_helper[of _ e2] red_helper[of _ e3]
+      by (cases "e1 = Bool False") auto
+  qed
 next
   case (T_IfFalse G e1 t1 f1p f1m e3 _  t2 f2 o2 _ e2)  
-  let ?trm = "Iff e1 e2 e3"
-  {
-    assume "~ (e1 : values)"    
+  thus ?case
+  proof (cases "e1 : values")
+    case False
     then obtain E e' e'' where "e1 = E e'" and A:"e' \<hookrightarrow> e''" and "E : ctxt" using T_IfFalse
       unfolding closed_def fv_def trm.supp by blast
-    hence ?case using ctxt_helper by auto
-  }
-  moreover
-  {
-    assume v:"e1 : values" and b:"e1 = Bool False"
-    hence ?case using red_helper[of _ e3] by auto
-  }
-  moreover
-  {
-    assume v:"e1 : values" and b:"e1 \<noteq> Bool False"
-    hence ?case using red_helper[of _ e2] by auto
-  }
-  ultimately show ?case by blast
-
+    thus ?thesis using ctxt_helper by auto
+  next
+    case True thus ?thesis using red_helper[of _ e2] red_helper[of _ e3]
+      by (cases "e1 = Bool False") auto
+  qed
 qed
+
+consts dom :: "('a * 'b) list \<Rightarrow> 'a set"
+defs dom_def: "dom G == {x . EX y. ((x,y) : set G)}"
+
+consts
+sub_filter :: "p list \<Rightarrow> p list \<Rightarrow> bool" ("\<turnstile> _ < _")
+defs
+sub_filter_def: 
+"sub_filter ps' ps == \<forall> \<Gamma>. (\<forall>  x T T'. (x : dom \<Gamma> \<and> (lookup (env_plus \<Gamma> ps') x) = Some T' \<and> (lookup (env_plus \<Gamma> ps) x) = Some T ) \<longrightarrow> \<turnstile> T' <: T)"
+
+inductive_cases false_bot1:"G \<turnstile> Bool False : t1 ; F [Bot] ps_m ; o1"
+inductive_cases false_bot2:"G \<turnstile> Bool False : t1 ; F ps_p [Bot]  ; o1"
+thm false_bot2
+
+(* in the paper model, we make this true by construction *)
+lemma filter_valid_axiom:
+  assumes "G \<turnstile> e : t ; f ; oo"
+  shows "valid_filter f"
+  sorry
+
+lemma subfilter_refl[intro]:
+  shows "\<turnstile> ps < ps"
+unfolding sub_filter_def
+by auto
+
+inductive_cases if_value: "Iff e1 e2 e3 : values"
+inductive_cases app_value: "App e1 e2 : values"
+inductive_cases var_value: "Var v : values"
+
+lemma value_typing:
+  assumes V:"v : values"
+  and T:"G \<turnstile> v : t ; f ; oo"
+  shows "(v = Bool False \<and> f = F [Bot] []) \<or>
+  (v \<noteq> Bool False \<and> f = F [] [Bot])"
+using T V app_value if_value var_value
+proof (induct) qed (auto simp add: trm.inject)
+
+lemma closed_object:
+  assumes A:"closed e"
+  and B:"G \<turnstile> e : t ; f ; oo"
+  shows "oo = None"
+  using B A
+proof (induct)
+  case T_Var thus ?case unfolding closed_def fv_def  by (auto simp add: at_supp at_name_inst trm.supp)
+next
+  case (T_App _ e_op t_op f_op o_op e_a t_a f_a o_a _ _ _ O_f _ o_r)
+  have "closed e_a" using `closed (App e_op e_a)` closed_def trm.supp by auto
+  hence "o_a = None" using T_App by auto
+  hence "o_r = None" using T_App by (cases O_f) auto
+  thus ?case by auto
+next
+  case (T_Car _ e_a _ _ o_a)
+  have "closed e_a" using T_Car closed_def trm.supp by auto
+  hence "o_a = None" using T_Car by auto
+  thus ?case using T_Car by  auto
+next
+  case (T_Cdr _ e_a _ _ o_a)
+  have "closed e_a" using T_Cdr closed_def trm.supp by auto
+  hence "o_a = None" using T_Cdr by auto
+  thus ?case using T_Cdr by  auto
+qed (auto)
+  
+fun path_apply :: "ty \<Rightarrow> pe list \<Rightarrow> ty"
+where
+"path_apply <t,s> (Car # pi) = path_apply t pi"
+| "path_apply <t,s> (Cdr # pi) = path_apply s pi"
+| "path_apply t [] = t"
+
+inductive filter_model :: "name \<Rightarrow> ty \<Rightarrow> p \<Rightarrow> bool" ("_ : _ \<Turnstile> _")
+where
+  m_bot[intro]:"x : t \<Turnstile> Bot"
+| m_filter[intro]: "\<turnstile> path_apply \<tau>' pi <: \<tau> \<Longrightarrow> x : \<tau>' \<Turnstile> TE \<tau> pi y"
+| m_notfilter[intro]: "~ (\<turnstile> path_apply \<tau>' pi <: \<tau>) \<Longrightarrow> x : \<tau>' \<Turnstile> NTE \<tau> pi y"
+
+| m_filter_noteq[intro]: "x \<noteq> y \<Longrightarrow> x : \<tau>' \<Turnstile> TE \<tau> pi y"
+| m_notfilter_noteq[intro]: "x \<noteq> y \<Longrightarrow> x : \<tau>' \<Turnstile> NTE \<tau> pi y"
+
+
+theorem preservation:
+  fixes \<Gamma> e \<tau> ps_p ps_m e'
+  assumes t:"\<Gamma> \<turnstile> e : \<tau> ; f ; None" and c:"closed e" and r:"e \<hookrightarrow> e'" and f:"f = F ps_p ps_m"
+  shows "EX \<tau>' ps_p' ps_m'.  (\<Gamma> \<turnstile> e' : \<tau>' ; F ps_p' ps_m' ; None \<and> \<turnstile> \<tau>' <: \<tau> \<and> \<turnstile> ps_p' < ps_p \<and> \<turnstile> ps_m' < ps_m)"
+using r t c f
+proof (nominal_induct ee=="e" e' rule: reduce.strong_induct)
+  case (e_if_false e_thn e_els) 
+  have "closed e_els" using e_if_false closed_def trm.supp by auto
+  from e_if_false show ?case
+    proof (induct rule: typing.induct)
+      case (T_IfTrue G e1 t1 ps_p  o1 e2 t2 f2 o2 t f e3)
+      hence A:"G \<turnstile> Bool False : t1 ; F ps_p [Bot] ; o1" by (auto simp add: trm.inject)
+      show ?case using false_bot2[OF A] by (auto simp add: trm.inject)
+    next      
+      case (T_IfFalse G e1 t1 ps_mm  o1 e3 t3 f3 o3 t f e2)
+      hence "valid_filter (F [Bot] ps_mm)" using filter_valid_axiom by auto
+      also have "valid_filter (F [Bot] ps_mm) \<Longrightarrow> ps_mm = []" by (ind_cases "valid_filter (F [Bot] ps_mm)") auto
+      ultimately have "ps_mm = []" by simp
+      thm T_IfFalse
+      hence "env_plus G ps_mm = G"  by auto
+      hence A:"G \<turnstile> e3 : t3 ; f3 ; o3" using T_IfFalse by auto
+      have B:"e_els = e3" using T_IfFalse trm.inject by auto
+      have C:"f = f3" using T_IfFalse by auto
+      have "o3 = None" using  closed_object[OF `closed e_els`] T_IfFalse `e_els = e3` by auto
+      hence A':"G \<turnstile> e_els : t3 ; f ; None" using A B C by simp
+      hence " G \<turnstile> e_els : t3 ; F ps_p ps_m ; None  \<and> \<turnstile> t3 <: t \<and> \<turnstile> ps_p < ps_p \<and> \<turnstile> ps_m < ps_m" using T_IfFalse by auto
+      thus ?case using A B C T_IfFalse by auto
+    next
+      case (T_If  G e1 t1 ps_p' ps_m'  o1 e2 t2 f2 o2 e3 t3 f3 o3 t f) 
+      hence "e1 = Bool False" using trm.inject by auto
+      have "G \<turnstile> Bool False : t1 ; F ps_p' ps_m'; o1 \<Longrightarrow> ps_p' = [Bot] \<and> ps_m' = []"
+	by (ind_cases "G \<turnstile> Bool False : t1 ; F ps_p' ps_m'; o1") (auto simp add: trm.inject)
+      hence eq:"ps_p' = [Bot] "" ps_m' = []" using `e1 = Bool False` T_If by auto
+      hence "env_plus G ps_m' = G"  by auto
+      hence A:"G \<turnstile> e3 : t3 ; f3 ; o3" using T_If by auto
+      have B:"e_els = e3" using T_If trm.inject by auto
+      have C:"f = f3" using eq T_If by auto
+      have "o3 = None" using  closed_object[OF `closed e_els`] T_If `e_els = e3` by auto
+      hence A':"G \<turnstile> e_els : t3 ; f ; None" using A B C by simp
+      thus ?case using A B C T_If by auto
+    qed (auto)
+  next
+    case (e_if_true e_tst e_thn e_els)
+    have "closed e_thn" using e_if_true closed_def trm.supp by auto
+    show ?case using e_if_true(3) e_if_true
+    proof (induct rule: typing.induct)
+      case (T_IfFalse  G e1 t1 ps_mm  o1 e3 t3 f3 o3 t f e2) 
+      have "e1 = e_tst" using T_IfFalse(13) trm.inject by auto      
+      note value_typing[OF _ `G \<turnstile> e1 : t1 ; F [Bot] ps_mm ;o1`] `e_tst : values`
+      hence "e1 = Bool False \<and> F [Bot] ps_mm = F [Bot] [] \<or>
+  e1 \<noteq> Bool False \<and> F [Bot] ps_mm = tfil" using `e1 = e_tst` by auto      
+      hence "F [Bot] ps_mm = tfil" using `e_tst \<noteq> Bool False` `e1 = e_tst` trm.inject by auto
+      thus ?case by auto
+    next      
+      case (T_IfTrue G e1 t1 ps_pp  o1 e2 t2 f2 o2 t f e3)
+      have "valid_filter (F ps_pp [Bot])" using filter_valid_axiom[OF T_IfTrue(2)] by auto
+      also have "valid_filter (F ps_pp [Bot]) \<Longrightarrow> ps_pp = []" by (ind_cases "valid_filter (F ps_pp [Bot])") auto
+      ultimately have "ps_pp = []" by simp
+      thm T_IfFalse
+      hence "env_plus G ps_pp = G"  by auto
+      hence A:"G \<turnstile> e2 : t2 ; f2 ; o2" using T_IfTrue(4) by auto
+      have B:"e_thn = e2" using T_IfTrue(13) trm.inject by auto
+      have C:"f = f2" using `f = combfilter tfil f2 (F [] [])` by auto
+      have "o2 = None" using  closed_object[OF `closed e_thn`] T_IfTrue(4) `e_thn = e2` by auto
+      hence A':"G \<turnstile> e_thn : t2 ; f ; None" using A B C by simp
+      hence " G \<turnstile> e_thn : t2 ; F ps_p ps_m ; None  \<and> \<turnstile> t2 <: t \<and> \<turnstile> ps_p < ps_p \<and> \<turnstile> ps_m < ps_m" using `\<turnstile> t2 <: t` 
+	using `f = F ps_p ps_m` by auto
+      thus ?case using A B C by auto
+    next
+      case (T_If  G e1 t1 ps_p' ps_m'  o1 e2 t2 f2 o2 e3 t3 f3 o3 t f) 
+      hence "e1 \<noteq> Bool False" "e1 : values" using trm.inject by auto
+      have eq:"ps_p' = [] ""ps_m' = [Bot]"
+	using value_typing[OF `e1 : values` `G \<turnstile> e1 : t1 ; F ps_p' ps_m' ; o1`] `e1 \<noteq> Bool False` by auto
+      hence "env_plus G ps_p' = G"  by auto
+      hence A:"G \<turnstile> e2 : t2 ; f2 ; o2" using T_If by auto
+      have B:"e_thn = e2" using T_If trm.inject by auto
+      have C:"f = f2" using eq `f = combfilter (F ps_p' ps_m') f2 f3` by auto
+      have "o2 = None" using  closed_object[OF `closed e_thn`] T_If `e_thn = e2` by auto
+      hence A':"G \<turnstile> e_thn : t2 ; f ; None" using A B C by simp
+      thus ?case using A B C `\<turnstile> t2 <: t`  `f = F ps_p ps_m` by auto
+    qed (auto)
+  next
+    case (e_delta v p r)
+    from e_delta(3) e_delta show ?case
+    proof (induct  rule: typing.induct)
+      case (T_Car G e_a t_a f_a o_a t1 t2 fr or t1')
+      have "p = CAR" using T_Car trm.inject by auto
+      have "e_a : values" using T_Car trm.inject by auto
+      hence "EX v1 v2. e_a = CONS v1 v2" using T_Car sub_pair[OF `e_a : values`] by auto
+      then obtain v1 v2 where "e_a = CONS v1 v2" by auto
+      have "or = None" using `closed (App (BI CAR) e_a)` closed_object T_Car by auto
+      have "o_a = None" using `closed (App (BI CAR) e_a)` closed_def trm.supp closed_object T_Car by auto
+      have "fr = F [] []" using `o_a = None` `fr = applyfilter (FH [NTEH FF [Car]] [TEH FF [Car]]) t_a o_a` 
+	by (cases "\<turnstile> t_a <: FF") auto
+      have "v = CONS v1 v2" using T_Car trm.inject `e_a = CONS v1 v2` by auto
+      hence "r = v1" using T_Car trm.inject by auto
+      have "G \<turnstile> CONS v1 v2 : t_a ; f_a ; o_a \<Longrightarrow> EX t1 t2 ff oo.( t_a = <t1,t2> \<and> G \<turnstile> v1 : t1 ; ff ; oo)"
+	by (ind_cases "G \<turnstile> CONS v1 v2 : t_a ; f_a ; o_a") (auto simp add: trm.inject)
+      hence "EX t1 t2 ff oo . t_a = <t1,t2> \<and> G \<turnstile> v1 : t1 ; ff ; oo" using `e_a = CONS v1 v2` T_Car by auto
+      then obtain t10 t20 ff oo  where "t_a = <t10,t20>" "G \<turnstile> v1 : t10 ; ff ; oo" by auto
+      thus ?case
+      
+	
+
+ thus ?case
+
+    
+
+ thus ?case sorry
+  next
+    case e_beta thus ?case sorry
+  qed
+
 
 
 thm typing.induct
