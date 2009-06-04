@@ -5,6 +5,9 @@
 \newif\ifmarg
 \margtrue
 
+\newif\ifpath
+\pathtrue
+
 %% macros for model.tex
 
 \newcommand\overvec[2][\relax]{\vbox{\mathsurround=0pt\ialign{##\hfil&&\hfil##\crcr
@@ -19,6 +22,7 @@
   \fi}
 
 \newcommand\marg[2]{\ifmarg {#1} \else {#2} \fi}
+\newcommand\path[2]{\ifpath {#1} \else {#2} \fi}
 
 \newcommand\lts{$\lambda_{TS}$}
 
@@ -118,8 +122,8 @@
 \newcommand\notsubtype[2]{\ma{\vdash #1 \not\subtypesym #2}}
 \newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{?} #2}}
 
-\newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{#3}|{\fft}_{#3}}}{#4}}
-\newcommand{\predty}[3][\top]{\proctype{#1}{\bool}{{#3}_{#2}|{\comp{#3}}_{#2}}{\noeffect}}
+\newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{\path{#3}{}}|{\fft}_{\path{#3}{}}}}{#4}}
+\newcommand{\predty}[3][\top]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noeffect}}
 \newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\bullet|\bullet}{\noeffect}}
 
 % reductions
@@ -220,3 +224,16 @@
 
 \newcommand{\pii}{\marg{\pi(\i{})}{\pi}}
 \newcommand{\pipi}{\marg{\pi'(\i{})}{\pi'}}
+
+%\newcommand\newmeta[2]{\def#1##1{\ensuremath{#2_{##1}}}}
+
+\newcommand{\defwrap}[2]{\def#1##1{\path{\ensuremath{#2(##1)}}{##1}}}
+
+\defwrap\wpi{\pi}
+\defwrap\wpip{\pi'}
+
+\newcommand{\pathmaybe}[1]{\path{#1}{0}}
+
+\def\pimaybe{\path{\pi}{}}
+
+\def\pbullet{\path{\bullet}{}}

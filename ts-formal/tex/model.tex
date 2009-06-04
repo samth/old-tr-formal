@@ -23,8 +23,16 @@
 \margfalse
 }
 
+\ifthenelse{\equal{\paths}{true}}{
+\pathtrue
+}
+{
+\pathfalse
+}
 
-\title{Typed Scheme with Paths}
+\newcommand{\ponly}[1]{\path{#1}{}}
+
+\title{Typed Scheme}
 
 \date{\today}
 
@@ -33,23 +41,29 @@
 
 \maketitle
 
+\huge
+\marg{With Multiple Arguments}{}
+
+\path{With Paths}{}
+\normalsize
+
 \section{Syntax}
 
 
 \[
   \begin{altgrammar}
     \d{}, \e{}, \dots &::=& \x{}  \alt \comb{\e{op}}{\movervec{\e{a}}} 
-    \alt \cond{\e1}{\e2}{\e3} \alt \cons{\e{}}{\e{}} \alt \vv{}  &\mbox{Expressions} \\
-    \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \abs{\x{}}{\t{}}{\e{}} \alt \cons{\vv{}}{\vv{}}  & \mbox{Values} \\
-    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym \alt \\
-    &   & \consp \alt \car \alt \cdr & \mbox{Primitive Operations} 
+    \alt \cond{\e1}{\e2}{\e3} \ponly{\alt \cons{\e{}}{\e{}}} \alt \vv{}  &\mbox{Expressions} \\
+    \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \abs{\x{}}{\t{}}{\e{}} \ponly{\alt \cons{\vv{}}{\vv{}}}  & \mbox{Values} \\
+    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym \ponly{\alt} \\
+    &   & \ponly{\consp \alt \car \alt \cdr} & \mbox{Primitive Operations} 
     \vspace{1mm}
     \\
     \E{} &::=& [] \alt 
     \marg
         {\comb{\overvec{\vv{}}}{\E{}\ {\overvec{\e{}}}}} % general multi-arg contexts
         {\comb{\E{}}{\e{}} \alt \comb{\vv{}}{\E{}}} % one-arg contexts
-        \alt \cons{\E{}}{\e{}} \alt \cons{\vv{}}{\E{}} \alt \cond{\E{}}{\e{}}{\e{}} 
+        \ponly{\alt \cons{\E{}}{\e{}} \alt \cons{\vv{}}{\E{}}} \alt \cond{\E{}}{\e{}}{\e{}} 
         & \mbox{Evaluation Contexts} \vspace{1mm} \\
   \end{altgrammar}
   \]
@@ -63,21 +77,23 @@
 
 
 
-         \p{} &::=&  \t{\pi(\x{})} \alt \compt{\pi(\x{})} \alt \bot & \mbox{Filters} \\
+         \p{} &::=&  \t{\wpi{\x{}}} \alt \compt{\wpi{\x{}}} \alt \bot & \mbox{Filters} \\
 
-         \ph{} & ::=& \t{\pi} \alt \compt{\pi}  \alt \both & \mbox{Latent Filters} \\
+         \ph{} & ::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}}  \alt \both & \mbox{Latent Filters} \\
 
          \phii{} & ::= & \overvec{\p{}}|\overvec{\p{}} & \mbox{Filter Sets} \\
 
          \phih{} & ::= & \overvec{\ph{}}|\overvec{\ph{}} & \mbox{Latent Filter Sets} \\
 
-         \s{} & ::= &   \pi(\x{}) \alt \noeffect &\mbox{Objects} \\
+         \s{} & ::= &   \wpi{\x{}} \alt \noeffect &\mbox{Objects} \\
          
-         \sh{} & ::= & \pii \alt \noeffect  & \mbox{Projections (Latent Objects)} \\
-
-         \pi & ::= & \overvec{\pe{}} & \mbox{Paths} \\
-
+         \sh{} & ::= & \pathmaybe{\pii} \alt \noeffect  & \mbox{Projections (Latent Objects)} \\
+         \ifpath
+         \pi & ::= & \overvec{\pe{}} & \mbox{Paths}\\
+         
          \pe{} & :: = & \pecar \alt \pecdr & \mbox{Path Elements} \\
+         \else
+         \fi
          
          \Gamma & ::= & \overvec{\x{}:\t{}} & \mbox{Type Environments} \\
   \end{altgrammar}
@@ -154,7 +170,7 @@ the object \s{}.
 \movervec[i]{\phih{} = \abstractfilter {\xi} {\phii{}}} \\
 \sh{} = \left\{
  \protect{\begin{array}{ll}
-  \pii     & \text{if } \s{} = \pi(\xi) \\
+  \pathmaybe{\pii}     & \text{if } \s{} = \wpi{\xi} \\
   \noeffect  & \text{otherwise}
  \end{array}} \right.
 }
@@ -171,7 +187,7 @@ the object \s{}.
 \phii{r} = \movervec[i]{\applyfilter{\phih{f}}{\t{a}}{\s{a}}} \\\\
 \s{r} = \left\{
   \protect{\begin{array}{ll}
-      \pi'(\pi(x))     & \text{if } \sh{} = \pipi \text{ and } {\sai} = \pi(\x{}) \\
+      \wpip{\wpi{x}}     & \text{if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
       \noeffect  & \text{otherwise}
     \end{array}} \right.
 }
@@ -194,6 +210,8 @@ the object \s{}.
 {\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
 \]
 
+\ifpath
+
 \paragraph{Rules for Pairs}
 
 \begin{displaymath}
@@ -213,7 +231,7 @@ the object \s{}.
     \phii{r} = \applyfilter{\comp{\fft}_{\pecar}|{\fft}_{\pecar}}{\consty{\t1}{\t2}} {\s{}} \\\\
     \s{r} = \left\{
       \protect{\begin{array}{ll}
-          \pecar(\pi(x))     & \text{if } {\s{}} = \pi(\x{}) \\
+          \pecar(\pi(x))     & \text{if } {\s{}} = \wpi{\x{}} \\
           \noeffect  & \text{otherwise}
         \end{array}} \right.
   }
@@ -227,7 +245,7 @@ the object \s{}.
     \phii{r} = \applyfilter{\comp{\fft}_{\pecdr}|{\fft}_{\pecdr}}{\consty{\t1}{\t2}} {\s{}} \\\\
     \s{r} = \left\{
       \protect{\begin{array}{ll}
-          \pecdr(\pi(x))     & \text{if } {\s{}} = \pi(\x{}) \\
+          \pecdr(\pi(x))     & \text{if } {\s{}} = \wpi{\x{}} \\
           \noeffect  & \text{otherwise}
         \end{array}} \right.
   }
@@ -235,6 +253,10 @@ the object \s{}.
     \hastyeffphi{\comb{\cdr}{\e{}}}{\t2}{\phii{r}}{\s{r}} 
   }
 \end{displaymath}
+
+\else
+\fi
+
 
 \paragraph{Auxilliary Type Rules}
 
@@ -302,6 +324,7 @@ the object \s{}.
 \]
 
 \[
+\ifpath
 \inferrule[S-Pair]
 {
   \subtype{\t1}{\t2} \\
@@ -311,6 +334,8 @@ the object \s{}.
   \subtype{\consty{\t1}{\sig1}}{\consty{\t2}{\sig2}}
 }
 \qquad\qquad
+\else
+\fi
 \inferrule[S-Fun]
 {
   \movervec[i]{\subtype{\sig{a}}{\t{a}}} \\ 
@@ -334,6 +359,7 @@ the object \s{}.
 {\subtype{(\usym\ \overvec[i]{\t{}})}{\sig{}}}
 \]
 
+\ifpath
 \vspace{5mm}
 
 There's still a problem here: 
@@ -342,7 +368,7 @@ There's still a problem here:
 {\uniontwo {\consty{\t{}} {\ups{}}} {\consty{\sig{}} {\ups{}}}  } 
 
 I don't know how to fix this at the moment, short of a \usym-normalization step.
-
+\fi
 %% Unclear if we need a subeffecting relation - it was only used in the proof
 
 % \[
@@ -372,10 +398,10 @@ $$
     \af{\x{}}{\op1|\op2}{\overvec{\abstractone{\x{}}{\p1}}|\overvec{\abstractone{\x{}}{\p2}}} &  \vspace{2mm}\\
 
     \abstractone{\x{}}{\bot}& {\both} & \\
-    \abstractone{\x{}}{{\t{}}_{\pi(\x{})}}& {{\t{}}_{\pi}} & \\
-    \abstractone{\x{}}{\comp{\t{}}_{\pi(\x{})}}& {\comp{\t{}}_{\pi}} & \\
-    \abstractone{\x{}}{{\t{}}_{\pi(\y{})}}& {\bullet} &  \text{ where } \x{} \neq \y{} \\
-    \abstractone{\x{}}{\comp{\t{}}_{\pi(\y{})}}& {\bullet} & \text{ where } \x{} \neq \y{} \\
+    \abstractone{\x{}}{{\t{}}_{\wpi{\x{}}}}& {{\t{}}_{\pi}} & \\
+    \abstractone{\x{}}{\comp{\t{}}_{\wpi{\x{}}}}& {\comp{\t{}}_{\pi}} & \\
+    \abstractone{\x{}}{{\t{}}_{\wpi{\y{}}}}& {\bullet} &  \text{ where } \x{} \neq \y{} \\
+    \abstractone{\x{}}{\comp{\t{}}_{\wpi{\y{}}}}& {\bullet} & \text{ where } \x{} \neq \y{} \\
 %    \text{ where }
 %    \ph{} = \left\{
 %      \protect{\begin{array}{ll}
@@ -386,7 +412,6 @@ $$
 $$
 %
 \subsection{Apply}
-
 
 $$
   \begin{array}{l@{\ =\ }l@{\qquad}l}
@@ -400,11 +425,11 @@ $$
 
 
     \applyone{\both}{\sig{}}{\s{}} & \bot & \\
-    \applyone{\comp{\t{}}_{\bullet}} {\sig{}} {\s{}} & \bot & \text{ where } \subtype{\sig{}}{\t{}}\\
-    \applyone{{\t{}}_{\bullet}} {\sig{}} {\s{}} & \bot & \text{ where } \nooverlap{\sig{}}{\t{}}\\
+    \applyone{\comp{\t{}}_{{\pbullet}}} {\sig{}} {\s{}} & \bot & \text{ where } \subtype{\sig{}}{\t{}}\\
+    \applyone{{\t{}}_{{\pbullet}}} {\sig{}} {\s{}} & \bot & \text{ where } \nooverlap{\sig{}}{\t{}}\\
     \applyone{\ph{}}{\sig{}}{\noeffect} & \bullet & \\
-    \applyone{\t{\pi'}} {\sig{}} {\pi(\x{})} & \t{{\pi'(\pi(\x{}))}} & \\
-    \applyone{\comp{\t{}}_{\pi'}} {\sig{}} {\pi(\x{})} & \comp{\t{}}_{{\pi'(\pi(\x{}))}} & \\
+    \applyone{\t{\ponly{\pi'}}} {\sig{}} {\wpi{\x{}}} & \t{{\wpip{\wpi{\x{}}}}} & \\
+    \applyone{\comp{\t{}}_{\ponly{\pi'}}} {\sig{}} {\wpi{\x{}}} & \comp{\t{}}_{{\wpip{\wpi{\x{}}}}} & \\
    \end{array}
 $$
 
@@ -438,12 +463,12 @@ $$
 \combfilter{\bot|\bullet}{\phii2}{\phii3} & \phii3 & \vspace{3mm}\\
 
 \multicolumn{2}{l}{\combfilter 
-{\t{\pi(\x{})}::\op{1_+}|\comp{\t{}}_{\pi(\x{})}::\op{1_-}}
+{\t{\wpi{\x{}}}::\op{1_+}|\comp{\t{}}_{\wpi{\x{}}}::\op{1_-}}
 {\bullet|\bot}
-{{\sig{\pi(\x{})}::\op{3_+}|\comp{\sig{}}_{\pi(\x{})}::\op{3_-}}} 
+{{\sig{\wpi{\x{}}}::\op{3_+}|\comp{\sig{}}_{\wpi{\x{}}}::\op{3_-}}} 
 }
   & \text{ or with predicates} \\
-& \ts_{\pi(\x{})}::\op+|{\comp{\ts}}_{\pi(\x{})}::\op- & \\
+& \ts_{\wpi{\x{}}}::\op+|{\comp{\ts}}_{\wpi{\x{}}}::\op- & \\
 \multicolumn{3}{c}{\text{where } \op+|\op- = \combfilter{\op1_+|\op1_-}{\bullet|\bot}{\op3_+|\op3_-}} \vspace{3mm}\\
 
 \combfilter{\op{1_+}|\op{1_-}} {\bullet|\bot} {\op{3_+}|\op{3_-}} & {\bullet|\op{1_-},\op{3_-}}& \text{ or} \vspace{3mm}\\
@@ -497,7 +522,9 @@ Rules 2 and 3 might only be needed in the proof.
   \dt{\numberp} & {\predty{\bullet}{\num}} & \\
   \dt{\procp} & {\predty{\bullet}{\proctop}} & \\
   \dt{\boolp} & {\predty{\bullet}{\bool}} & \\
+\ifpath
   \dt{\consp} & {\predty{\bullet}{\consty{\top}{\top}}} & \\
+\fi
   \dt{\addone} & {\simpleproc{\num}{\num}} & \\
   \dt{\notsym} & {\simpleproc{\top}{\bool}} & \\
   \dt{\zerop} & {\simpleproc{\num}{\bool}} & \\
@@ -525,38 +552,43 @@ Rules 2 and 3 might only be needed in the proof.
 
   \del{\procp}{\abs{\x{}}{\t{}}{\e{}}} & \tt & \\
   \del{\procp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
+\ifpath
+  \del{\consp}{\cons{\vv1}{\vv2}} & \tt & \\
+  \del{\consp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
 
   \del{\car}{\cons{\vv1}{\vv2}} & \vv1 & \\
   \del{\cdr}{\cons{\vv1}{\vv2}} & \vv2 & \\
+\fi
 \end{array}
 \]
 
 \newpage
 \section{Environment Operations}
 
-\newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}_{#2})}
+\newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}_{\ponly{#2}})}
 \newcommand{\updatesimp}[2]{\mathrm{update}({#1},{#2})}
 
 $$
 \begin{array}{@{\Gamma\ +\ }l@{\ =\ }l@{\qquad}l}
-  \t{\pi(\x{})},\op{} & (\Gamma,\x{}:\update{\pi}{\t{}}) + \op{}& \\
-  \comp{\t{}}_{\pi(\x{})},\op{} & (\Gamma,\x{}:\update{\pi}{\comp{\t{}}}) + \op{}& \\
+  \t{\wpi{\x{}}},\op{} & (\Gamma,\x{}:\update{\pi}{\t{}}) + \op{}& \\
+  \comp{\t{}}_{\wpi{\x{}}},\op{} & (\Gamma,\x{}:\update{\pi}{\comp{\t{}}}) + \op{}& \\
   \bot,\op{} & \Gamma' & \text{ where } {\forall \x{}}.\Gamma'(\x{}) = \bot\ \\ %
   \bullet & \Gamma & \\
 %  \p{} & \Gamma,\x{}:\updatesimp{\Gamma(\x{})}{\p{}} & \\
-%  \comp{\t{}}_{\pi(\x{})} & \Gamma,\x{}:\update{\pi}{\comp{\t{}}} & \\
+%  \comp{\t{}}_{\wpi{\x{}}} & \Gamma,\x{}:\update{\pi}{\comp{\t{}}} & \\
 %  \bot & \Gamma' & \text{ where } {\forall \x{}}.\Gamma'(\x{}) = \bot\ \\ %
 \end{array}
 $$
 
 $$
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
+\ifpath
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\ups{}} & \consty{\update[\t{}]{\pi}{\ups{}}}{\sig{}}  & \\
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\comp{\ups{}}} & \consty{\update[\t{}]{\pi}{\comp{\ups{}}}}{\sig{}}  & \\
 
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\ups{}} & \consty{\t{}}{\update[\sig{}]{\pi}{\ups{}}}  & \\
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\comp{\ups{}}} & \consty{\t{}}{\update[\sig{}]{\pi}{\comp{\ups{}}}}  & \\
-
+\fi
   \update[\t{}]{\bullet}{\ups{}} & \restrict{\t{}}{\ups{}}& \\
 
   \update[\t{}]{\bullet}{\comp{\ups{}}} & \remove{\t{}}{\ups{}}& \\
@@ -579,20 +611,26 @@ $$
   \remove{\t{}}{\sig{}} & \t{} & \text{ otherwise} \vspace{5mm}\\
 
   \nooverlap{\num}{\bool} & \mathrm{true} & \\
+\ifpath
   \nooverlap{\num}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
   \nooverlap{\bool}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
+\fi
   \nooverlap{\num}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phih{}}}{\sh{}}} & \mathrm{true} & \\
   \nooverlap{\bool}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phih{}}}{\sh{}}} & \mathrm{true} & \\
+\ifpath
   \nooverlap
   {\consty{\t{}}{\sig{}}}
   {\proctype{\movervec[i]{\ups{a}}}{\ups{r}}{\movervec[i]{\phih{}}}{\sh{}}} & 
   \mathrm{true} & \\
+\fi
   \nooverlap{(\usym\ \overvec{\t{}})}{\sig{}} & \bigwedge
   \overvec{\nooverlap{\t{}}{\sig{}}} & \\
   \nooverlap{\t{}}{\sig{}} & \mathrm{true} & \text{ if } \nooverlap{\sig{}}{\t{}}\\
   \nooverlap{\t{}}{\sig{}} & \mathrm{false} & \text{ otherwise}\\
 \end{array}
 $$
+
+\ifpath
 
 \newpage
 \section{Examples}
@@ -785,17 +823,17 @@ $
 \hastype{\x{}}{\t{}} \models \bot
 \qquad
 \inferrule{\subtype{\t{}' @ \pi}{\t{}}}
-{\hastype{\x{}}{\t{}'} \models \t{\pi(\x{})}}
+{\hastype{\x{}}{\t{}'} \models \t{\wpi{\x{}}}}
 \qquad
 \inferrule{\notsubtype{\t{}' @ \pi}{\t{}}}
-{\hastype{\x{}}{\t{}'} \models \compt{\pi(\x{})}}
+{\hastype{\x{}}{\t{}'} \models \compt{\wpi{\x{}}}}
 \]
 \[
 \inferrule{\x{} \neq \y{}}
-{\hastype{\x{}}{\t{}'} \models \t{\pi(\y{})}}
+{\hastype{\x{}}{\t{}'} \models \t{\wpi{\y{}}}}
 \qquad
 \inferrule{\x{} \neq \y{}}
-{\hastype{\x{}}{\t{}'} \models \compt{\pi(\y{})}}
+{\hastype{\x{}}{\t{}'} \models \compt{\wpi{\y{}}}}
 \]
 
 Note that we can use $\notsubtype{\t{}' @ \pi}{\t{}}$ instead of the
@@ -825,6 +863,9 @@ and $\hastype{\x{}}{\sig{}'} \models \op{\pm} \quad \Rightarrow \quad \vdash \op
 and $\hastype{\x{}}{\sig{}'} \not\models \op{\pm} \quad \Rightarrow \quad \opp{\pm} = \bot$
 
 \noindent
-and either $\s{} = \pi(\x{}) \wedge \s{}' = \noeffect$ or $\s{} = \s{}'$
+and either $\s{} = \wpi{\x{}} \wedge \s{}' = \noeffect$ or $\s{} = \s{}'$
+
+\fi
+
 \end{document}
 
