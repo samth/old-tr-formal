@@ -8,6 +8,10 @@
 \newif\ifpath
 \pathtrue
 
+\newif\iflogic
+\logictrue
+
+
 %% macros for model.tex
 
 \newcommand\overvec[2][\relax]{\vbox{\mathsurround=0pt\ialign{##\hfil&&\hfil##\crcr
@@ -23,6 +27,7 @@
 
 \newcommand\marg[2]{\ifmarg {#1} \else {#2} \fi}
 \newcommand\path[2]{\ifpath {#1} \else {#2} \fi}
+\newcommand\logic[2]{\iflogic {#1} \else {#2} \fi}
 
 \newcommand\lts{$\lambda_{TS}$}
 
@@ -96,23 +101,25 @@
 
 \def\subtypesym{<:}
 
+\def\mdel{\logic{\Delta, }{}}
+
 % typing judgements
 \newcommand\hastype[2]{\ma{#1 \mathbin{:} #2}}
 \newcommand\hasty[3]{\hastype{#1 \vdash #2}{#3}}
-\newcommand\hastyeff[6][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4|#5\ ;\ #6}}}
+\newcommand\hastyeff[6][\mdel \Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4|#5\ ;\ #6}}}
 
-\newcommand\hastyeffphi[5][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4\ ;\ #5}}}
+\newcommand\hastyeffphi[5][\mdel \Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4\ ;\ #5}}}
 
-\newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
+\newcommand\hastyvar[4][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
 
 
-\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bullet} {\noeffect}}
-\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
-\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
+\newcommand\hastyno[3][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bullet} {\noeffect}}
+\newcommand\hastytrue[3][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
+\newcommand\hastyfalse[3][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
 
-\newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
+\newcommand\hastypred[4][\mdel \Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
 
-\newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
+\newcommand\ghastyeff[3]{\ma{\hastyeff{\mdel \Gamma}{#1}{#2}{#3}}}
 \newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
 
 
@@ -214,6 +221,7 @@
 
 
 \newometa\op{\psi}
+\newometa\opp{\psi'}
 \newometa\oph{\latentmvar{\psi}}
 
 \newcommand{\abstractfilter}[2]{\ma{\mathrm{abstractfilter}({#1}, {#2})}}
@@ -237,3 +245,7 @@
 \def\pimaybe{\path{\pi}{}}
 
 \def\pbullet{\path{\bullet}{}}
+
+\newcommand{\imp}[2]{\ma{{#1} \supset {#2}}}
+
+\newcommand{\derive}[3]{#1 \cup #2 \vdash #3}

@@ -30,7 +30,16 @@
 \pathfalse
 }
 
+\ifthenelse{\equal{\dologic}{true}}{
+\logictrue
+}
+{
+\logicfalse
+}
+
+
 \newcommand{\ponly}[1]{\path{#1}{}}
+\newcommand{\lonly}[1]{\logic{#1}{}}
 
 \title{Typed Scheme}
 
@@ -45,6 +54,8 @@
 \marg{With Multiple Arguments}{}
 
 \path{With Paths}{}
+
+\logic{With Logic}{}
 \normalsize
 
 \section{Syntax}
@@ -55,10 +66,16 @@
     \d{}, \e{}, \dots &::=& \x{}  \alt \comb{\e{op}}{\movervec{\e{a}}} 
     \alt \cond{\e1}{\e2}{\e3} \ponly{\alt \cons{\e{}}{\e{}}} \alt \vv{}  &\mbox{Expressions} \\
     \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \abs{\x{}}{\t{}}{\e{}} \ponly{\alt \cons{\vv{}}{\vv{}}}  & \mbox{Values} \\
-    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym \ponly{\alt} \\
-    &   & \ponly{\consp \alt \car \alt \cdr} & \mbox{Primitive Operations} 
+\ifpath
+    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym  \alt \\
+    &   & \consp \alt \car \alt \cdr  & \mbox{Primitive Operations} 
     \vspace{1mm}
     \\
+\else 
+    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym  & \mbox{Primitive Operations} 
+    \vspace{1mm}
+    \\
+\fi
     \E{} &::=& [] \alt 
     \marg
         {\comb{\overvec{\vv{}}}{\E{}\ {\overvec{\e{}}}}} % general multi-arg contexts
@@ -77,9 +94,9 @@
 
 
 
-         \p{} &::=&  \t{\wpi{\x{}}} \alt \compt{\wpi{\x{}}} \alt \bot & \mbox{Filters} \\
+         \p{} &::=&  \t{\wpi{\x{}}} \alt \compt{\wpi{\x{}}} \lonly{\alt \imp{\p{}}{\p{}}} \alt \bot & \mbox{Filters} \\
 
-         \ph{} & ::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}}  \alt \both & \mbox{Latent Filters} \\
+         \ph{} & ::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}} \lonly{\alt \imp{\ph{}}{\ph{}}} \alt \both & \mbox{Latent Filters} \\
 
          \phii{} & ::= & \overvec{\p{}}|\overvec{\p{}} & \mbox{Filter Sets} \\
 
@@ -130,10 +147,10 @@ otherwise representable.
 \end{displaymath}
 \normalsize
 
-This means that in environment $\Gamma$, \e{} has the type \t{}, that
-evaluating \e{} and gives us information \phii{} based on whether \e{}
-evaluates to \ff or not, and that testing \e{} is the same as testing
-the object \s{}.
+This means that in proposition environment $\Delta$ and type
+environment $\Gamma$, \e{} has the type \t{}, that evaluating \e{} and
+gives us information \phii{} based on whether \e{} evaluates to \ff or
+not, and that testing \e{} is the same as testing the object \s{}.
 
 \newpage
 
@@ -166,7 +183,7 @@ the object \s{}.
 
 \[
 \inferrule[T-Abs]
-{\hastyeffphi [\G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}} \\\\
+{\hastyeffphi [\mdel \G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}} \\\\
 \movervec[i]{\phih{} = \abstractfilter {\xi} {\phii{}}} \\
 \sh{} = \left\{
  \protect{\begin{array}{ll}
@@ -199,9 +216,13 @@ the object \s{}.
 {
   \hastyeff{\e1}{\t1}{\op1}{\op2}{\s1}
   \\\\
-  \hastyeffphi[\G{} + \op1]{\e2}{\t2}{\phii2} {\s2}
+  \lonly{\derive{\Delta}{\op1}{\opp1}}
+  \\
+  \lonly{\derive{\Delta}{\op2}{\opp2}}
   \\\\
-  \hastyeffphi[\G{} + \op2]{\e3}{\t3}{\phii3} {\s3}
+  \hastyeffphi[\logic{\Delta \cup \op1, }{} \G{} + \logic{\opp1}{\op1}]{\e2}{\t2}{\phii2} {\s2}
+  \\\\
+  \hastyeffphi[\logic{\Delta \cup \op2, }{} \G{} + \logic{\opp2}{\op2}]{\e3}{\t3}{\phii3} {\s3}
   \\\\
   \subtype{\t2}{\t{}} \\
   \subtype{\t3}{\t{}} \\\\
@@ -287,7 +308,7 @@ the object \s{}.
 {
   \hastyeff{\e1}{\t1}{\bullet}{\bot}{\s1}
   \\\\
-  \hastyeffphi[\G{} + \op1]{\e2}{\t2}{\phii2} {\s2}
+  \hastyeffphi{\e2}{\t2}{\phii2} {\s2}
   \\\\
   \subtype{\t2}{\t{}} \\\\
   \phii{} = \combfilter{\bullet|\bot}{\phii2}{\bullet|\bullet}
@@ -298,7 +319,7 @@ the object \s{}.
 {
   \hastyeff{\e1}{\t1}{\bot}{\bullet}{\s1}
   \\\\
-  \hastyeffphi[\G{} + \op2]{\e3}{\t3}{\phii3} {\s3}
+  \hastyeffphi{\e3}{\t3}{\phii3} {\s3}
   \\\\
   \subtype{\t3}{\t{}} \\\\
   \phii{} = \combfilter{\bot|\bullet}{\bullet|\bullet}{\phii3}
@@ -307,6 +328,22 @@ the object \s{}.
 \]
 
 \newpage
+\iflogic
+
+\section{Logic Rules}
+
+\[
+\inferrule[L-Env]
+{\p{} \in \Delta}
+{\Delta \vdash \p{}}
+\qquad
+\qquad
+\inferrule[L-MP]
+{\overvec{\Delta \vdash \p{}} \\ \Delta \vdash \imp{\op{}}{\opp{}}}
+{\overvec{\Delta \vdash \p{}'}}
+\]
+
+\fi
 
 \section{Subtyping}
 
@@ -473,7 +510,7 @@ $$
 
 \combfilter{\op{1_+}|\op{1_-}} {\bullet|\bot} {\op{3_+}|\op{3_-}} & {\bullet|\op{1_-},\op{3_-}}& \text{ or} \vspace{3mm}\\
 
-\combfilter{\op{1_+}|\op{1_-}} {\op{2_+}|\op{2_-}} {\bot|\bullet} & \op{1_+},\op{2_+}|\bullet & \text{ and} \vspace{3mm}\\
+\combfilter{\op{1_+}|\op{1_-}} {\op{2_+}|\op{2_-}} {\bot|\bullet} & \op{1_+},\op{2_+}|\imp{\op{1_+}}{\op{2_-}},\imp{\op{2_+}}{\op{1_-}} & \text{ and} \vspace{3mm}\\
 
 \combfilter{\phii{}}{\phii{}'}{\phii{}'} & \phii{}' & \\
 
@@ -797,8 +834,6 @@ $
 \newpage
 
 \section{Theorems and Proofs}
-
-\newometa\opp{\psi'}
 
 \subsection{Preliminary Definitions}
 
