@@ -1325,10 +1325,27 @@ qed
 
 termination by lexicographic_order
 
+function mk_F :: "p list \<Rightarrow> p list => f"
+where
+"Bot : set ps \<Longrightarrow> mk_F ps ps' = F [Bot] []"
+| "Bot \<notin> set ps \<Longrightarrow> Bot : set ps' \<Longrightarrow> mk_F ps ps' = F [] [Bot]"
+| "Bot \<notin> set ps \<Longrightarrow> Bot \<notin> set ps' \<Longrightarrow> mk_F ps ps' = F ps ps'"
+by (atomize_elim, auto)
+
+termination by lexicographic_order
+
+lemma valid_mk_F: "valid_filter (mk_F ps ps')"
+proof (cases "Bot : set ps")
+qed (cases "Bot : set ps'", auto, cases "Bot : set ps'", auto)
+
 fun applyfilter :: "fh \<Rightarrow> ty \<Rightarrow> s \<Rightarrow> f"
 where
-"applyfilter (FH ph_plus ph_minus) t s = 
-  F (filtermap (% ph. apo ph t s) ph_plus) (filtermap (% ph. apo ph t s) ph_minus)"
+applyfilter_d:"applyfilter (FH ph_plus ph_minus) t s = 
+  mk_F (filtermap (% ph. apo ph t s) ph_plus) (filtermap (% ph. apo ph t s) ph_minus)"
+
+lemma valid_applyfilter: 
+  "valid_filter (applyfilter a b c)"
+using valid_mk_F by (cases a, simp)
 
 function abo :: "name \<Rightarrow> p \<Rightarrow> ph option"
 where
@@ -2014,7 +2031,8 @@ thm false_bot2
 lemma filter_valid_axiom:
   assumes "G \<turnstile> e : t ; f ; oo"
   shows "valid_filter f"
-  sorry
+  using prems valid_mk_F valid_applyfilter
+by (induct) auto
 
 lemma subfilter_refl[intro]:
   shows "\<turnstile> ps < ps"
@@ -2072,6 +2090,82 @@ where
 
 | m_filter_noteq[intro]: "x \<noteq> y \<Longrightarrow> x : \<tau>' \<Turnstile> TE \<tau> pi y"
 | m_notfilter_noteq[intro]: "x \<noteq> y \<Longrightarrow> x : \<tau>' \<Turnstile> NTE \<tau> pi y"
+
+
+inductive_cases car_cons_cases:"G \<turnstile> App (BI CAR) (CONS v1 v2) : t1' ; fr ; or"
+thm car_cons_cases
+
+lemma filter_supp:
+  assumes A:"(x :: name) : supp f"
+  and B:"G \<turnstile> e : t ; f ; oo"
+  shows "x : supp e"
+sorry
+  
+
+lemma closed_filter:
+  assumes A:"closed e"
+  and B:"G \<turnstile> e : t ; f ; oo"
+  and C:"valid_filter f"
+  shows "f = F [] [] \<or> f = F [Bot] [] \<or> f = F [] [Bot]"
+  using C A B
+(*
+proof (induct)
+  fix ps ps'
+  assume "Bot \<notin> set ps"" Bot \<notin> set ps'"" closed e""  G \<turnstile> e : t ; F ps ps' ; oo"
+  hence se:"supp (F ps ps') = ({} :: name set)" using filter_supp[OF _ `G \<turnstile> e : t ; F ps ps' ; oo`] unfolding closed_def fv_def by auto
+  have "(supp (F ps ps') :: name set) = supp ps \<union> supp ps'" unfolding supp_def sorry
+  hence "supp ps = ({} :: name set)" "supp ps' = ({} :: name set)" using se by auto
+  have "ps = []" using `supp ps = {}` `Bot \<notin> set ps`
+    proof (induct ps)
+      case (Cons a b)
+      hence "supp a \<union> supp b = ({} :: name set)" using supp_list_cons[of a b] by auto
+      hence "b = []" by auto
+  show "F ps ps' = F [] [] \<or> F ps ps' = F [Bot] [] \<or> F ps ps' = tfil"
+    sorry
+qed (auto)
+  *)
+sorry
+
+
+
+lemma do_update_subtype:
+  assumes "lookup \<Gamma> x = Some \<tau>"
+  and "lookup (do_update \<Gamma> b t) x = Some \<tau>'"
+  shows "\<turnstile> \<tau>' <: \<tau>"
+  sorry
+
+
+lemma env_plus_subtype:  
+  assumes "lookup \<Gamma> x = Some \<tau>"
+  and "valid \<Gamma>"
+  and "lookup (env_plus \<Gamma> ps) x = Some \<tau>'"
+  shows "\<turnstile> \<tau>' <: \<tau>"
+using prems
+proof (induct ps)
+  case Nil thus ?case by auto
+next
+  case (Cons p ps')
+  thus ?case 
+  proof (induct p rule: p.induct)
+    case Bot
+    have A:"env_plus \<Gamma> (Bot # ps') = map (% (x,t). (x,Union [])) \<Gamma>" by simp
+    have "\<tau>' = Union []" using `valid \<Gamma>` A Bot
+      proof (induct rule: valid.induct)	
+	case v1 thus ?case by auto
+      next
+	case (v2 G' x' t)
+	thus ?case
+	  apply (cases "x = x'")
+	  apply auto
+	  sorry
+    
+    
+
+lemma below_subset:
+  assumes "set ps \<subseteq> set ps'"
+  shows "\<turnstile> ps' < ps"
+sorry
+  
 
 
 theorem preservation:
@@ -2173,8 +2267,19 @@ proof (nominal_induct ee=="e" e' rule: reduce.strong_induct)
       have "G \<turnstile> CONS v1 v2 : t_a ; f_a ; o_a \<Longrightarrow> EX t1 t2 ff oo.( t_a = <t1,t2> \<and> G \<turnstile> v1 : t1 ; ff ; oo)"
 	by (ind_cases "G \<turnstile> CONS v1 v2 : t_a ; f_a ; o_a") (auto simp add: trm.inject)
       hence "EX t1 t2 ff oo . t_a = <t1,t2> \<and> G \<turnstile> v1 : t1 ; ff ; oo" using `e_a = CONS v1 v2` T_Car by auto
-      then obtain t10 t20 ff oo  where "t_a = <t10,t20>" "G \<turnstile> v1 : t10 ; ff ; oo" by auto
-      thus ?case
+      then obtain t10 t20 ff oo  where v1:"t_a = <t10,t20>" "G \<turnstile> v1 : t10 ; ff ; oo" by auto
+      then obtain ps_p' ps_m' where v2:"ff = F ps_p' ps_m'" by (cases ff) auto
+      have "closed v1" using closed_def T_Car `e_a = CONS v1 v2` trm.supp by auto
+      hence oo:"oo = None" using v1 closed_object by auto
+      have "\<turnstile> <t10,t20> <: <t1,t2>" using T_Car `t_a = <t10,t20>` S_Pair by auto
+      also have "\<turnstile> <t10,t20> <: <t1,t2> \<Longrightarrow> \<turnstile> t10 <: t1" by (ind_cases "\<turnstile> <t10,t20> <: <t1,t2>") auto
+      ultimately have subty:"\<turnstile> t10 <: t1" using T_Car by auto
+      from T_Car have "G \<turnstile> App (BI CAR) (CONS v1 v2) : t1' ; fr ; or" using `e_a = CONS v1 v2` by auto
+      have ps:"ps_p = []" "ps_m=[]" using  `fr = F [] []` T_Car by auto
+      have ty:"G \<turnstile> v1 : t10 ; F ps_p' ps_m' ; oo" using v1 v2 by auto
+      have subf:"\<turnstile> ps_p' < ps_p" "\<turnstile> ps_m' < ps_m" using ps below_subset by auto
+      have subty2:"\<turnstile> t10 <: t1'" using T_Car subty sorry
+      thus ?case using subf oo `or = None` ty `r = v1` subty2 by auto
       
 	
 

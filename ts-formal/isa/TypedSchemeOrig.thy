@@ -37,7 +37,7 @@ lemma trm_finite_supp:
   shows "finite ((supp x)::name set)"
   using fs_name_class.axioms[of x] by simp
 
-lemma eq_eqvt:
+lemma eq_eqvt2:
   fixes pi::"name prm"
   and   x::"'a::pt_name"
   shows "pi\<bullet>(x=y) = ((pi\<bullet>x)=(pi\<bullet>y))"
@@ -240,10 +240,10 @@ nominal_primrec
  "(BI c)[y::=t'] = (BI c)"
  "(Num c)[y::=t'] = (Num c)"
  "(Bool c)[y::=t'] = (Bool c)"
-apply(finite_guess add: eq_eqvt if_eqvt fs_name1)+
+apply(finite_guess add: eq_eqvt2 if_eqvt fs_name1)+
 apply(perm_full_simp)
-apply(auto simp add: fs_name1 eq_eqvt abs_fresh)
-apply(fresh_guess add: eq_eqvt fs_name1)+
+apply(auto simp add: fs_name1 eq_eqvt2 abs_fresh)
+apply(fresh_guess add: eq_eqvt2 fs_name1)+
 done
 
 
@@ -512,9 +512,9 @@ nominal_primrec
   "add1_fun (BI a) = None"
   "add1_fun (Var a) = None"
   apply auto
-  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat abs_fresh)+
-  apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some abs_fresh)+
+  apply(finite_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat abs_fresh)+
+  apply(auto simp add: fs_name1 eq_eqvt2 abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some ty.supp)
+  apply(fresh_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty fresh_nat fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -526,9 +526,9 @@ nominal_primrec
   "nott_fun (BI a) = None"
   "nott_fun (Var a) = None"
   apply auto
-  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
-  apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
+  apply(finite_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
+  apply(auto simp add: fs_name1 eq_eqvt2 abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
+  apply(fresh_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -540,9 +540,9 @@ nominal_primrec
   "booleanp_fun (Var v) = False"
   "booleanp_fun (Iff a b c) = False"
   apply auto
-  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
-  apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
+  apply(finite_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
+  apply(auto simp add: fs_name1 eq_eqvt2 abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
+  apply(fresh_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
   done
 
 nominal_primrec
@@ -554,9 +554,9 @@ nominal_primrec
   "numberp_fun (Var v) = False"
   "numberp_fun (Iff a b c) = False"
   apply auto
-  apply(finite_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
-  apply(auto simp add: fs_name1 eq_eqvt abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
-  apply(fresh_guess add: eq_eqvt if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
+  apply(finite_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool abs_fresh)+
+  apply(auto simp add: fs_name1 eq_eqvt2 abs_fresh supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some ty.supp)
+  apply(fresh_guess add: eq_eqvt2 if_eqvt fs_name1 supp_none fresh_none fresh_set_empty supp_set_empty perm_bool fresh_some abs_fresh)+
   done
 
 nominal_primrec
