@@ -11,7 +11,7 @@
    - eta-expansion
 *)
 
-theory Refinement
+theory RefinementNew
 imports Nominal
 
 begin
@@ -82,14 +82,33 @@ nominal_primrec
   |"\<Delta>\<^isub>\<tau> ProcP = (Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE))"
   |"\<Delta>\<^isub>\<tau> Add1 = (ty.Int \<rightarrow> ty.Int : latent_eff.NE)"
   |"\<Delta>\<^isub>\<tau> Nott = (Top \<rightarrow> BoolTy : latent_eff.NE)"
-  |"\<Delta>\<^isub>\<tau> EvenP = (ty.Int \<rightarrow> BoolTy : Latent (R EvenP ty.Int))"
-  |"\<Delta>\<^isub>\<tau> OddP = (ty.Int \<rightarrow> BoolTy : Latent (R OddP ty.Int))"
+  |"\<Delta>\<^isub>\<tau> EvenP = (ty.Int \<rightarrow> BoolTy : latent_eff.NE)"
+  |"\<Delta>\<^isub>\<tau> OddP = (ty.Int \<rightarrow> BoolTy : latent_eff.NE)"
   by simp_all
+
+nominal_primrec
+  \<Delta>\<^isub>\<tau>r :: "builtin \<Rightarrow> ty"
+  where
+  "\<Delta>\<^isub>\<tau>r NumberP = (Top \<rightarrow> BoolTy : Latent ty.Int)"
+  |"\<Delta>\<^isub>\<tau>r BooleanP = (Top \<rightarrow> BoolTy : Latent BoolTy)"
+  |"\<Delta>\<^isub>\<tau>r ProcP = (Top \<rightarrow> BoolTy : Latent (Union [] \<rightarrow> Top : latent_eff.NE))"
+  |"\<Delta>\<^isub>\<tau>r Add1 = (ty.Int \<rightarrow> ty.Int : latent_eff.NE)"
+  |"\<Delta>\<^isub>\<tau>r Nott = (Top \<rightarrow> BoolTy : latent_eff.NE)"
+  |"\<Delta>\<^isub>\<tau>r EvenP = (ty.Int \<rightarrow> BoolTy : Latent (R EvenP ty.Int))"
+  |"\<Delta>\<^isub>\<tau>r OddP = (ty.Int \<rightarrow> BoolTy : Latent (R OddP ty.Int))"
+  by simp_all
+
 
 lemma delta_t_eqvt[eqvt]:
   fixes pi :: "name prm"
   shows "pi \<bullet> \<Delta>\<^isub>\<tau> b = \<Delta>\<^isub>\<tau> (pi \<bullet> b)"
   by (nominal_induct b rule: builtin.strong_induct) auto
+
+lemma delta_tr_eqvt[eqvt]:
+  fixes pi :: "name prm"
+  shows "pi \<bullet> \<Delta>\<^isub>\<tau>r b = \<Delta>\<^isub>\<tau>r (pi \<bullet> b)"
+  by (nominal_induct b rule: builtin.strong_induct) auto
+
 
 
 fun
@@ -868,37 +887,63 @@ types
 denv = "builtin list"
 
 inductive
-  subtype :: "denv \<Rightarrow> ty \<Rightarrow> ty \<Rightarrow> bool" ("_ \<turnstile> _ <: _" [60,60] 60)
+  subtype_r :: "denv \<Rightarrow> ty \<Rightarrow> ty \<Rightarrow> bool" ("_ \<turnstile>r _ <: _" [60,60] 60)
 where
-  S_Refl[intro]: "D \<turnstile> T <: T"
-| S_Fun[intro]: "\<lbrakk>D \<turnstile> S1 <: T1 ; D \<turnstile> T2 <: S2 ; eff = eff' \<or> eff' = latent_eff.NE\<rbrakk> \<Longrightarrow> D \<turnstile> (T1 \<rightarrow> T2 : eff) <: (S1 \<rightarrow> S2 : eff')"
-| S_Top[intro]: "D \<turnstile> T <: Top"
-| S_UnionAbove[intro]: "\<lbrakk>T : set Ts ; D \<turnstile> S <: T\<rbrakk> \<Longrightarrow> D \<turnstile> S <: Union Ts"
-| S_UnionBelow[intro]: "\<lbrakk>!! T.( T : set Ts \<Longrightarrow> D \<turnstile> T <: S)\<rbrakk> \<Longrightarrow> D \<turnstile> Union Ts <: S"
-| S_Refinement[intro]: "\<lbrakk>\<Delta>\<^isub>\<tau> c = T1 \<rightarrow> T2 : Latent (R c T1); D \<turnstile> T1 <: T1'; c : set D\<rbrakk> \<Longrightarrow> D \<turnstile> R c T1 <: T1'"
+  S_Refl[intro]: "D \<turnstile>r T <: T"
+| S_Fun[intro]: "\<lbrakk>D \<turnstile>r S1 <: T1 ; D \<turnstile>r T2 <: S2 ; eff = eff' \<or> eff' = latent_eff.NE\<rbrakk> \<Longrightarrow> D \<turnstile>r (T1 \<rightarrow> T2 : eff) <: (S1 \<rightarrow> S2 : eff')"
+| S_Top[intro]: "D \<turnstile>r T <: Top"
+| S_UnionAbove[intro]: "\<lbrakk>T : set Ts ; D \<turnstile>r S <: T\<rbrakk> \<Longrightarrow> D \<turnstile>r S <: Union Ts"
+| S_UnionBelow[intro]: "\<lbrakk>!! T.( T : set Ts \<Longrightarrow> D \<turnstile>r T <: S)\<rbrakk> \<Longrightarrow> D \<turnstile>r Union Ts <: S"
+| S_Refinement[intro]: "\<lbrakk>\<Delta>\<^isub>\<tau> c = T1 \<rightarrow> T2 : Latent (R c T1); D \<turnstile>r T1 <: T1'; c : set D\<rbrakk> \<Longrightarrow> D \<turnstile>r R c T1 <: T1'"
+
+equivariance subtype_r
+
+nominal_inductive subtype_r done
+
+inductive
+  subtype :: "ty \<Rightarrow> ty \<Rightarrow> bool" ("\<turnstile> _ <: _" [60,60] 60)
+where
+  S_Refl[intro]: "\<turnstile> T <: T"
+| S_Fun[intro]: "\<lbrakk>\<turnstile> S1 <: T1 ; \<turnstile> T2 <: S2 ; eff = eff' \<or> eff' = latent_eff.NE\<rbrakk> \<Longrightarrow> \<turnstile> (T1 \<rightarrow> T2 : eff) <: (S1 \<rightarrow> S2 : eff')"
+| S_Top[intro]: "\<turnstile> T <: Top"
+| S_UnionAbove[intro]: "\<lbrakk>T : set Ts ; \<turnstile> S <: T\<rbrakk> \<Longrightarrow> \<turnstile> S <: Union Ts"
+| S_UnionBelow[intro]: "\<lbrakk>!! T.( T : set Ts \<Longrightarrow> \<turnstile> T <: S)\<rbrakk> \<Longrightarrow> \<turnstile> Union Ts <: S"
 
 equivariance subtype
 
 nominal_inductive subtype done
 
 
-inductive_cases sub_arr_cases: "D \<turnstile> T <: S1 \<rightarrow> S2 : L"
+
+inductive_cases sub_arr_cases: "\<turnstile> T <: S1 \<rightarrow> S2 : L"
 
 lemma subtype_arr_elim:
-  "\<lbrakk>D \<turnstile> T <: S ; S = S0 \<rightarrow> S1 : le\<rbrakk> \<Longrightarrow> (EX T0 T1. T = T0 \<rightarrow> T1 : le \<and> D \<turnstile> S0 <: T0 \<and> D \<turnstile> T1 <: S1) \<or> (EX T0 T1 le'. T = T0 \<rightarrow> T1 : le' \<and> le = latent_eff.NE \<and> D \<turnstile> S0 <: T0 \<and> D \<turnstile> T1 <: S1) \<or> (EX Ts. T = Union Ts) \<or> (EX c T1. T =  R c T1)"
+  "\<lbrakk>\<turnstile> T <: S ; S = S0 \<rightarrow> S1 : le\<rbrakk> \<Longrightarrow> (EX T0 T1. T = T0 \<rightarrow> T1 : le \<and> \<turnstile> S0 <: T0 \<and> \<turnstile> T1 <: S1) \<or> (EX T0 T1 le'. T = T0 \<rightarrow> T1 : le' \<and> le = latent_eff.NE \<and> \<turnstile> S0 <: T0 \<and> \<turnstile> T1 <: S1) \<or> (EX Ts. T = Union Ts) \<or> (EX c T1. T =  R c T1)"
 proof (induct arbitrary: S0 S1  rule: subtype.induct)
   qed (auto)
 
 lemma S_TopE:
-  assumes a: "D \<turnstile> Top <: T"
-  shows "T = Top \<or> (EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> D \<turnstile> Top <: T')"
+  assumes a: "\<turnstile> Top <: T"
+  shows "T = Top \<or> (EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> \<turnstile> Top <: T')"
+using a by (cases, auto) 
+
+lemma Sr_TopE:
+  assumes a: "D \<turnstile>r Top <: T"
+  shows "T = Top \<or> (EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> D \<turnstile>r Top <: T')"
 using a by (cases, auto) 
 
 lemma S_ArrowE_left:
-  assumes a: "D \<turnstile> S\<^isub>1 \<rightarrow> S\<^isub>2 : L <: T" 
-  shows "T = Top \<or> (\<exists>T\<^isub>1 T\<^isub>2. T = T\<^isub>1 \<rightarrow> T\<^isub>2  : L \<and> D \<turnstile> T\<^isub>1 <: S\<^isub>1 \<and> D \<turnstile> S\<^isub>2 <: T\<^isub>2) \<or> 
-  (\<exists>T\<^isub>1 T\<^isub>2. T = T\<^isub>1 \<rightarrow> T\<^isub>2  : latent_eff.NE \<and> D \<turnstile> T\<^isub>1 <: S\<^isub>1 \<and> D \<turnstile> S\<^isub>2 <: T\<^isub>2) \<or>
-  (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> D \<turnstile> S\<^isub>1 \<rightarrow> S\<^isub>2 : L <: T1)"
+  assumes a: "\<turnstile> S\<^isub>1 \<rightarrow> S\<^isub>2 : L <: T" 
+  shows "T = Top \<or> (\<exists>T\<^isub>1 T\<^isub>2. T = T\<^isub>1 \<rightarrow> T\<^isub>2  : L \<and> \<turnstile> T\<^isub>1 <: S\<^isub>1 \<and> \<turnstile> S\<^isub>2 <: T\<^isub>2) \<or> 
+  (\<exists>T\<^isub>1 T\<^isub>2. T = T\<^isub>1 \<rightarrow> T\<^isub>2  : latent_eff.NE \<and> \<turnstile> T\<^isub>1 <: S\<^isub>1 \<and> \<turnstile> S\<^isub>2 <: T\<^isub>2) \<or>
+  (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> \<turnstile> S\<^isub>1 \<rightarrow> S\<^isub>2 : L <: T1)"
+using a by (cases, auto simp add: ty.inject)
+
+lemma Sr_ArrowE_left:
+  assumes a: "D \<turnstile>r S\<^isub>1 \<rightarrow> S\<^isub>2 : L <: T" 
+  shows "T = Top \<or> (\<exists>T\<^isub>1 T\<^isub>2. T = T\<^isub>1 \<rightarrow> T\<^isub>2  : L \<and> D \<turnstile>r T\<^isub>1 <: S\<^isub>1 \<and> D \<turnstile>r S\<^isub>2 <: T\<^isub>2) \<or> 
+  (\<exists>T\<^isub>1 T\<^isub>2. T = T\<^isub>1 \<rightarrow> T\<^isub>2  : latent_eff.NE \<and> D \<turnstile>r T\<^isub>1 <: S\<^isub>1 \<and> D \<turnstile>r S\<^isub>2 <: T\<^isub>2) \<or>
+  (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> D \<turnstile>r S\<^isub>1 \<rightarrow> S\<^isub>2 : L <: T1)"
 using a by (cases, auto simp add: ty.inject)
 
 lemma union_size_ty:
@@ -911,16 +956,17 @@ fun size_ty3 :: "ty*ty*ty \<Rightarrow> nat"
 where 
 size_ty3_d[simp]:"size_ty3 (a,b,c) = size_ty a + size_ty b + size_ty c"
 
-inductive_cases union_sub_cases[consumes 1, case_names 1 2 3 4]:"D \<turnstile> Union Ts <: S"
+inductive_cases union_sub_cases[consumes 1, case_names 1 2 3 4]:"\<turnstile> Union Ts <: S"
+inductive_cases union_sub_cases_r[consumes 1, case_names 1 2 3 4]:"D\<turnstile>r Union Ts <: S"
 
 lemma union_sub_elim: 
-  assumes A:"D \<turnstile> Union Ts <: T " (is "D \<turnstile> ?S <: T") 
+  assumes A:"\<turnstile> Union Ts <: T " (is "\<turnstile> ?S <: T") 
   and B:" T1 : set Ts "
-  shows "D \<turnstile> T1 <: T"
+  shows "\<turnstile> T1 <: T"
   using prems
 proof (induct "X"=="(T1,?S,T)"  arbitrary: T1 Ts T taking: "size_ty3" rule: measure_induct_rule)
   case (less X)
-  show "D \<turnstile> T1 <: T" using `D \<turnstile>  Union Ts <: T` less 
+  show "\<turnstile> T1 <: T" using `\<turnstile>  Union Ts <: T` less 
   proof (induct rule: union_sub_cases)
     case 1 thus ?case by auto
   next
@@ -929,7 +975,30 @@ proof (induct "X"=="(T1,?S,T)"  arbitrary: T1 Ts T taking: "size_ty3" rule: meas
     case (3 T' Ts')
     have X_inst:"X = (T1, ty.Union Ts, T)" by fact
     have "size_ty T' < size_ty T" using 3 union_size_ty by auto
-    hence "D \<turnstile> T1 <: T'" using X_inst 3(4)[OF _ `D \<turnstile> ty.Union Ts <: T'` `T1 : set Ts`] by auto
+    hence "\<turnstile> T1 <: T'" using X_inst 3(4)[OF _ `\<turnstile> ty.Union Ts <: T'` `T1 : set Ts`] by auto
+    thus ?case using 3 by auto
+  next
+    case 4 thus ?case by auto
+  qed
+qed
+
+lemma union_sub_elim_r: 
+  assumes A:"D \<turnstile>r Union Ts <: T " (is "D \<turnstile>r ?S <: T") 
+  and B:" T1 : set Ts "
+  shows "D \<turnstile>r T1 <: T"
+  using prems
+proof (induct "X"=="(T1,?S,T)"  arbitrary: T1 Ts T taking: "size_ty3" rule: measure_induct_rule)
+  case (less X)
+  show "D \<turnstile>r T1 <: T" using `D \<turnstile>r  Union Ts <: T` less 
+  proof (induct rule: union_sub_cases_r)
+    case 1 thus ?case by auto
+  next
+    case 2 thus ?case by auto
+  next
+    case (3 T' Ts')
+    have X_inst:"X = (T1, ty.Union Ts, T)" by fact
+    have "size_ty T' < size_ty T" using 3 union_size_ty by auto
+    hence "D \<turnstile>r T1 <: T'" using X_inst 3(4)[OF _ `D \<turnstile>r ty.Union Ts <: T'` `T1 : set Ts`] by auto
     thus ?case using 3 by auto
   next
     case 4 thus ?case by auto
@@ -937,63 +1006,14 @@ proof (induct "X"=="(T1,?S,T)"  arbitrary: T1 Ts T taking: "size_ty3" rule: meas
 qed
 
 
-(*
-lemma S_Trans_test[intro]:
-  assumes "D\<turnstile>S<:Q" and "D \<turnstile>Q<:T"
-  shows "D\<turnstile>S<:T" 
-using prems
-proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T D taking: "size_ty3" rule: measure_induct_rule)
-  case (less X S0 Q0 T0 D)
-  have IH_trans:  
-    "\<And>Q' \<Gamma> S T. \<lbrakk>size_ty3 (S,Q',T) < size_ty3 X; \<Gamma>\<turnstile>S<:Q'; \<Gamma>\<turnstile>Q'<:T\<rbrakk> \<Longrightarrow> \<Gamma>\<turnstile>S<:T"  using less by auto
-  have transitivity_aux:
-    "\<And>\<Gamma> S T Q. \<lbrakk>\<Gamma> \<turnstile> S <: Q; \<Gamma> \<turnstile> Q <: T\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> S <: T"
-  proof - 
-    fix \<Gamma>' S' T Q
-    assume "\<Gamma>' \<turnstile> S' <: Q" --{* left-hand derivation *}
-      and  "\<Gamma>' \<turnstile> Q <: T"  --{* right-hand derivation *}
-    thus "\<Gamma>' \<turnstile> S' <: T"
-    proof (induct \<Gamma>' S' Q0\<equiv>Q rule: subtype.induct) 
-      case (S_Refinement c T1 T2 D T1')
-      hence IH_inner: "D \<turnstile> Q <: T" by simp
-      hence "D \<turnstile> T1 <: T" using S_Refinement by auto
-      have A:"\<Delta>\<^isub>\<tau> c = T1 \<rightarrow> T2 : Latent (R c)" by fact
-      with IH_inner show "D \<turnstile> R c <: T" using `c : set D` subtype.S_Refinement[OF A `D \<turnstile> T1 <: T`] by auto
-    next
-      case S_Refl thus ?case by auto
-    next
-    case (S_Top D')
-    note less
-    have X_inst:"X = (S0,Q0,T0)" by fact
-    show ?case  
-    proof -
-      {
-	assume "EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> D \<turnstile> Q <: T'"
-	then obtain Ts T' where "T = Union Ts "" T' : set Ts ""D \<turnstile> Q <: T'" by auto
-	hence "size_ty T' < size_ty T" using union_size_ty by auto
-	hence "size_ty3 (A,Q,T') < size_ty3 (A,Q,T)" by auto
-	hence "D \<turnstile> A <: T'" using `D \<turnstile> A <: Q` `D \<turnstile> Q <: T'` using less(1)[of "(A,Q,T')" D A Q T'] X_inst by auto
-	hence ?thesis using S_Top prems by auto
-      }
-      thus ?thesis using S_TopE S_Top by auto
-    qed
-
-
-      
-
-  show "D \<turnstile> S <: T" using `D \<turnstile> S <: Q` less 
-  proof (induct  S Q\<equiv>Q rule: subtype.induct) 
-
-*)
-
-lemma S_Trans[intro]:
-  assumes "D\<turnstile>S<:Q" and "D \<turnstile>Q<:T"
-  shows "D\<turnstile>S<:T" 
+lemma SR_Trans[intro]:
+  assumes "D\<turnstile>r S<:Q" and "D \<turnstile>r Q<:T"
+  shows "D\<turnstile>r S<:T" 
 using prems
 proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T D taking: "size_ty3" rule: measure_induct_rule)
   case (less X S Q T)
-  show "D \<turnstile> S <: T" using `D \<turnstile> S <: Q` less 
-  proof (induct  S Q\<equiv>Q rule: subtype.induct) 
+  show "D \<turnstile>r S <: T" using `D \<turnstile>r S <: Q` less 
+  proof (induct  S Q\<equiv>Q rule: subtype_r.induct) 
     case S_Refl thus ?case by auto
   next
     case (S_Top D A)
@@ -1001,93 +1021,93 @@ proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T D taking: "size_ty3" rule: measur
     show ?case  
     proof -
       {
-	assume "EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> D \<turnstile> Q <: T'"
-	then obtain Ts T' where "T = Union Ts "" T' : set Ts ""D \<turnstile> Q <: T'" by auto
+	assume "EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> D \<turnstile>r Q <: T'"
+	then obtain Ts T' where "T = Union Ts "" T' : set Ts ""D \<turnstile>r Q <: T'" by auto
 	hence "size_ty T' < size_ty T" using union_size_ty by auto
 	hence "size_ty3 (A,Q,T') < size_ty3 (A,Q,T)" by auto
-	hence "D \<turnstile> A <: T'" using `D \<turnstile> A <: Q` `D \<turnstile> Q <: T'` using less(1)[of "(A,Q,T')" D A Q T'] X_inst by auto
+	hence "D \<turnstile>r A <: T'" using `D \<turnstile>r A <: Q` `D \<turnstile>r Q <: T'` using less(1)[of "(A,Q,T')" D A Q T'] X_inst by auto
 	hence ?thesis using S_Top prems by auto
       }
-      thus ?thesis using S_TopE S_Top by auto
+      thus ?thesis using Sr_TopE S_Top by auto
     qed
   next
     case (S_Fun D Q1 S1 S2 Q2 L L') 
-    hence rh_drv: "D \<turnstile> Q1 \<rightarrow> Q2 : L' <: T" by simp
+    hence rh_drv: "D \<turnstile>r Q1 \<rightarrow> Q2 : L' <: T" by simp
     have X_inst:"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T)" using S_Fun by auto
     note `Q1 \<rightarrow> Q2 : L' = Q`  
     hence Q12_less: "size_ty Q1 < size_ty Q" "size_ty Q2 < size_ty Q" using size_ty_pos by auto
-    have lh_drv_prm1: "D \<turnstile> Q1 <: S1" by fact
-    have lh_drv_prm2: "D \<turnstile> S2 <: Q2" by fact      
-    have "T=Top \<or> (\<exists>T1 T2 LL. T=T1\<rightarrow>T2 : LL \<and> D\<turnstile>T1<:Q1 \<and> D\<turnstile>Q2<:T2 \<and> LL = L') \<or> 
-      (\<exists>T1 T2. T=T1\<rightarrow>T2 : latent_eff.NE \<and> D\<turnstile>T1<:Q1 \<and> D\<turnstile>Q2<:T2) \<or>
-      (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> D\<turnstile> Q1 \<rightarrow> Q2 : L' <: T1)" 
-      using S_ArrowE_left[OF rh_drv] by auto
+    have lh_drv_prm1: "D \<turnstile>r Q1 <: S1" by fact
+    have lh_drv_prm2: "D \<turnstile>r S2 <: Q2" by fact      
+    have "T=Top \<or> (\<exists>T1 T2 LL. T=T1\<rightarrow>T2 : LL \<and> D\<turnstile>r T1<:Q1 \<and> D\<turnstile>r Q2<:T2 \<and> LL = L') \<or> 
+      (\<exists>T1 T2. T=T1\<rightarrow>T2 : latent_eff.NE \<and> D\<turnstile>r T1<:Q1 \<and> D\<turnstile>r Q2<:T2) \<or>
+      (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> D\<turnstile>r  Q1 \<rightarrow> Q2 : L' <: T1)" 
+      using Sr_ArrowE_left[OF rh_drv] by auto
     moreover
     { 
-      assume "\<exists>T1 T2 LL. T=T1\<rightarrow>T2:LL \<and> D\<turnstile>T1<:Q1 \<and> D\<turnstile>Q2<:T2 \<and> LL = L'"
+      assume "\<exists>T1 T2 LL. T=T1\<rightarrow>T2:LL \<and> D\<turnstile>r T1<:Q1 \<and> D\<turnstile>r Q2<:T2 \<and> LL = L'"
       then obtain T1 T2 LL
 	where T_inst: "T = T1 \<rightarrow> T2 : L'" 
-	and   rh_drv_prm1: " D\<turnstile> T1 <: Q1"
-	and   rh_drv_prm2: " D\<turnstile> Q2 <: T2"
+	and   rh_drv_prm1: " D\<turnstile>r T1 <: Q1"
+	and   rh_drv_prm2: " D\<turnstile>r Q2 <: T2"
 	and   LL': "LL = L'" by auto
       from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T1 \<rightarrow> T2 : L')" by simp
       hence "size_ty3 (T1, Q1, S1) < size_ty3 X" using size_ty_pos by auto     
-      from X_inst' lh_drv_prm1  rh_drv_prm1 have  "D \<turnstile> T1 <: S1" using S_Fun(6)[of _ _ T1 Q1 S1] size_ty_pos by auto
+      from X_inst' lh_drv_prm1  rh_drv_prm1 have  "D \<turnstile>r T1 <: S1" using S_Fun(6)[of _ _ T1 Q1 S1] size_ty_pos by auto
       moreover
-      from X_inst' lh_drv_prm2  rh_drv_prm2 have "D \<turnstile> S2 <: T2" using S_Fun(6)[of _ _ S2 Q2   T2] size_ty_pos by auto
-      ultimately have "D \<turnstile> S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : LL" using LL' S_Fun by (simp add: subtype.S_Fun)
-      hence "D \<turnstile> S1 \<rightarrow> S2 : L <: T" using T_inst LL' by simp
+      from X_inst' lh_drv_prm2  rh_drv_prm2 have "D \<turnstile>r S2 <: T2" using S_Fun(6)[of _ _ S2 Q2   T2] size_ty_pos by auto
+      ultimately have "D \<turnstile>r S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : LL" using LL' S_Fun by (simp add: subtype_r.S_Fun)
+      hence "D \<turnstile>r S1 \<rightarrow> S2 : L <: T" using T_inst LL' by simp
     }
     moreover 
     { 
-      assume "EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and>D \<turnstile> Q1 \<rightarrow> Q2 : L' <: T1"
+      assume "EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and>D \<turnstile>r Q1 \<rightarrow> Q2 : L' <: T1"
       then obtain Ts T1
 	where T_inst: "T = Union Ts"
 	and elem: "T1 : set Ts"
-	and sub:"D \<turnstile> Q1 \<rightarrow> Q2 : L' <: T1"
+	and sub:"D \<turnstile>r Q1 \<rightarrow> Q2 : L' <: T1"
 	by auto
-      have sub':"D \<turnstile> S1 \<rightarrow> S2 : L <:  Q1 \<rightarrow> Q2 : L'" using S_Fun by simp
+      have sub':"D \<turnstile>r S1 \<rightarrow> S2 : L <:  Q1 \<rightarrow> Q2 : L'" using S_Fun by simp
       have sz:"size_ty T1 < size_ty T" using T_inst elem union_size_ty by auto
       from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', Union Ts)" by simp
       from sub sub' X_inst' 
-      have "D \<turnstile> S1 \<rightarrow> S2 : L <: T1"  using S_Fun(6)[OF _ sub' sub]  sz T_inst by auto
-      hence "D \<turnstile> S1 \<rightarrow> S2 : L <: T"  using T_inst elem S_UnionAbove by auto      
+      have "D \<turnstile>r S1 \<rightarrow> S2 : L <: T1"  using S_Fun(6)[OF _ sub' sub]  sz T_inst by auto
+      hence "D \<turnstile>r S1 \<rightarrow> S2 : L <: T"  using T_inst elem S_UnionAbove by auto      
     }
     moreover
     {
-      assume "\<exists>T1 T2. T=T1\<rightarrow>T2:latent_eff.NE \<and> D\<turnstile>T1<:Q1 \<and> D\<turnstile>Q2<:T2 "
+      assume "\<exists>T1 T2. T=T1\<rightarrow>T2:latent_eff.NE \<and> D\<turnstile>r T1<:Q1 \<and> D\<turnstile>r Q2<:T2 "
       then obtain T1 T2 LL
 	where T_inst: "T = T1 \<rightarrow> T2 : latent_eff.NE" 
-	and   rh_drv_prm1: "D \<turnstile> T1 <: Q1"
-	and   rh_drv_prm2: "D \<turnstile> Q2 <: T2"
+	and   rh_drv_prm1: "D \<turnstile>r T1 <: Q1"
+	and   rh_drv_prm2: "D \<turnstile>r Q2 <: T2"
 	 by auto
       from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T1 \<rightarrow> T2 : latent_eff.NE)" by simp
       hence "size_ty3 (T1, Q1, S1) < size_ty3 X" using size_ty_pos by auto     
-      from X_inst' lh_drv_prm1  rh_drv_prm1 have  "D \<turnstile> T1 <: S1" using S_Fun(6)[of _ _ T1 Q1 S1] size_ty_pos by auto
+      from X_inst' lh_drv_prm1  rh_drv_prm1 have  "D \<turnstile>r T1 <: S1" using S_Fun(6)[of _ _ T1 Q1 S1] size_ty_pos by auto
       moreover
-      from X_inst' lh_drv_prm2  rh_drv_prm2 have "D \<turnstile> S2 <: T2" using S_Fun(6)[of _ _ S2 Q2   T2] size_ty_pos by auto
-      ultimately have "D \<turnstile> S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : latent_eff.NE" using  S_Fun by (simp add: subtype.S_Fun)
-      hence "D \<turnstile> S1 \<rightarrow> S2 : L <: T" using T_inst  by simp
+      from X_inst' lh_drv_prm2  rh_drv_prm2 have "D \<turnstile>r S2 <: T2" using S_Fun(6)[of _ _ S2 Q2   T2] size_ty_pos by auto
+      ultimately have "D \<turnstile>r S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : latent_eff.NE" using  S_Fun by (simp add: subtype_r.S_Fun)
+      hence "D \<turnstile>r S1 \<rightarrow> S2 : L <: T" using T_inst  by simp
     }
-    ultimately show "D \<turnstile> S1 \<rightarrow> S2 : L <: T" by blast
+    ultimately show "D \<turnstile>r S1 \<rightarrow> S2 : L <: T" by blast
   next
     case (S_UnionAbove T1 Ts D S)
-    have sub1:"D \<turnstile> S <: T1" by fact
-    hence sub2:"D \<turnstile> T1 <: T" using S_UnionAbove union_sub_elim[of D Ts T T1] by auto
+    have sub1:"D \<turnstile>r S <: T1" by fact
+    hence sub2:"D \<turnstile>r T1 <: T" using S_UnionAbove union_sub_elim_r[of D Ts T T1] by auto
     have sz:"size_ty T1 < size_ty Q" using S_UnionAbove union_size_ty by auto
-    hence "D \<turnstile> S <: T" using S_UnionAbove(4)[OF _ sub1 sub2] sz S_UnionAbove(7) by auto
+    hence "D \<turnstile>r S <: T" using S_UnionAbove(4)[OF _ sub1 sub2] sz S_UnionAbove(7) by auto
     thus ?case .
   next
     case (S_UnionBelow Ts D S)
-    have "!! T0. T0 : set Ts \<Longrightarrow> D \<turnstile> T0 <: T"
+    have "!! T0. T0 : set Ts \<Longrightarrow> D \<turnstile>r T0 <: T"
       proof -
 	fix T0
 	assume "T0 : set Ts"
 	hence sz:"size_ty T0 < size_ty (Union Ts)" using union_size_ty by auto
-	have s1:"D \<turnstile> T0 <: S" using S_UnionBelow `T0 : set Ts` by auto
-	have s2:"D \<turnstile> S <: T" using S_UnionBelow by auto
+	have s1:"D \<turnstile>r T0 <: S" using S_UnionBelow `T0 : set Ts` by auto
+	have s2:"D \<turnstile>r S <: T" using S_UnionBelow by auto
 	note S_UnionBelow(6)
-	thus "D \<turnstile> T0 <: T" using S_UnionBelow(3)[OF _ s1 s2] sz `S = Q` by auto
+	thus "D \<turnstile>r T0 <: T" using S_UnionBelow(3)[OF _ s1 s2] sz `S = Q` by auto
       qed
     thus ?case ..
   next
@@ -1095,9 +1115,164 @@ proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T D taking: "size_ty3" rule: measur
     let ?X = "(T1,Q,T)"
     have "size_ty3 ?X < size_ty3 X" using S_Refinement by auto
     note S_Refinement(5)[of ?X D T1 Q T]
-    with S_Refinement have "D \<turnstile> T1 <: T" by auto
-    thus "D \<turnstile> R c T1 <: T" using `c : set D` using subtype.S_Refinement[of c Q T2 D T] using S_Refinement by auto
+    with S_Refinement have "D \<turnstile>r T1 <: T" by auto
+    thus "D \<turnstile>r R c T1 <: T" using `c : set D` using subtype_r.S_Refinement[of c Q T2 D T] using S_Refinement by auto
   qed
+qed
+
+lemma S_Trans[intro]:
+  assumes "\<turnstile>S<:Q" and " \<turnstile>Q<:T"
+  shows "\<turnstile>S<:T" 
+using prems
+proof (induct "X"=="(S,Q,T)"  arbitrary: S Q T taking: "size_ty3" rule: measure_induct_rule)
+  case (less X S Q T)
+  show " \<turnstile> S <: T" using `\<turnstile> S <: Q` less 
+  proof (induct  S Q\<equiv>Q rule: subtype.induct) 
+    case S_Refl thus ?case by auto
+  next
+    case (S_Top A)
+    have X_inst:"X = (A,Q,T)" by fact
+    show ?case  
+    proof -
+      {
+	assume "EX Ts T'. T = Union Ts \<and> T' : set Ts \<and> \<turnstile> Q <: T'"
+	then obtain Ts T' where "T = Union Ts "" T' : set Ts "" \<turnstile> Q <: T'" by auto
+	hence "size_ty T' < size_ty T" using union_size_ty by auto
+	hence "size_ty3 (A,Q,T') < size_ty3 (A,Q,T)" by auto
+	hence "\<turnstile> A <: T'" using `\<turnstile> A <: Q` `\<turnstile> Q <: T'` using less(1)[of "(A,Q,T')" A Q T'] X_inst by auto
+	hence ?thesis using S_Top prems by auto
+      }
+      thus ?thesis using S_TopE S_Top by auto
+    qed
+  next
+    case (S_Fun Q1 S1 S2 Q2 L L') 
+    hence rh_drv: " \<turnstile> Q1 \<rightarrow> Q2 : L' <: T" by simp
+    have X_inst:"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T)" using S_Fun by auto
+    note `Q1 \<rightarrow> Q2 : L' = Q`  
+    hence Q12_less: "size_ty Q1 < size_ty Q" "size_ty Q2 < size_ty Q" using size_ty_pos by auto
+    have lh_drv_prm1: " \<turnstile> Q1 <: S1" by fact
+    have lh_drv_prm2: " \<turnstile> S2 <: Q2" by fact      
+    have "T=Top \<or> (\<exists>T1 T2 LL. T=T1\<rightarrow>T2 : LL \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2 \<and> LL = L') \<or> 
+      (\<exists>T1 T2. T=T1\<rightarrow>T2 : latent_eff.NE \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2) \<or>
+      (EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> \<turnstile> Q1 \<rightarrow> Q2 : L' <: T1)" 
+      using S_ArrowE_left[OF rh_drv] by auto
+    moreover
+    { 
+      assume "\<exists>T1 T2 LL. T=T1\<rightarrow>T2:LL \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2 \<and> LL = L'"
+      then obtain T1 T2 LL
+	where T_inst: "T = T1 \<rightarrow> T2 : L'" 
+	and   rh_drv_prm1: " \<turnstile> T1 <: Q1"
+	and   rh_drv_prm2: " \<turnstile> Q2 <: T2"
+	and   LL': "LL = L'" by auto
+      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T1 \<rightarrow> T2 : L')" by simp
+      hence "size_ty3 (T1, Q1, S1) < size_ty3 X" using size_ty_pos by auto     
+      from X_inst' lh_drv_prm1  rh_drv_prm1 have  " \<turnstile> T1 <: S1" using S_Fun(6)[of _ T1 Q1 S1] size_ty_pos by auto
+      moreover
+      from X_inst' lh_drv_prm2  rh_drv_prm2 have " \<turnstile> S2 <: T2" using S_Fun(6)[of _ S2 Q2   T2] size_ty_pos by auto
+      ultimately have " \<turnstile> S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : LL" using LL' S_Fun by (simp add: subtype.S_Fun)
+      hence " \<turnstile> S1 \<rightarrow> S2 : L <: T" using T_inst LL' by simp
+    }
+    moreover 
+    { 
+      assume "EX Ts T1. T = Union Ts \<and> T1 : set Ts \<and> \<turnstile> Q1 \<rightarrow> Q2 : L' <: T1"
+      then obtain Ts T1
+	where T_inst: "T = Union Ts"
+	and elem: "T1 : set Ts"
+	and sub:"\<turnstile> Q1 \<rightarrow> Q2 : L' <: T1"
+	by auto
+      have sub':"\<turnstile> S1 \<rightarrow> S2 : L <:  Q1 \<rightarrow> Q2 : L'" using S_Fun by simp
+      have sz:"size_ty T1 < size_ty T" using T_inst elem union_size_ty by auto
+      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', Union Ts)" by simp
+      from sub sub' X_inst' 
+      have " \<turnstile> S1 \<rightarrow> S2 : L <: T1"  using S_Fun(6)[OF _ sub' sub]  sz T_inst by auto
+      hence " \<turnstile> S1 \<rightarrow> S2 : L <: T"  using T_inst elem S_UnionAbove by auto      
+    }
+    moreover
+    {
+      assume "\<exists>T1 T2. T=T1\<rightarrow>T2:latent_eff.NE \<and> \<turnstile>T1<:Q1 \<and> \<turnstile>Q2<:T2 "
+      then obtain T1 T2 LL
+	where T_inst: "T = T1 \<rightarrow> T2 : latent_eff.NE" 
+	and   rh_drv_prm1: " \<turnstile> T1 <: Q1"
+	and   rh_drv_prm2: " \<turnstile> Q2 <: T2"
+	 by auto
+      from X_inst T_inst have X_inst':"X = (S1 \<rightarrow> S2 : L, Q1 \<rightarrow> Q2 : L', T1 \<rightarrow> T2 : latent_eff.NE)" by simp
+      hence "size_ty3 (T1, Q1, S1) < size_ty3 X" using size_ty_pos by auto     
+      from X_inst' lh_drv_prm1  rh_drv_prm1 have  " \<turnstile> T1 <: S1" using S_Fun(6)[of _ T1 Q1 S1] size_ty_pos by auto
+      moreover
+      from X_inst' lh_drv_prm2  rh_drv_prm2 have " \<turnstile> S2 <: T2" using S_Fun(6)[of _ S2 Q2   T2] size_ty_pos by auto
+      ultimately have " \<turnstile> S1 \<rightarrow> S2 : L <: T1 \<rightarrow> T2 : latent_eff.NE" using  S_Fun by (simp add: subtype.S_Fun)
+      hence " \<turnstile> S1 \<rightarrow> S2 : L <: T" using T_inst  by simp
+    }
+    ultimately show " \<turnstile> S1 \<rightarrow> S2 : L <: T" by blast
+  next
+    case (S_UnionAbove T1 Ts S)
+    have sub1:"\<turnstile> S <: T1" by fact
+    hence sub2:"\<turnstile> T1 <: T" using S_UnionAbove union_sub_elim[of Ts T T1] by auto
+    have sz:"size_ty T1 < size_ty Q" using S_UnionAbove union_size_ty by auto
+    hence "\<turnstile> S <: T" using S_UnionAbove(4)[OF _ sub1 sub2] sz S_UnionAbove(7) by auto
+    thus ?case .
+  next
+    case (S_UnionBelow Ts S)
+    have "!! T0. T0 : set Ts \<Longrightarrow> \<turnstile> T0 <: T"
+      proof -
+	fix T0
+	assume "T0 : set Ts"
+	hence sz:"size_ty T0 < size_ty (Union Ts)" using union_size_ty by auto
+	have s1:"\<turnstile> T0 <: S" using S_UnionBelow `T0 : set Ts` by auto
+	have s2:"\<turnstile> S <: T" using S_UnionBelow by auto
+	note S_UnionBelow(6)
+	thus "\<turnstile> T0 <: T" using S_UnionBelow(3)[OF _ s1 s2] sz `S = Q` by auto
+      qed
+    thus ?case ..
+  qed
+qed
+
+
+fun erase_ty :: "ty \<Rightarrow> ty"
+  and erase_eff :: "latent_eff \<Rightarrow> latent_eff"
+  where
+  "erase_ty (R c T) = erase_ty T"
+  | erase_ty_un:"erase_ty (Union Ts) = Union (map erase_ty Ts)"
+  | erase_ty_fun:"erase_ty (A \<rightarrow> B : C) = (erase_ty A \<rightarrow> erase_ty B : erase_eff C)"
+  | "erase_ty T = T"
+  | "erase_eff (Latent T) = Latent (erase_ty T)"
+  | "erase_eff (latent_eff.NE) = latent_eff.NE"
+
+lemma S_RefinementSimple:
+  assumes A:"c : set D"
+  and B:"\<Delta>\<^isub>\<tau> c = T \<rightarrow> T2 : Latent (R c T)"
+  shows "D \<turnstile>r R c T <: T"
+  using S_Refinement[OF B _ A, of T] by auto
+
+lemma erase_ty_sub:
+  assumes "D \<turnstile>r T1 <: T2"
+  shows "\<turnstile> erase_ty T1 <: erase_ty T2"
+  using prems
+proof (induct)
+  case S_Refl thus ?case by auto
+next
+  case (S_Fun D T1 T2 S1 S2 F1 F2)
+  {
+    assume "F2 = latent_eff.NE"
+    hence ?case unfolding erase_ty_fun using  S_Fun by auto
+  }
+  moreover
+  {
+    assume "~(F2 = latent_eff.NE)"
+    hence ?case unfolding erase_ty_fun using  S_Fun by auto
+  }
+  ultimately show ?case by blast
+next
+  case S_Top thus ?case by auto
+next
+  case (S_Refinement c T1 T2 D T1') thus ?case by auto
+next
+  case (S_UnionBelow Ts D S) thus ?case
+    unfolding erase_ty_un using subtype.S_UnionBelow[of "map erase_ty Ts" "erase_ty S" ] by auto
+next
+  case (S_UnionAbove T Ts D S)
+  hence A:"erase_ty T : set (map erase_ty Ts)" by auto
+  thus ?case unfolding erase_ty_un using S_UnionAbove subtype.S_UnionAbove[OF A, of "erase_ty S"] by auto
 qed
 
 
@@ -1152,12 +1327,6 @@ constdefs
 less_ty :: "((ty * ty) * ty * ty) set"
 "less_ty == {((a,b),c,d) . (size_ty b) < (size_ty d)}"
 
-(*
-abbreviation
-  simple_sub_syn :: "ty \<Rightarrow> ty \<Rightarrow> bool"  ("\<turnstile> _ <: _" [0, 0] 10) 
-where
-  "\<turnstile> A <: B \<equiv> (\<forall> D. D\<turnstile>A <: B)"
-*)
 
 function (sequential)
   restrict :: "denv \<Rightarrow> ty \<Rightarrow> ty \<Rightarrow> ty"
@@ -1190,7 +1359,6 @@ where
 |  "simple_ty ty.FF = True"
 |  "simple_ty (A1 \<rightarrow> A2 : L) = True"
 (* |  "simple_ty (Union [ty.TT,ty.FF]) = True" *)
-| "simple_ty (R c T) = True"
 |  "simple_ty T = False"
 
 lemma ty_cases[consumes 0, case_names Top Int TT FF Arr Union Refinement]:
@@ -1300,7 +1468,7 @@ proof (induct T arbitrary: D S T0 taking:"size_ty" rule: measure_induct_rule)
 	  fix c T1 T2
 	  assume "T0 = R c T1"" \<Delta>\<^isub>\<tau> c = T1 \<rightarrow> T2 : Latent (R c T1)"
             "D \<turnstile> T1 <: ty.Union Ts"" c \<in> set D"
-	  thus "D \<turnstile> T0 <: restrict D S T" using `simple_ty T0` prems req sorry
+	  thus "D \<turnstile> T0 <: restrict D S T" using `simple_ty T0` by auto
 	qed
 	hence ?thesis using T by simp
       }
@@ -1369,7 +1537,7 @@ proof (induct T arbitrary: S T0 taking:"size_ty" rule: measure_induct_rule)
 	  fix c T1 T2
 	  assume "T0 = R c T1"" \<Delta>\<^isub>\<tau> c = T1 \<rightarrow> T2 : Latent (R c T1)"
             "D \<turnstile> T1 <: ty.Union Ts"" c \<in> set D"
-	  thus "D \<turnstile> T0 <: remove D S T" using `simple_ty T0` sorry
+	  thus "D \<turnstile> T0 <: remove D S T" using `simple_ty T0` by auto
 	qed
 	hence ?thesis using T by simp
       }
@@ -1584,11 +1752,6 @@ inductive_cases ref_sub_arr: "D\<turnstile> R c T <: T1 \<rightarrow> T2 : L"
 inductive_cases ref_cases:"D , \<Gamma> \<turnstile> e : R c T1a ; F"
 thm ref_cases
 
-lemma S_RefinementSimple:
-  assumes A:"c : set D"
-  and B:"\<Delta>\<^isub>\<tau> c = T \<rightarrow> T2 : Latent (R c T)"
-  shows "D \<turnstile> R c T <: T"
-  using S_Refinement[OF B _ A, of T] by auto
 
 lemma ref_arrow_elim:
   assumes B:"D \<turnstile> R c T <: T1 \<rightarrow> T2 : L"  
