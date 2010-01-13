@@ -106,23 +106,21 @@
 % typing judgements
 \newcommand\hastype[2]{\ma{#1 \mathbin{:} #2}}
 \newcommand\hasty[3]{\hastype{#1 \vdash #2}{#3}}
-\newcommand\hastyeff[6][\mdel \Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4|#5\ ;\ #6}}}
+\newcommand\hastyeff[6][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4|#5\ ;\ #6}}}
 
-\newcommand\hastyeffphi[5][\mdel \Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4\ ;\ #5}}}
+\newcommand\hastyeffphi[5][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4\ ;\ #5}}}
 
-\newcommand\hastyvar[4][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
+\newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
 
 
-\newcommand\hastyno[3][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bullet} {\noeffect}}
-\newcommand\hastytrue[3][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
-\newcommand\hastyfalse[3][\mdel \Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
+\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bullet} {\noeffect}}
+\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
+\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
 
-\newcommand\hastypred[4][\mdel \Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
+\newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
 
-\newcommand\ghastyeff[3]{\ma{\hastyeff{\mdel \Gamma}{#1}{#2}{#3}}}
+\newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
 \newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
-
-
 
 
 \newcommand\subtype[2]{\ma{\vdash #1 \subtypesym #2}}
@@ -141,7 +139,7 @@
 \newcommand\reduce[2]{\ma{#1 \rightarrow #2}}
 \newcommand\reduces[2]{\ma{#1 \rightarrow^* #2}}
 
-\newcommand\combfilter[3]{\ma{\mathrm{combfilter}({#1},{#2},{#3})}}
+\newcommand\combfilter[3]{\ma{\mathrm{combinefilter}({#1},{#2},{#3})}}
 \newcommand\remove[2]{\ma{\mathrm{remove}({#1},{#2})}}
 \newcommand\restrict[2]{\ma{\mathrm{restrict}({#1},{#2})}}
 
@@ -225,10 +223,12 @@
 \newometa\oph{\latentmvar{\psi}}
 
 \newcommand{\abstractfilter}[2]{\ma{\mathrm{abstractfilter}({#1}, {#2})}}
+\newcommand{\abstractobject}[2]{\ma{\mathrm{abstractobject}({#1}, {#2})}}
 \newcommand{\nooverlap}[2]{\ma{\mbox{no-overlap}({#1}, {#2})}}
-\newcommand{\applyfilter}[3]{\ma{\mathrm{applyfilter}({#1}, {#2}, {#3})}}
+\newcommand{\applyfilter}[3]{\ma{\mathrm{applyfilter}({#1},  {#3})}}
+\newcommand{\applyobject}[2]{\ma{\mathrm{applyobject}({#1},  {#2})}}
 \newcommand{\abstractone}[2]{\ma{\mathrm{abo}({#1}, {#2})}}
-\newcommand{\applyone}[3]{\ma{\mathrm{apo}({#1}, {#2}, {#3})}}
+\newcommand{\applyone}[2]{\ma{\mathrm{apo}({#1}, {#2})}}
 
 \newcommand{\pii}{\marg{\pi(\i{})}{\pi}}
 \newcommand{\pipi}{\marg{\pi'(\i{})}{\pi'}}

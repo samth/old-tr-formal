@@ -112,7 +112,7 @@
          \else
          \fi
          
-         \Gamma & ::= & \overvec{\x{}:\t{}} & \mbox{Type Environments} \\
+         \Gamma & ::= & \overvec{\p{}} & \mbox{Type Environments} \\
   \end{altgrammar}
   \]
 
@@ -147,8 +147,9 @@ otherwise representable.
 \end{displaymath}
 \normalsize
 
-This means that in proposition environment $\Delta$ and type
-environment $\Gamma$, \e{} has the type \t{}, that evaluating \e{} and
+This means that in 
+environment $\Gamma$ (which serves as both the type and the
+proposition environment), \e{} has the type \t{}, that evaluating \e{} and
 gives us information \phii{} based on whether \e{} evaluates to \ff or
 not, and that testing \e{} is the same as testing the object \s{}.
 
@@ -159,7 +160,7 @@ not, and that testing \e{} is the same as testing the object \s{}.
 \paragraph{Core Type Rules}
 
 \[
-\inferrule[T-Var]{}{\hastyvar {\x{}} {\G{}(\x{})} {\x{}}}
+\inferrule[T-Var]{\Gamma \vdash \t{\x{}}}{\hastyvar {\x{}} {\t{}} {\x{}}}
 \qquad\qquad
 \inferrule[T-Num]{}{\hastytrue{\n{}}{\num}} 
 \qquad\qquad
@@ -183,13 +184,14 @@ not, and that testing \e{} is the same as testing the object \s{}.
 
 \[
 \inferrule[T-Abs]
-{\hastyeffphi [\mdel \G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}} \\\\
-\movervec[i]{\phih{} = \abstractfilter {\xi} {\phii{}}} \\
-\sh{} = \left\{
- \protect{\begin{array}{ll}
-  \pathmaybe{\pii}     & \text{if } \s{} = \wpi{\xi} \\
-  \noeffect  & \text{otherwise}
- \end{array}} \right.
+{\hastyeffphi [\G{},{\movervec[i]{\sig{\x{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}} \\\\
+\movervec[i]{\phih{} = \abstractfilter {\xi} {\phii{}}} \\\\
+\sh{} = \abstractobject{\movervec[i]{\x{}}}{\s{}}
+% \left\{
+%  \protect{\begin{array}{ll}
+%   \pathmaybe{\pii}     & \text{if } \s{} = \wpi{\xi} \\
+%   \noeffect  & \text{otherwise}
+%  \end{array}} \right.
 }
 {\hastytrue
   {\abs[i]{\x{}}{\sig{}}{\e{}}} 
@@ -202,11 +204,12 @@ not, and that testing \e{} is the same as testing the object \s{}.
   \movervec[i]{\subtype {\t{a}}{\t{f}}} \\
   {\subtype {\t{op}} {\proctype{\movervec[i]{\t{f}}}{\t{r}}{\movervec[i]{\phih{f}}}{\sh{}}}} \\\\
 \phii{r} = \movervec[i]{\applyfilter{\phih{f}}{\t{a}}{\s{a}}} \\\\
-\s{r} = \left\{
-  \protect{\begin{array}{ll}
-      \wpip{\wpi{x}}     & \text{if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
-      \noeffect  & \text{otherwise}
-    \end{array}} \right.
+\s{r} = \applyobject{\movervec[i]{\s{a}}}{\sh{}}
+ % \left\{
+ %  \protect{\begin{array}{ll}
+ %      \wpip{\wpi{x}}     & \text{if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
+ %      \noeffect  & \text{otherwise}
+ %    \end{array}} \right.
 }
 {\hastyeffphi {\comb{\e{op}}{\movervec[i]{\e{a}}}} {\t{r}} {\phii{r}} {\s{r}}}
 \]
@@ -216,13 +219,9 @@ not, and that testing \e{} is the same as testing the object \s{}.
 {
   \hastyeff{\e1}{\t1}{\op1}{\op2}{\s1}
   \\\\
-  \lonly{\derive{\Delta}{\op1}{\opp1}}
-  \\
-  \lonly{\derive{\Delta}{\op2}{\opp2}}
+  \hastyeffphi[\G{} \cup {\op1}]{\e2}{\t2}{\phii2} {\s2}
   \\\\
-  \hastyeffphi[\logic{\Delta \cup \op1, }{} \G{} + \logic{\opp1}{\op1}]{\e2}{\t2}{\phii2} {\s2}
-  \\\\
-  \hastyeffphi[\logic{\Delta \cup \op2, }{} \G{} + \logic{\opp2}{\op2}]{\e3}{\t3}{\phii3} {\s3}
+  \hastyeffphi[\G{} \cup {\op2}]{\e3}{\t3}{\phii3} {\s3}
   \\\\
   \subtype{\t2}{\t{}} \\
   \subtype{\t3}{\t{}} \\\\
@@ -292,58 +291,50 @@ not, and that testing \e{} is the same as testing the object \s{}.
   \qquad\qquad
   \inferrule[T-Bot]
   {
-    \Gamma(\x{}) = \bot \\ \x{} \in \mbox{fv}(\e{}) 
+    \Gamma \vdash \bot_{\x{}} 
   }
   {
     \hastyeffphi{\e{}}{\bot}{\bullet|\bullet}{\noeffect}
   }
 \end{displaymath}
 
-{\sc T-Bot} is needed to avoid complaints about spurious unreachable code.
+{\sc T-Bot} is needed to avoid complaints about spurious unreachable
+code, and it takes the place of the earlier rules {\sc T-IfTrue} and
+{\sc T-IfFalse}.
 
-\paragraph{Proof-theoretic Type Rules}
-
-\[
-\inferrule[T-IfTrue]
-{
-  \hastyeff{\e1}{\t1}{\bullet}{\bot}{\s1}
-  \\\\
-  \hastyeffphi{\e2}{\t2}{\phii2} {\s2}
-  \\\\
-  \subtype{\t2}{\t{}} \\\\
-  \phii{} = \combfilter{\bullet|\bot}{\phii2}{\bullet|\bullet}
-}
-{\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
-\qquad\qquad
-\inferrule[T-IfFalse]
-{
-  \hastyeff{\e1}{\t1}{\bot}{\bullet}{\s1}
-  \\\\
-  \hastyeffphi{\e3}{\t3}{\phii3} {\s3}
-  \\\\
-  \subtype{\t3}{\t{}} \\\\
-  \phii{} = \combfilter{\bot|\bullet}{\bullet|\bullet}{\phii3}
-}
-{\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
-\]
 
 \newpage
-\iflogic
 
-\section{Logic Rules}
+\section{Environment Rules}
+
+\newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}{\ponly{,#2}})}
+\newcommand{\updatesimp}[2]{\mathrm{update}({#1},{#2})}
+
 
 \[
-\inferrule[L-Env]
-{\p{} \in \Delta}
-{\Delta \vdash \p{}}
-\qquad
-\qquad
-\inferrule[L-MP]
-{\overvec{\Delta \vdash \p{}} \\ \Delta \vdash \imp{\op{}}{\opp{}}}
-{\overvec{\Delta \vdash \p{}'}}
+\inferrule[L-Atom]
+{\p{} \in \Gamma}
+{\Gamma \vdash \p{}}
+\qquad \qquad
+\inferrule[L-Bot]
+{\Gamma \vdash \bot}
+{\Gamma \vdash \t{\x{}}}
+\ifpath
+\qquad \qquad
+\inferrule[L-Update]
+{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \t{\x{}}'}
+{\Gamma \vdash {\update[\t{}]{\pi}{\t{}'}}_{\x{}}}
+\fi
 \]
 
+\iflogic
+\[
+\inferrule[L-MP]
+{\overvec{\Gamma \vdash \p{}} \\ \Gamma \vdash \imp{\op{}}{\opp{}}}
+{\overvec{\Gamma \vdash \p{}'}}
+\]
 \fi
+
 
 \section{Subtyping}
 
@@ -438,13 +429,16 @@ $$
     \abstractone{\x{}}{{\t{}}_{\wpi{\x{}}}}& {{\t{}}_{\pi}} & \\
     \abstractone{\x{}}{\comp{\t{}}_{\wpi{\x{}}}}& {\comp{\t{}}_{\pi}} & \\
     \abstractone{\x{}}{{\t{}}_{\wpi{\y{}}}}& {\bullet} &  \text{ where } \x{} \neq \y{} \\
-    \abstractone{\x{}}{\comp{\t{}}_{\wpi{\y{}}}}& {\bullet} & \text{ where } \x{} \neq \y{} \\
+    \abstractone{\x{}}{\comp{\t{}}_{\wpi{\y{}}}}& {\bullet} & \text{ where } \x{} \neq \y{} \vspace{2mm}\\
 %    \text{ where }
 %    \ph{} = \left\{
 %      \protect{\begin{array}{ll}
 %          \both             & \text{if } \bot \in \op{i} \\
 %          \bullet        & \text{otherwise}
 %        \end{array}} \right.
+    \abstractobject{\movervec[i]{\x{}}}{\s{}} & \pathmaybe{\pii} &
+    \text{ if } \s{} = \wpi{\xi} \\
+    \abstractobject{\movervec[i]{\x{}}}{\s{}} & \noeffect & \text{ otherwise}\\
    \end{array}
 $$
 %
@@ -452,7 +446,7 @@ $$
 
 $$
   \begin{array}{l@{\ =\ }l@{\qquad}l}
-    \apf{\oph{+}|\oph{-}}{\t{}}{\s{}}{\overvec{\applyone{\ph+}{\t{}}{\s{}}}|\overvec{\applyone{\ph-}{\t{}}{\s{}}}} &
+    \apf{\oph{+}|\oph{-}}{\t{}}{\s{}}{\overvec{\applyone{\ph+}{\s{}}}|\overvec{\applyone{\ph-}{\s{}}}} &
 %    {\overvec[i]{\p{+_+}},\overvec[j]{\p{-_-}}|
 %     \overvec[i]{\p{-_+}},\overvec[j]{\p{+_-}}} & 
 %   \text{ where } \overvec[i]{\p{+_+},{\p{+_-}}}  = \overvec[i]{\applyone{\ph+}{\t{}}{\s{}}} \\
@@ -461,17 +455,18 @@ $$
 
 
 
-    \applyone{\both}{\sig{}}{\s{}} & \bot & \\
-    \applyone{\comp{\t{}}_{{\pbullet}}} {\sig{}} {\s{}} & \bot & \text{ where } \subtype{\sig{}}{\t{}}\\
-    \applyone{{\t{}}_{{\pbullet}}} {\sig{}} {\s{}} & \bot & \text{ where } \nooverlap{\sig{}}{\t{}}\\
-    \applyone{\ph{}}{\sig{}}{\noeffect} & \bullet & \\
-    \applyone{\t{\ponly{\pi'}}} {\sig{}} {\wpi{\x{}}} & \t{{\wpip{\wpi{\x{}}}}} & \\
-    \applyone{\comp{\t{}}_{\ponly{\pi'}}} {\sig{}} {\wpi{\x{}}} & \comp{\t{}}_{{\wpip{\wpi{\x{}}}}} & \\
+    \applyone{\both}{\s{}} & \bot & \\
+    \applyone{\ph{}}{\noeffect} & \bullet & \\
+    \applyone{\t{\ponly{\pi'}}} {\wpi{\x{}}} & \t{{\wpip{\wpi{\x{}}}}} & \\
+    \applyone{\comp{\t{}}_{\ponly{\pi'}}} {\wpi{\x{}}} &
+    \comp{\t{}}_{{\wpip{\wpi{\x{}}}}} & \vspace{2mm}\\
+
+    \applyobject{\movervec[i]{\s{a}}}{\sh{}}  &      \wpip{\wpi{x}}
+    & \text{ if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
+    \applyobject{\movervec[i]{\s{a}}}{\sh{}}  &  \noeffect  & \text{ otherwise} \\
+
    \end{array}
 $$
-
-Cases 2 and 3 of {\applyone{-}{-}{-}} are redundant with the {\sc
-  T-Bot} type rule.  Probably one one of them is needed.
 
 \subsection{Combine}
 
@@ -600,22 +595,8 @@ Rules 2 and 3 might only be needed in the proof.
 \]
 
 \newpage
-\section{Environment Operations}
+\section{Type Operations}
 
-\newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}_{\ponly{#2}})}
-\newcommand{\updatesimp}[2]{\mathrm{update}({#1},{#2})}
-
-$$
-\begin{array}{@{\Gamma\ +\ }l@{\ =\ }l@{\qquad}l}
-  \t{\wpi{\x{}}},\op{} & (\Gamma,\x{}:\update{\pi}{\t{}}) + \op{}& \\
-  \comp{\t{}}_{\wpi{\x{}}},\op{} & (\Gamma,\x{}:\update{\pi}{\comp{\t{}}}) + \op{}& \\
-  \bot,\op{} & \Gamma' & \text{ where } {\forall \x{}}.\Gamma'(\x{}) = \bot\ \\ %
-  \bullet & \Gamma & \\
-%  \p{} & \Gamma,\x{}:\updatesimp{\Gamma(\x{})}{\p{}} & \\
-%  \comp{\t{}}_{\wpi{\x{}}} & \Gamma,\x{}:\update{\pi}{\comp{\t{}}} & \\
-%  \bot & \Gamma' & \text{ where } {\forall \x{}}.\Gamma'(\x{}) = \bot\ \\ %
-\end{array}
-$$
 
 $$
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
@@ -628,15 +609,8 @@ $$
 \fi
   \update[\t{}]{\bullet}{\ups{}} & \restrict{\t{}}{\ups{}}& \\
 
-  \update[\t{}]{\bullet}{\comp{\ups{}}} & \remove{\t{}}{\ups{}}& \\
+  \update[\t{}]{\bullet}{\comp{\ups{}}} & \remove{\t{}}{\ups{}}& \vspace{5mm}\\
 %  \updatesimp{\t{}}{\both} & {\bot} & \\
-\end{array}
-%
-$$
-
-\vspace{5mm}
-$$
-\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
   \restrict{\t{}}{\sig{}} & \bot & \text{ if } {\nooverlap{\t{}}{\sig{}}} \\
   \restrict{(\usym\ \overvec{\t{}})}{\sig{}} & (\usym\ \overvec{\restrict{\t{}}{\sig{}}})& \\
   \restrict{\t{}}{\sig{}} & \t{} & \text{ if } {\subtype{\t{}}{\sig{}}} \\
