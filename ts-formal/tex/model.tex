@@ -94,9 +94,11 @@
 
 
 
-         \p{} &::=&  \t{\wpi{\x{}}} \alt \compt{\wpi{\x{}}} \lonly{\alt \imp{\p{}}{\p{}}} \alt \bot & \mbox{Filters} \\
+         \p{} &::=&  \t{\wpi{\x{}}} \alt \compt{\wpi{\x{}}}
+         \lonly{\alt \imp{\op{}}{\op{}}} \alt \op{} \vee \op{} \alt \bot & \mbox{Filters} \\
 
-         \ph{} & ::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}} \lonly{\alt \imp{\ph{}}{\ph{}}} \alt \both & \mbox{Latent Filters} \\
+         \ph{} & ::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}}
+         \lonly{\alt \imp{\oph{}}{\oph{}}} \alt \oph{} \vee \oph{} \alt \both & \mbox{Latent Filters} \\
 
          \phii{} & ::= & \overvec{\p{}}|\overvec{\p{}} & \mbox{Filter Sets} \\
 
@@ -123,8 +125,7 @@ abbreviate $\bullet(\x{})$ as $\x{}$.  Sequences are assumed to be
 automatically flattened, so $\overvec{\t1},\overvec{\t2}$ is a sequence 
 of types with $|\overvec{\t1}| + |\overvec{\t2}|$ elements, not a two
 element sequence of sequences. 
-When $\bot$ is an element of a sequence, we
-will treat it as absorbing all the other elements, so 
+Since $\bot$  and $\both$  are notation for the universe of formulas, 
 $\op1,\bot,\op2 = \bot$.
  Finally, note that if we have $\op{}|\bot$, $\op{}$
 cannot contain any information we don't already know.  So we will
@@ -147,11 +148,10 @@ otherwise representable.
 \end{displaymath}
 \normalsize
 
-This means that in 
-environment $\Gamma$ (which serves as both the type and the
-proposition environment), \e{} has the type \t{}, that evaluating \e{} and
-gives us information \phii{} based on whether \e{} evaluates to \ff or
-not, and that testing \e{} is the same as testing the object \s{}.
+This means that in environment $\Gamma$, \e{} has the type \t{}, that
+evaluating \e{} and gives us information \phii{} based on whether \e{}
+evaluates to \ff or not, and that testing \e{} is the same as testing
+the object \s{}.
 
 \newpage
 
@@ -202,9 +202,9 @@ not, and that testing \e{} is the same as testing the object \s{}.
 { \hastyeffphi {\e{op}} {\t{op}}   {\phii{op}} {\s{op}}\\  
   \movervec[i]{\hastyeffphi {\e{a}} {\t{a}}  {\phii{a}} {\s{a}}}\\\\ 
   \movervec[i]{\subtype {\t{a}}{\t{f}}} \\
-  {\subtype {\t{op}} {\proctype{\movervec[i]{\t{f}}}{\t{r}}{\movervec[i]{\phih{f}}}{\sh{}}}} \\\\
+  {\subtype {\t{op}} {\proctype{\movervec[i]{\t{f}}}{\t{r}}{\movervec[i]{\phih{f}}}{\sh{f}}}} \\\\
 \phii{r} = \movervec[i]{\applyfilter{\phih{f}}{\t{a}}{\s{a}}} \\\\
-\s{r} = \applyobject{\movervec[i]{\s{a}}}{\sh{}}
+\s{r} = \applyobject{\movervec[i]{\s{a}}}{\sh{f}}
  % \left\{
  %  \protect{\begin{array}{ll}
  %      \wpip{\wpi{x}}     & \text{if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
@@ -217,17 +217,19 @@ not, and that testing \e{} is the same as testing the object \s{}.
 \[
 \inferrule[T-If]
 {
-  \hastyeff{\e1}{\t1}{\op1}{\op2}{\s1}
+  \hastyeff{\e1}{\t1}{\op{1_+}}{\op{1_-}}{\s1}
   \\\\
-  \hastyeffphi[\G{} \cup {\op1}]{\e2}{\t2}{\phii2} {\s2}
+  \hastyeff[\G{} \cup {\op{1_+}}]{\e2}{\t2}{\op{2_+}}{\op{2_-}} {\s2}
   \\\\
-  \hastyeffphi[\G{} \cup {\op2}]{\e3}{\t3}{\phii3} {\s3}
+  \hastyeff[\G{} \cup {\op{1_-}}]{\e3}{\t3}{\op{3_+}}{\op{3_-}} {\s3}
   \\\\
   \subtype{\t2}{\t{}} \\
   \subtype{\t3}{\t{}} \\\\
-  \phii{} = \combfilter{\op1|\op2}{\phii2}{\phii3}
+  \Gamma, (\op{1_+}, \op{2_+}) \vee (\op{1_-}, \op{3_+}) \vdash \op{+} \\\\
+  \Gamma, (\op{1_+}, \op{2_-}) \vee (\op{1_-}, \op{3_-}) \vdash \op{-}
+%  \phii{} = \combfilter{\op1|\op2}{\phii2}{\phii3}
 }
-{\hastyeffphi {\cond{\e1}{\e2}{\e3}} {\t{}}  {\phii{}} {\noeffect}}
+{\hastyeff {\cond{\e1}{\e2}{\e3}} {\t{}}  {\op{+}} {\op{-}} {\noeffect}}
 \]
 
 \ifpath
@@ -318,7 +320,7 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \qquad \qquad
 \inferrule[L-Bot]
 {\Gamma \vdash \bot}
-{\Gamma \vdash \t{\x{}}}
+{\Gamma \vdash \t{\wpi{\x{}}}}
 \ifpath
 \qquad \qquad
 \inferrule[L-Update]
@@ -326,14 +328,21 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\Gamma \vdash {\update[\t{}]{\pi}{\t{}'}}_{\x{}}}
 \fi
 \]
-
-\iflogic
 \[
-\inferrule[L-MP]
+\inferrule[L-ImpE]
 {\overvec{\Gamma \vdash \p{}} \\ \Gamma \vdash \imp{\op{}}{\opp{}}}
 {\overvec{\Gamma \vdash \p{}'}}
+\qquad\qquad
+\inferrule[L-ImpI]{\Gamma,\op{} \vdash \p{}'}{\Gamma \vdash \imp{\op{}}{\p{}'}}
 \]
-\fi
+\[
+\inferrule[L-Sub]{\Gamma \vdash \t{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \sig{\wpi{\x{}}}}
+\qquad\qquad
+\inferrule[L-SubNot]{\Gamma \vdash \comp{\sig{}}_{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \comp{\t{}}_{\wpi{\x{}}}}
+\]
+\[
+\inferrule[L-OrE]{\Gamma, \op1 \vdash \p{} \\ \Gamma, \op2 \vdash \p{}}{\Gamma, \op1 \vee \op2 \vdash \p{}}
+\]
 
 
 \section{Subtyping}
@@ -436,8 +445,8 @@ $$
 %          \both             & \text{if } \bot \in \op{i} \\
 %          \bullet        & \text{otherwise}
 %        \end{array}} \right.
-    \abstractobject{\movervec[i]{\x{}}}{\s{}} & \pathmaybe{\pii} &
-    \text{ if } \s{} = \wpi{\xi} \\
+    \abstractobject{\movervec[i]{\x{}}}{\wpi{\xi}} & \pathmaybe{\pii} &
+    \\
     \abstractobject{\movervec[i]{\x{}}}{\s{}} & \noeffect & \text{ otherwise}\\
    \end{array}
 $$
@@ -461,8 +470,8 @@ $$
     \applyone{\comp{\t{}}_{\ponly{\pi'}}} {\wpi{\x{}}} &
     \comp{\t{}}_{{\wpip{\wpi{\x{}}}}} & \vspace{2mm}\\
 
-    \applyobject{\movervec[i]{\s{a}}}{\sh{}}  &      \wpip{\wpi{x}}
-    & \text{ if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
+    \applyobject{\movervec[i]{\s{a}}}{\pathmaybe{\pipi}}  &      \wpip{\wpi{x}}
+    & \text{ if } {\sai} = \wpi{\x{}} \\
     \applyobject{\movervec[i]{\s{a}}}{\sh{}}  &  \noeffect  & \text{ otherwise} \\
 
    \end{array}
