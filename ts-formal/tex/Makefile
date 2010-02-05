@@ -8,8 +8,8 @@ LF=\def\dologic{false}
 LT=\def\dologic{true}
 
 model-simple.pdf: model.tex ts.sty
-	pdflatex '$(MF)$(PF)$(LT)\input{model.tex}'
-	pdflatex '$(MF)$(PF)$(LT)\input{model.tex}'
+	pdflatex -jobname=model-simple '$(MF)$(PF)$(LT)\input{model.tex}'
+	pdflatex -jobname=model-simple '$(MF)$(PF)$(LT)\input{model.tex}'
 
 model.pdf: model.tex ts.sty
 	pdflatex '$(MF)$(PT)$(LT)\input{model.tex}'
@@ -17,8 +17,8 @@ model.pdf: model.tex ts.sty
 
 
 model-multi.pdf: model.tex ts.sty
-	pdflatex -jobname=model-everything '$(MT)$(PT)$(LT)\input{model.tex}'
-	pdflatex -jobname=model-everything '$(MT)$(PT)$(LT)\input{model.tex}'
+	pdflatex -jobname=model-multi '$(MT)$(PT)$(LT)\input{model.tex}'
+	pdflatex -jobname=model-multi '$(MT)$(PT)$(LT)\input{model.tex}'
 
 clean:
 	rm -f model.pdf model-multi.pdf

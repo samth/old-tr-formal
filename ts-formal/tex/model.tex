@@ -83,7 +83,9 @@
     \marg
         {\comb{\overvec{\vv{}}}{\E{}\ {\overvec{\e{}}}}} % general multi-arg contexts
         {\comb{\E{}}{\e{}} \alt \comb{\vv{}}{\E{}}} % one-arg contexts
-        \ponly{\alt \cons{\E{}}{\e{}} \alt \cons{\vv{}}{\E{}}} \alt \cond{\E{}}{\e{}}{\e{}} 
+        \ponly{\alt \cons{\E{}}{\e{}} \alt \cons{\vv{}}{\E{}}} \alt
+        \cond{\E{}}{\e{}}{\e{}} 
+        \alt \marg{(\letsym\ (\movervec{[\x{}\ \vv{}]}\ [{\x{}}\ {\E{}}]\ \movervec{[\x{}\ \e{}]})\ {\e{}})}{\lett{\x{}}{\E{}}{\e{}}}
         & \mbox{Evaluation Contexts} \vspace{1mm} \\
   \end{altgrammar}
   \]
@@ -235,8 +237,8 @@ the object \s{}.
 {\hastyeff {\cond{\e1}{\e2}{\e3}} {\t{}}  {\op{+}} {\op{-}} {\noeffect}}
 \qquad\qquad
 \inferrule[T-Let]
-{\hastyeff{\e0}{\t{}}{\op{0_+}}{\op{0_+}}{\s0}\\\\
-\hastyeffphi[\G{}, \t{\x{}}, \imp{\comp{\fft}_{\x{}}}{\op{0_+}}, \imp{{\fft}_{\x{}}}{\op{0_-}}]{\e1}{\sig{}}{\phii1}{\s1}}
+{\movervec{\hastyeff{\e0}{\t{}}{\op{0_+}}{\op{0_-}}{\s0}}\\\\
+\hastyeffphi[\G{}, \movervec{\t{\x{}}}, \movervec{\imp{\comp{\fft}_{\x{}}}{\op{0_+}}, \imp{{\fft}_{\x{}}}{\op{0_-}}}]{\e1}{\sig{}}{\phii1}{\s1}}
 {\hastyeffphi{\lett{\x{}}{\e0}{\e1}}{\sig{}}{\phii1}{\s1}}
 \]
 
@@ -327,12 +329,14 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \inferrule[L-Bot]
 {\Gamma \vdash \bot}
 {\Gamma \vdash \t{\wpi{\x{}}}}
-\ifpath
 \qquad \qquad
 \inferrule[L-Update]
 {\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \sig{\x{}}}
 {\Gamma \vdash {\update[\t{}]{\pi}{\sig{}}}_{\x{}}}
-\fi
+\qquad \qquad
+\inferrule[L-UpdateNot]
+{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \comp{\sig{}}_{\x{}}}
+{\Gamma \vdash {\update[\t{}]{\pi}{\comp{\sig{}}}}_{\x{}}}
 \]
 \[
 \inferrule[L-ImpE]
@@ -340,14 +344,13 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\overvec{\Gamma \vdash \p{}'}}
 \qquad\qquad
 \inferrule[L-ImpI]{\Gamma,\op{} \vdash \p{}'}{\Gamma \vdash \imp{\op{}}{\p{}'}}
+\qquad\qquad
+\inferrule[L-OrE]{\Gamma, \op1 \vdash \p{} \\ \Gamma, \op2 \vdash \p{}}{\Gamma, \op1 \vee \op2 \vdash \p{}}
 \]
 \[
 \inferrule[L-Sub]{\Gamma \vdash \t{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \sig{\wpi{\x{}}}}
 \qquad\qquad
 \inferrule[L-SubNot]{\Gamma \vdash \comp{\sig{}}_{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \comp{\t{}}_{\wpi{\x{}}}}
-\]
-\[
-\inferrule[L-OrE]{\Gamma, \op1 \vdash \p{} \\ \Gamma, \op2 \vdash \p{}}{\Gamma, \op1 \vee \op2 \vdash \p{}}
 \]
 
 
@@ -552,13 +555,17 @@ $$
 
 \section{Operational Semantics}
 
+\subsection{Small Step Semantics}
+
 \[
 \inferrule*[lab={E-Delta}]
         {\del{\c{}}{\vv{}} = \vv{}'}
         {\step{\comb{\c{}}{\vv{}}}{\vv{}'}}
 \qquad\qquad
 \inferrule[E-Beta]{}
-      {\step{\comb{\abs[i]{\x{}}{\t{}}{\e{b}}}{\movervec[i]{\e{a}}}}{\subsmulti{\e{b}}{\x{}}{\e{a}}{i}}}
+      {\step{\comb{\abs[i]{\x{}}{\t{}}{\e{b}}}{\movervec[i]{\vv{a}}}}{\subsmulti{\e{b}}{\x{}}{\vv{a}}{i}}}
+\qquad\qquad
+\inferrule[E-Let]{}{\step{\lett[i]{\x{}}{\vv{a}}{\e{b}}}{\subsmulti{\e{b}}{\x{}}{\vv{a}}{i}}}
 \]
 
 \[
@@ -576,6 +583,44 @@ $$
 \]
 
 \vspace{5mm}
+
+\subsection{Big Step Semantics}
+
+\[
+\inferrule[B-Var]{\rho(\x{}) = \vv{}}{\eval{\x{}}{\vv{}}}
+\qquad\qquad
+\inferrule[B-Delta]{\eval{\e{}}{\c{}}
+  \\ \eval{\e{}'}{\vv{}} 
+  \\\\ \del{\c{}}{\vv{}} = \vv{}'}{\eval{\comb{\e{}}{\e{}'}}
+  {\vv{}'}}
+\qquad\qquad
+\inferrule[B-Let]{\movervec[i]{\eval{\e{a}}{\vv{a}}} 
+\\\\ \eval[\rho, \movervec{\x{} \mapsto \vv{a}}]{\e{b}}{\vv{}}}
+{\eval{{\lett[i]{\x{}}{\e{a}}{\e{b}}}}{\vv{}}}
+\qquad\qquad
+\inferrule[B-Beta]{\movervec[i]{\eval{\e{a}}{\vv{a}}} 
+  \\\\ \eval{\e{f}}{\abs[i]{\x{}}{\t{}}{\e{b}}}
+\\\\ \eval[\rho, \movervec{\x{} \mapsto \vv{a}}]{\e{b}}{\vv{}}}
+{\eval{{\comb{\abs[i]{\x{}}{\t{}}{\e{b}}}{\movervec[i]{\e{a}}}}}{\vv{}}}
+\]
+\[
+\inferrule[B-Val]{}{\eval{\vv{}}{\vv{}}}
+\ifpath
+\qquad\qquad
+\inferrule[B-Cons]{\eval{\e1}{\vv1} \\ \eval{\e2}{\vv2}}
+{\eval{\cons{\e1}{\e2}}{\cons{\vv1}{\vv2}}}
+\fi
+\qquad\qquad
+\inferrule[B-IfTrue]{\eval{\e1}{\vv1} \\\\ \vv1 \neq \ff\\\\
+  \eval{\e2}{\vv{}}}
+{\eval{\cond{\e1}{\e2}{\e3}}{\vv{}}}
+\qquad\qquad
+\inferrule[B-IfFalse]{\eval{\e1}{\ff} \\\\
+  \eval{\e3}{\vv{}}}
+{\eval{\cond{\e1}{\e2}{\e3}}{\vv{}}}
+\]
+\subsection{Constants}
+
 
 \[
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
@@ -595,6 +640,7 @@ $$
   \del{\boolp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
 
   \del{\procp}{\abs{\x{}}{\t{}}{\e{}}} & \tt & \\
+  \del{\procp}{\c{}} & \tt & \\
   \del{\procp}{\vv{}} & \ff & \text{ otherwise}\vspace{2mm}\\
 \ifpath
   \del{\consp}{\cons{\vv1}{\vv2}} & \tt & \\

@@ -100,7 +100,7 @@
 
 \newcommand{\nott}[1]{\comb{\notsym}{#1}}
 
-\newcommand{\lett}[3]{(\letsym\ ({#1}\ {#2})\ {#3})}
+\newcommand{\lett}[4][\relax{}]{(\letsym\ \marg{(}{}\movervec[#1]{[{#2}\ {#3}]}\marg{)}{}\ {#4})}
 
 \def\subtypesym{<:}
 
@@ -252,3 +252,5 @@
 \newcommand{\imp}[2]{\ma{{#1} \supset {#2}}}
 
 \newcommand{\derive}[3]{#1 \cup #2 \vdash #3}
+
+\newcommand{\eval}[3][\rho]{#1 \vdash #2 \Downarrow #3}
