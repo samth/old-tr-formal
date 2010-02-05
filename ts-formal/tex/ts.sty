@@ -57,6 +57,7 @@
 \newbfop\fft{\#f}
 %\newbfop\wrong{wrong}
 \newbfop\ifsym{if}
+\newbfop\letsym{let}
 \newcommand\pecar{{\bf car}}
 \newcommand\pecdr{{\bf cdr}}
 \newcommand\noeffect{\bf \emptyset}
@@ -98,6 +99,8 @@
 \newcommand\consty[2]{\ma{\langle {#1} , {#2} \rangle}}
 
 \newcommand{\nott}[1]{\comb{\notsym}{#1}}
+
+\newcommand{\lett}[3]{(\letsym\ ({#1}\ {#2})\ {#3})}
 
 \def\subtypesym{<:}
 

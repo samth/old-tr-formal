@@ -51,11 +51,13 @@
 \maketitle
 
 \huge
+
 \marg{With Multiple Arguments}{}
 
 \path{With Paths}{}
 
 \logic{With Logic}{}
+
 \normalsize
 
 \section{Syntax}
@@ -64,7 +66,8 @@
 \[
   \begin{altgrammar}
     \d{}, \e{}, \dots &::=& \x{}  \alt \comb{\e{op}}{\movervec{\e{a}}} 
-    \alt \cond{\e1}{\e2}{\e3} \ponly{\alt \cons{\e{}}{\e{}}} \alt \vv{}  &\mbox{Expressions} \\
+    \alt \cond{\e1}{\e2}{\e3} \ponly{\alt \cons{\e{}}{\e{}}} \alt
+    \vv{}  \alt \lett{\x{}}{\e{}}{\e{}} &\mbox{Expressions} \\
     \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \abs{\x{}}{\t{}}{\e{}} \ponly{\alt \cons{\vv{}}{\vv{}}}  & \mbox{Values} \\
 \ifpath
     \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym  \alt \\
@@ -153,7 +156,7 @@ evaluating \e{} and gives us information \phii{} based on whether \e{}
 evaluates to \ff or not, and that testing \e{} is the same as testing
 the object \s{}.
 
-\newpage
+%\newpage
 
 \section{Type Rules}
 
@@ -230,6 +233,11 @@ the object \s{}.
 %  \phii{} = \combfilter{\op1|\op2}{\phii2}{\phii3}
 }
 {\hastyeff {\cond{\e1}{\e2}{\e3}} {\t{}}  {\op{+}} {\op{-}} {\noeffect}}
+\qquad\qquad
+\inferrule[T-Let]
+{\hastyeff{\e0}{\t{}}{\op{0_+}}{\op{0_+}}{\s0}\\\\
+\hastyeffphi[\G{}, \t{\x{}}, \imp{\comp{\fft}_{\x{}}}{\op{0_+}}, \imp{{\fft}_{\x{}}}{\op{0_-}}]{\e1}{\sig{}}{\phii1}{\s1}}
+{\hastyeffphi{\lett{\x{}}{\e0}{\e1}}{\sig{}}{\phii1}{\s1}}
 \]
 
 \ifpath
@@ -305,8 +313,6 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\sc T-IfFalse}.
 
 
-\newpage
-
 \section{Environment Rules}
 
 \newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}{\ponly{,#2}})}
@@ -324,8 +330,8 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \ifpath
 \qquad \qquad
 \inferrule[L-Update]
-{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \t{\x{}}'}
-{\Gamma \vdash {\update[\t{}]{\pi}{\t{}'}}_{\x{}}}
+{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \sig{\x{}}}
+{\Gamma \vdash {\update[\t{}]{\pi}{\sig{}}}_{\x{}}}
 \fi
 \]
 \[
@@ -404,7 +410,7 @@ There's still a problem here:
 {\consty{\uniontwo{\t{}}{\sig{}}}{\ups{}}}
 {\uniontwo {\consty{\t{}} {\ups{}}} {\consty{\sig{}} {\ups{}}}  } 
 
-I don't know how to fix this at the moment, short of a \usym-normalization step.
+This can be fixed with a subtyping algorithm presented in a paper by Voillion.
 \fi
 %% Unclear if we need a subeffecting relation - it was only used in the proof
 
@@ -477,52 +483,69 @@ $$
    \end{array}
 $$
 
-\subsection{Combine}
+\subsection{Constant Typing}
 
-There are many possibilities for $\combfilter{-}{-}{-}$.  One is the
-very conservative
-
-$$%
-\begin{array}{l@{\ =\ }l@{\qquad}l}
-\combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & 
+\[
+\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
+  \dt{\numberp} & {\predty{\bullet}{\num}} & \\
+  \dt{\procp} & {\predty{\bullet}{\proctop}} & \\
+  \dt{\boolp} & {\predty{\bullet}{\bool}} & \\
+\ifpath
+  \dt{\consp} & {\predty{\bullet}{\consty{\top}{\top}}} & \\
+\fi
+  \dt{\addone} & {\simpleproc{\num}{\num}} & \\
+  \dt{\notsym} & {\simpleproc{\top}{\bool}} & \\
+  \dt{\zerop} & {\simpleproc{\num}{\bool}} & \\
 \end{array}
-$$
-
-\noindent
-A more sophisticated version is:
+\]
 
 
-\newcommand{\ts}{\uniontwo{\t{}}{\s{}}}
+% \subsection{Combine}
 
-$$
-\begin{array}{l@{\ =\ }l@{\qquad}l}
-\combfilter{\phii{}}{\bullet|\bot}{\bot|\bullet} & \phii{}
-& \text{  the student expansion}\\
+% There are many possibilities for $\combfilter{-}{-}{-}$.  One is the
+% very conservative
 
-\combfilter{\bullet|\bot}{\phii2}{\phii3} & \phii2 & \\
+% $$%
+% \begin{array}{l@{\ =\ }l@{\qquad}l}
+% \combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & 
+% \end{array}
+% $$
 
-\combfilter{\bot|\bullet}{\phii2}{\phii3} & \phii3 & \vspace{3mm}\\
+% \noindent
+% A more sophisticated version is:
 
-\multicolumn{2}{l}{\combfilter 
-{\t{\wpi{\x{}}}::\op{1_+}|\comp{\t{}}_{\wpi{\x{}}}::\op{1_-}}
-{\bullet|\bot}
-{{\sig{\wpi{\x{}}}::\op{3_+}|\comp{\sig{}}_{\wpi{\x{}}}::\op{3_-}}} 
-}
-  & \text{ or with predicates} \\
-& \ts_{\wpi{\x{}}}::\op+|{\comp{\ts}}_{\wpi{\x{}}}::\op- & \\
-\multicolumn{3}{c}{\text{where } \op+|\op- = \combfilter{\op1_+|\op1_-}{\bullet|\bot}{\op3_+|\op3_-}} \vspace{3mm}\\
 
-\combfilter{\op{1_+}|\op{1_-}} {\bullet|\bot} {\op{3_+}|\op{3_-}} & {\bullet|\op{1_-},\op{3_-}}& \text{ or} \vspace{3mm}\\
+% \newcommand{\ts}{\uniontwo{\t{}}{\s{}}}
 
-\combfilter{\op{1_+}|\op{1_-}} {\op{2_+}|\op{2_-}} {\bot|\bullet} & \op{1_+},\op{2_+}|\imp{\op{1_+}}{\op{2_-}},\imp{\op{2_+}}{\op{1_-}} & \text{ and} \vspace{3mm}\\
+% $$
+% \begin{array}{l@{\ =\ }l@{\qquad}l}
+% \combfilter{\phii{}}{\bullet|\bot}{\bot|\bullet} & \phii{}
+% & \text{  the student expansion}\\
 
-\combfilter{\phii{}}{\phii{}'}{\phii{}'} & \phii{}' & \\
+% \combfilter{\bullet|\bot}{\phii2}{\phii3} & \phii2 & \\
 
-\combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & \text{ otherwise}
-\end{array}
-$$
+% \combfilter{\bot|\bullet}{\phii2}{\phii3} & \phii3 & \vspace{3mm}\\
 
-Rules 2 and 3 might only be needed in the proof.
+% \multicolumn{2}{l}{\combfilter 
+% {\t{\wpi{\x{}}}::\op{1_+}|\comp{\t{}}_{\wpi{\x{}}}::\op{1_-}}
+% {\bullet|\bot}
+% {{\sig{\wpi{\x{}}}::\op{3_+}|\comp{\sig{}}_{\wpi{\x{}}}::\op{3_-}}} 
+% }
+%   & \text{ or with predicates} \\
+% & \ts_{\wpi{\x{}}}::\op+|{\comp{\ts}}_{\wpi{\x{}}}::\op- & \\
+% \multicolumn{3}{c}{\text{where } \op+|\op- = \combfilter{\op1_+|\op1_-}{\bullet|\bot}{\op3_+|\op3_-}} \vspace{3mm}\\
+
+% \combfilter{\op{1_+}|\op{1_-}} {\bullet|\bot} {\op{3_+}|\op{3_-}} & {\bullet|\op{1_-},\op{3_-}}& \text{ or} \vspace{3mm}\\
+
+% \combfilter{\op{1_+}|\op{1_-}} {\op{2_+}|\op{2_-}} {\bot|\bullet} & \op{1_+},\op{2_+}|\imp{\op{1_+}}{\op{2_-}},\imp{\op{2_+}}{\op{1_-}} & \text{ and} \vspace{3mm}\\
+
+% \combfilter{\phii{}}{\phii{}'}{\phii{}'} & \phii{}' & \\
+
+% \combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & \text{ otherwise}
+% \end{array}
+% $$
+
+% Rules 2 and 3 might only be needed in the proof.
 
 
 \newpage
@@ -550,26 +573,6 @@ Rules 2 and 3 might only be needed in the proof.
 \inferrule*
         {\step{L}{R}}
         {\reduce{\E{}[L]}{\E{}[R]}}
-\]
-
-
-\newpage
-
-\section{Constants}
-
-
-\[
-\begin{array}{@{}l@{\ =\ }l@{\qquad}l}
-  \dt{\numberp} & {\predty{\bullet}{\num}} & \\
-  \dt{\procp} & {\predty{\bullet}{\proctop}} & \\
-  \dt{\boolp} & {\predty{\bullet}{\bool}} & \\
-\ifpath
-  \dt{\consp} & {\predty{\bullet}{\consty{\top}{\top}}} & \\
-\fi
-  \dt{\addone} & {\simpleproc{\num}{\num}} & \\
-  \dt{\notsym} & {\simpleproc{\top}{\bool}} & \\
-  \dt{\zerop} & {\simpleproc{\num}{\bool}} & \\
-\end{array}
 \]
 
 \vspace{5mm}
@@ -602,6 +605,7 @@ Rules 2 and 3 might only be needed in the proof.
 \fi
 \end{array}
 \]
+
 
 \newpage
 \section{Type Operations}
