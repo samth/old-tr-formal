@@ -253,4 +253,10 @@
 
 \newcommand{\derive}[3]{#1 \cup #2 \vdash #3}
 
-\newcommand{\eval}[3][\rho]{#1 \vdash #2 \Downarrow #3}
+\newcommand{\eval}[3][\rho]{\evaltwo{#1}{#2}{#1}{#3}}
+\newcommand{\evalprime}[3][\rho]{\evaltwo{#1}{#2}{#1'}{#3}}
+\newcommand{\evalpp}[3][\rho]{\evaltwo{#1}{#2}{#1''}{#3}}
+\newcommand{\evaltwo}[4]{#1;  #2 \Downarrow #3; #4}
+
+\def\rp{\rho'}
+\def\rpp{\rho''}

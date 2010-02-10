@@ -589,35 +589,45 @@ $$
 \[
 \inferrule[B-Var]{\rho(\x{}) = \vv{}}{\eval{\x{}}{\vv{}}}
 \qquad\qquad
-\inferrule[B-Delta]{\eval{\e{}}{\c{}}
-  \\ \eval{\e{}'}{\vv{}} 
-  \\\\ \del{\c{}}{\vv{}} = \vv{}'}{\eval{\comb{\e{}}{\e{}'}}
-  {\vv{}'}}
+\inferrule[B-Delta]{\evalprime{\e{}}{\c{}}
+  \\ \evalprime[\rp]{\e{}'}{\vv{}} 
+  \\\\ \del{\c{}}{\vv{}} = \vv{}'}
+{\evalpp{\comb{\e{}}{\e{}'}}{\vv{}'}}
 \qquad\qquad
-\inferrule[B-Let]{\movervec[i]{\eval{\e{a}}{\vv{a}}} 
-\\\\ \eval[\rho, \movervec{\x{} \mapsto \vv{a}}]{\e{b}}{\vv{}}}
-{\eval{{\lett[i]{\x{}}{\e{a}}{\e{b}}}}{\vv{}}}
+\inferrule[B-Let]
+{
+  {\evalprime{\movervec{\e{a}}}{\movervec{\vv{a}}}}
+  \\\\ 
+  \evaltwo{\rho'[\movervec{\x{} \mapsto \vv{a}}]}
+  {\e{b}}{\rho''}{\vv{}}
+}
+{\evaltwo{{\rho}}{{\lett{\x{}}{\e{a}}{\e{b}}}}{\rpp}{\vv{}}}
 \qquad\qquad
-\inferrule[B-Beta]{\movervec[i]{\eval{\e{a}}{\vv{a}}} 
-  \\\\ \eval{\e{f}}{\abs[i]{\x{}}{\t{}}{\e{b}}}
-\\\\ \eval[\rho, \movervec{\x{} \mapsto \vv{a}}]{\e{b}}{\vv{}}}
-{\eval{{\comb{\abs[i]{\x{}}{\t{}}{\e{b}}}{\movervec[i]{\e{a}}}}}{\vv{}}}
+\inferrule[B-Beta]
+{
+  \evalprime{\e{f}}{\abs[i]{\x{}}{\t{}}{\e{b}}}
+  \\\\ 
+  {\evalprime[\rp]{\movervec[i]{\e{a}}}{\movervec[i]{\vv{a}}}}
+  \\\\ 
+  \evaltwo {\rpp[\movervec{\x{} \mapsto \vv{a}}]} {\e{b}} {\rho'''} {\vv{}}
+}
+{\evaltwo{\rho}{\comb{\e{f}}{\movervec[i]{\e{a}}}}{\rho'''}{\vv{}}}
 \]
 \[
 \inferrule[B-Val]{}{\eval{\vv{}}{\vv{}}}
 \ifpath
 \qquad\qquad
-\inferrule[B-Cons]{\eval{\e1}{\vv1} \\ \eval{\e2}{\vv2}}
-{\eval{\cons{\e1}{\e2}}{\cons{\vv1}{\vv2}}}
+\inferrule[B-Cons]{\evalprime{\e1}{\vv1} \\ \evalprime[\rp]{\e2}{\vv2}}
+{\evalpp{\cons{\e1}{\e2}}{\cons{\vv1}{\vv2}}}
 \fi
 \qquad\qquad
-\inferrule[B-IfTrue]{\eval{\e1}{\vv1} \\\\ \vv1 \neq \ff\\\\
-  \eval{\e2}{\vv{}}}
-{\eval{\cond{\e1}{\e2}{\e3}}{\vv{}}}
+\inferrule[B-IfTrue]{\evalprime{\e1}{\vv1} \\\\ \vv1 \neq \ff\\\\
+  \evalprime[\rp]{\e2}{\vv{}}}
+{\evalpp{\cond{\e1}{\e2}{\e3}}{\vv{}}}
 \qquad\qquad
-\inferrule[B-IfFalse]{\eval{\e1}{\ff} \\\\
-  \eval{\e3}{\vv{}}}
-{\eval{\cond{\e1}{\e2}{\e3}}{\vv{}}}
+\inferrule[B-IfFalse]{\evalprime{\e1}{\ff} \\\\
+  \evalprime[\rp]{\e3}{\vv{}}}
+{\evalpp{\cond{\e1}{\e2}{\e3}}{\vv{}}}
 \]
 \subsection{Constants}
 
@@ -700,7 +710,6 @@ $$
 \end{array}
 $$
 
-\ifpath
 
 \newpage
 \section{Examples}
@@ -868,72 +877,116 @@ $
 
 \section{Theorems and Proofs}
 
-\subsection{Preliminary Definitions}
+% \subsection{Preliminary Definitions}
+
+% \[
+% \inferrule{
+% \forall \G{}. \forall \x{} \in \mbox{dom}(\G{}). \subtype{(\G{} + \opp{})(x)}{(\G{} + \op{})(x)}
+% }
+% {
+%   \vdash \op{} < \opp{}
+% }
+% \]
+
+% \[
+% \consty{\t{}}{\sig{}} @ \pecar :: \pi = \t{} @ \pi
+% \qquad
+% \consty{\t{}}{\sig{}} @ \pecdr :: \pi = \sig{} @ \pi
+% \qquad
+% \t{} @ \epsilon = \t{}
+% \]
+
+% \[
+% \hastype{\x{}}{\t{}} \models \bot
+% \qquad
+% \inferrule{\subtype{\t{}' @ \pi}{\t{}}}
+% {\hastype{\x{}}{\t{}'} \models \t{\wpi{\x{}}}}
+% \qquad
+% \inferrule{\notsubtype{\t{}' @ \pi}{\t{}}}
+% {\hastype{\x{}}{\t{}'} \models \compt{\wpi{\x{}}}}
+% \]
+% \[
+% \inferrule{\x{} \neq \y{}}
+% {\hastype{\x{}}{\t{}'} \models \t{\wpi{\y{}}}}
+% \qquad
+% \inferrule{\x{} \neq \y{}}
+% {\hastype{\x{}}{\t{}'} \models \compt{\wpi{\y{}}}}
+% \]
+
+% Note that we can use $\notsubtype{\t{}' @ \pi}{\t{}}$ instead of the
+% ``overlap'' relation since everything is a value.
+
+% \subsection{Substitution Lemma}
+
+% If \hastyeffphi [\G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\op{+} | \op{-}} {\s{}}
+
+% \noindent
+% and \hastyeffphi [] {\vv{}} {\sig{}'} {\phii{0}} {\s{0}}
+
+% \noindent
+% and \subtype{\sig{}'}{\sig{}}
+
+% \noindent
+% Then $\hastyeffphi {\subs{\e{}} {\x{}} {\vv{}}} {\t{}'} {\opp{+} | \opp{-}} {\s{}'}$
+
+% \noindent
+% and \subtype{\t{}'}{\t{}}
+
+% \noindent
+% and $\hastype{\x{}}{\sig{}'} \models \op{\pm} \quad \Rightarrow \quad \vdash \opp{\pm} < \op{\pm}$
+
+
+% \noindent
+% and $\hastype{\x{}}{\sig{}'} \not\models \op{\pm} \quad \Rightarrow \quad \opp{\pm} = \bot$
+
+% \noindent
+% and either $\s{} = \wpi{\x{}} \wedge \s{}' = \noeffect$ or $\s{} = \s{}'$
+ 
+
+\subsection{Environment Modeling}
 
 \[
-\inferrule{
-\forall \G{}. \forall \x{} \in \mbox{dom}(\G{}). \subtype{(\G{} + \opp{})(x)}{(\G{} + \op{})(x)}
-}
-{
-  \vdash \op{} < \opp{}
-}
-\]
-
-\[
-\consty{\t{}}{\sig{}} @ \pecar :: \pi = \t{} @ \pi
-\qquad
-\consty{\t{}}{\sig{}} @ \pecdr :: \pi = \sig{} @ \pi
-\qquad
-\t{} @ \epsilon = \t{}
-\]
-
-\[
-\hastype{\x{}}{\t{}} \models \bot
-\qquad
-\inferrule{\subtype{\t{}' @ \pi}{\t{}}}
-{\hastype{\x{}}{\t{}'} \models \t{\wpi{\x{}}}}
-\qquad
-\inferrule{\notsubtype{\t{}' @ \pi}{\t{}}}
-{\hastype{\x{}}{\t{}'} \models \compt{\wpi{\x{}}}}
+\inferrule{\hastyeffphi{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}} \\\\
+  \subtype{\sig{}}{\t{}}}{\rho \models \t{\wpi{x{}}}}
+\qquad\qquad
+\inferrule{\hastyeffphi{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}}
+\\\\  \nooverlap{\sig{}}{\t{}}}{\rho \models \comp{\t{}}_{\wpi{x{}}}}
 \]
 \[
-\inferrule{\x{} \neq \y{}}
-{\hastype{\x{}}{\t{}'} \models \t{\wpi{\y{}}}}
-\qquad
-\inferrule{\x{} \neq \y{}}
-{\hastype{\x{}}{\t{}'} \models \compt{\wpi{\y{}}}}
+\inferrule{\rho \models \op1}{\rho \models \op1 \vee \op2}
+\qquad\qquad
+\inferrule{\rho \models \op2}{\rho \models \op1 \vee \op2}
+\qquad\qquad
+\inferrule{\rho \models \overvec{\p{}} \Rightarrow \rho \models
+  \opp{}}{\rho \models \imp{\op{}}{\opp{}}}
 \]
 
-Note that we can use $\notsubtype{\t{}' @ \pi}{\t{}}$ instead of the
-``overlap'' relation since everything is a value.
 
-\subsection{Substitution Lemma}
+\subsection{Lemmas}
 
-If \hastyeffphi [\G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\op{+} | \op{-}} {\s{}}
+\begin{lemma}[Object Soundness]
+If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
+\G{}$ and $\evalprime{\e{}}{\vv{}}$ then $\rho(\s{}) = \vv{}$.
+\end{lemma}
 
-\noindent
-and \hastyeffphi [] {\vv{}} {\sig{}'} {\phii{0}} {\s{0}}
+\begin{lemma}[Filter Soundness True]
+If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
+\G{}$ and $\evalprime{\e{}}{\vv{}}$ and $\vv{} \neq \ff$ then $\rho \models
+\op{+}$. 
+\end{lemma}
 
-\noindent
-and \subtype{\sig{}'}{\sig{}}
+\begin{lemma}[Filter Soundness False]
+If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
+\G{}$ and $\evalprime{\e{}}{\ff}$ then $\rho \models \op{-}$.
+\end{lemma}
 
-\noindent
-Then $\hastyeffphi {\subs{\e{}} {\x{}} {\vv{}}} {\t{}'} {\opp{+} | \opp{-}} {\s{}'}$
+\begin{lemma}[Type Soundness]
+If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
+\G{}$ and $\evalprime{\e{}}{\vv{}}$ then
+$\exists \Gamma' \supseteq \Gamma$  where $\rho' \models \Gamma'$ and
+$\hastyeff[\Gamma']{\vv{}}{\t{}'}{\opp{+}}{\opp{-}}{\s{}'}$ and $\subtype{\t{}'}{\t{}}$.
+\end{lemma}
 
-\noindent
-and \subtype{\t{}'}{\t{}}
-
-\noindent
-and $\hastype{\x{}}{\sig{}'} \models \op{\pm} \quad \Rightarrow \quad \vdash \opp{\pm} < \op{\pm}$
-
-
-\noindent
-and $\hastype{\x{}}{\sig{}'} \not\models \op{\pm} \quad \Rightarrow \quad \opp{\pm} = \bot$
-
-\noindent
-and either $\s{} = \wpi{\x{}} \wedge \s{}' = \noeffect$ or $\s{} = \s{}'$
-
-\fi
 
 \end{document}
 
