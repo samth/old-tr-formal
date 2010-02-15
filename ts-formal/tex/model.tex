@@ -964,29 +964,39 @@ $
 
 \subsection{Lemmas}
 
-\begin{lemma}[Object Soundness]
-If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
-\G{}$ and $\evalprime{\e{}}{\vv{}}$ then $\rho(\s{}) = \vv{}$.
+\begin{lemma}[Soundness of Derivations]
+If $\rho \models \G{}$ and $\G{} \vdash P$ then $\rho \models P$.
+\label{lem:mod-concl}
 \end{lemma}
 
-\begin{lemma}[Filter Soundness True]
-If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
-\G{}$ and $\evalprime{\e{}}{\vv{}}$ and $\vv{} \neq \ff$ then $\rho \models
-\op{+}$. 
-\end{lemma}
-
-\begin{lemma}[Filter Soundness False]
-If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
-\G{}$ and $\evalprime{\e{}}{\ff}$ then $\rho \models \op{-}$.
-\end{lemma}
-
-\begin{lemma}[Type Soundness]
+\begin{lemma}[Soundness]
 If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
 \G{}$ and $\evalprime{\e{}}{\vv{}}$ then
-$\exists \Gamma' \supseteq \Gamma$  where $\rho' \models \Gamma'$ and
-$\hastyeff[\Gamma']{\vv{}}{\t{}'}{\opp{+}}{\opp{-}}{\s{}'}$ and $\subtype{\t{}'}{\t{}}$.
+
+\begin{enumerate}
+\item $\rho(\s{}) = \vv{}$.
+\item Either $\vv{} \neq \ff$ and $\rho \models
+\op{+}$ or $\vv{} = \ff$ and $\rho \models
+\op{-}$.
+\item $\exists \Gamma' \supseteq \Gamma$  where $\rho' \models \Gamma'$ and
+$\hastyeff[\Gamma']{\vv{}}{\t{}'}{\opp{+}}{\opp{-}}{\s{}'}$ and
+$\subtype{\t{}'}{\t{}}$. 
+\end{enumerate}
 \end{lemma}
 
+{\bf Proof:}
+By induction and cases on the derivation of
+$\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$.
+
+Cases:
+\begin{enumerate}
+\item {\sc T-Bot}.  By assumption, $\rho \models \G{}$, and therefore
+  $\rho \models \bot$ by lemma~\ref{lem:mod-concl}.  But $\rho \not\models
+\bot$.  
+\item {\sc T-Num,
+    T-Const, T-True, T-False}
+\end{enumerate}
+\qed 
 
 \end{document}
 
