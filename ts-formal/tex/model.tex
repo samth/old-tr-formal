@@ -261,11 +261,7 @@ the object \s{}.
   {
     \hastyeffphi{\e{}} {\consty{\t1}{\t2}} {\phii{}} {\s{}} \\\\
     \phii{r} = \applyfilter{\comp{\fft}_{\pecar}|{\fft}_{\pecar}}{\consty{\t1}{\t2}} {\s{}} \\\\
-    \s{r} = \left\{
-      \protect{\begin{array}{ll}
-          \pecar(\pi(x))     & \text{if } {\s{}} = \wpi{\x{}} \\
-          \noeffect  & \text{otherwise}
-        \end{array}} \right.
+    \s{r} = \applyobject{\pecar}{\s{}}
   }
   {
     \hastyeffphi{\comb{\car}{\e{}}}{\t1}{\phii{r}}{\s{r}}
@@ -275,11 +271,7 @@ the object \s{}.
   {
     \hastyeffphi{\e{}} {\consty{\t1}{\t2}} {\phii{}} {\s{}} \\\\
     \phii{r} = \applyfilter{\comp{\fft}_{\pecdr}|{\fft}_{\pecdr}}{\consty{\t1}{\t2}} {\s{}} \\\\
-    \s{r} = \left\{
-      \protect{\begin{array}{ll}
-          \pecdr(\pi(x))     & \text{if } {\s{}} = \wpi{\x{}} \\
-          \noeffect  & \text{otherwise}
-        \end{array}} \right.
+    \s{r} = \applyobject{\pecdr}{\s{}}
   }
   {
     \hastyeffphi{\comb{\cdr}{\e{}}}{\t2}{\phii{r}}{\s{r}} 
