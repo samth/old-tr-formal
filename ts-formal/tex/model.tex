@@ -326,24 +326,32 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \inferrule[L-Bot]
 {\Gamma \vdash \bot}
 {\Gamma \vdash \t{\wpi{\x{}}}}
-\qquad \qquad
-\inferrule[L-Update]
-{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \nu_{\x{}}}
-{\Gamma \vdash {\update[\t{}]{\pi}{\nu}}_{\x{}}}
+\qquad\qquad
+\inferrule[L-AndI]{\Gamma \vdash \p1\\\\\Gamma \vdash \p2}{\Gamma
+  \vdash \p1 \wedge \p2}
+\qquad\qquad
+\inferrule[L-AndE]{\Gamma, \p1 \vdash \p{} \text{ or } \Gamma, \p2 \vdash \p{}}{\Gamma
+  , \p1 \wedge \p2 \vdash \p{}}
 \]
 \[
+\inferrule[L-ImpI]{\Gamma,\p{} \vdash \p{}'}{\Gamma \vdash \imp{\p{}}{\p{}'}}
+\qquad\qquad
 \inferrule[L-ImpE]
-{\overvec{\Gamma \vdash \p{}} \\ \Gamma \vdash \imp{\op{}}{\opp{}}}
-{\overvec{\Gamma \vdash \p{}'}}
+{{\Gamma \vdash \p{}} \\\\ \Gamma \vdash \imp{\p{}}{\p{}'}}
+{{\Gamma \vdash \p{}'}}
 \qquad\qquad
-\inferrule[L-ImpI]{\Gamma,\op{} \vdash \p{}'}{\Gamma \vdash \imp{\op{}}{\p{}'}}
+\inferrule[L-OrI]{\Gamma \vdash \p1 \text{ or }\Gamma \vdash \p2}{\Gamma \vdash \p1 \vee \p2}
 \qquad\qquad
-\inferrule[L-OrE]{\Gamma, \op1 \vdash \p{} \\ \Gamma, \op2 \vdash \p{}}{\Gamma, \op1 \vee \op2 \vdash \p{}}
+\inferrule[L-OrE]{\Gamma, \p1 \vdash \p{} \\\\ \Gamma, \p2 \vdash \p{}}{\Gamma, \p1 \vee \p2 \vdash \p{}}
 \]
 \[
 \inferrule[L-Sub]{\Gamma \vdash \t{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \sig{\wpi{\x{}}}}
 \qquad\qquad
 \inferrule[L-SubNot]{\Gamma \vdash \comp{\sig{}}_{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \comp{\t{}}_{\wpi{\x{}}}}
+\qquad \qquad
+\inferrule[L-Update]
+{\Gamma \vdash \t{\wpi{\wpip{\x{}}}} \\ \Gamma \vdash \nu_{\wpip{\x{}}}}
+{\Gamma \vdash {\update[\t{}]{\pi}{\nu}}_{\wpip{\x{}}}}
 \]
 
 
@@ -591,7 +599,7 @@ $$
 \inferrule[B-Var]{\rho(\x{}) = \vv{}}{\eval{\x{}}{\vv{}}}
 \qquad\qquad
 \inferrule[B-Delta]{\evalprime{\e{}}{\c{}}
-  \\ \evalprime[\rp]{\e{}'}{\vv{}} 
+  \\ \evalprime{\e{}'}{\vv{}} 
   \\\\ \del{\c{}}{\vv{}} = \vv{}'}
 {\evalpp{\comb{\e{}}{\e{}'}}{\vv{}'}}
 \qquad\qquad
@@ -599,7 +607,7 @@ $$
 {
   {\evalprime{\movervec{\e{a}}}{\movervec{\vv{a}}}}
   \\\\ 
-  \evaltwo{\rho'[\movervec{\x{} \mapsto \vv{a}}]}
+  \evaltwo{\rho[\movervec{\x{} \mapsto \vv{a}}]}
   {\e{b}}{\rho''}{\vv{}}
 }
 {\evaltwo{{\rho}}{{\lett{\x{}}{\e{a}}{\e{b}}}}{\rpp}{\vv{}}}
@@ -608,28 +616,28 @@ $$
 {
   \evalprime{\e{f}}{\clos{\rho_c}{\abs[i]{\x{}}{\t{}}{\e{b}}}}
   \\\\ 
-  {\evalprime[\rp]{\movervec[i]{\e{a}}}{\movervec[i]{\vv{a}}}}
+  {\evalprime{\movervec[i]{\e{a}}}{\movervec[i]{\vv{a}}}}
   \\\\ 
-  \evaltwo {\rpp[\movervec{\x{} \mapsto \vv{a}}]} {\e{b}} {\rho'''} {\vv{}}
+  \evaltwo {\rho_c[\movervec{\x{} \mapsto \vv{a}}]} {\e{b}} {\rho'''} {\vv{}}
 }
 {\evaltwo{\rho}{\comb{\e{f}}{\movervec[i]{\e{a}}}}{\rho'''}{\vv{}}}
 \]
 \[
 \inferrule[B-Val]{}{\eval{\vv{}}{\vv{}}}
-\qquad\qquad
+\qquad
 \inferrule[B-Abs]{}{\eval{\abs{\x{}}{\t{}}{\e{}}}{\clos{\rho}{\abs{\x{}}{\t{}}{\e{}}}}}
 \ifpath
-\qquad\qquad
-\inferrule[B-Cons]{\evalprime{\e1}{\vv1} \\ \evalprime[\rp]{\e2}{\vv2}}
+\qquad
+\inferrule[B-Cons]{\evalprime{\e1}{\vv1} \\\\ \evalprime{\e2}{\vv2}}
 {\evalpp{\cons{\e1}{\e2}}{\cons{\vv1}{\vv2}}}
 \fi
-\qquad\qquad
+\qquad
 \inferrule[B-IfTrue]{\evalprime{\e1}{\vv1} \\\\ \vv1 \neq \ff\\\\
-  \evalprime[\rp]{\e2}{\vv{}}}
+  \evalprime{\e2}{\vv{}}}
 {\evalpp{\cond{\e1}{\e2}{\e3}}{\vv{}}}
-\qquad\qquad
+\qquad
 \inferrule[B-IfFalse]{\evalprime{\e1}{\ff} \\\\
-  \evalprime[\rp]{\e3}{\vv{}}}
+  \evalprime{\e3}{\vv{}}}
 {\evalpp{\cond{\e1}{\e2}{\e3}}{\vv{}}}
 \]
 \subsection{Constants}
@@ -673,11 +681,11 @@ $$
 $$
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
 \ifpath
-  \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\ups{}} & \consty{\update[\t{}]{\pi}{\ups{}}}{\sig{}}  & \\
-  \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\comp{\ups{}}} & \consty{\update[\t{}]{\pi}{\comp{\ups{}}}}{\sig{}}  & \\
+  \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\nu} & \consty{\update[\t{}]{\pi}{\nu}}{\sig{}}  & \\
+%  \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\comp{\ups{}}} & \consty{\update[\t{}]{\pi}{\comp{\ups{}}}}{\sig{}}  & \\
 
-  \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\ups{}} & \consty{\t{}}{\update[\sig{}]{\pi}{\ups{}}}  & \\
-  \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\comp{\ups{}}} & \consty{\t{}}{\update[\sig{}]{\pi}{\comp{\ups{}}}}  & \\
+  \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\nu} & \consty{\t{}}{\update[\sig{}]{\pi}{\nu}}  & \\
+%  \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\comp{\ups{}}} & \consty{\t{}}{\update[\sig{}]{\pi}{\comp{\ups{}}}}  & \\
 \fi
   \update[\t{}]{\bullet}{\ups{}} & \restrict{\t{}}{\ups{}}& \\
 
@@ -949,7 +957,7 @@ $
 \subsection{Typing for Closures}
 
 \[
-\inferrule[T-Clos]{\rho \models \G{} \Rightarrow
+\inferrule[T-Clos]{\exists \G{}. \rho \models \G{} \text{ and }
   \hastyeffphi{\abs{\x{}}{\t{}}{\e{}}}{\sig{}}{\phii{}}{\s{}}}
 {\hastyeffphi[]{\clos{\rho}{\abs{\x{}}{\t{}}{\e{}}}}{\sig{}}{\phii{}}{\s{}}}
 \]
