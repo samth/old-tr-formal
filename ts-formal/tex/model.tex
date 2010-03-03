@@ -597,7 +597,7 @@ $$
 \qquad\qquad
 \inferrule[B-Beta]
 {
-  \evalprime{\e{f}}{\abs[i]{\x{}}{\t{}}{\e{b}}}
+  \evalprime{\e{f}}{\clos{\rho_c}{\abs[i]{\x{}}{\t{}}{\e{b}}}}
   \\\\ 
   {\evalprime[\rp]{\movervec[i]{\e{a}}}{\movervec[i]{\vv{a}}}}
   \\\\ 
@@ -607,6 +607,8 @@ $$
 \]
 \[
 \inferrule[B-Val]{}{\eval{\vv{}}{\vv{}}}
+\qquad\qquad
+\inferrule[B-Abs]{}{\eval{\abs{\x{}}{\t{}}{\e{}}}{\clos{\rho}{\abs{\x{}}{\t{}}{\e{}}}}}
 \ifpath
 \qquad\qquad
 \inferrule[B-Cons]{\evalprime{\e1}{\vv1} \\ \evalprime[\rp]{\e2}{\vv2}}
@@ -935,13 +937,21 @@ $
 % and either $\s{} = \wpi{\x{}} \wedge \s{}' = \noeffect$ or $\s{} = \s{}'$
  
 
+\subsection{Typing for Closures}
+
+\[
+\inferrule[T-Clos]{\rho \models \G{} \Rightarrow
+  \hastyeffphi{\abs{\x{}}{\t{}}{\e{}}}{\sig{}}{\phii{}}{\s{}}}
+{\hastyeffphi[]{\clos{\rho}{\abs{\x{}}{\t{}}{\e{}}}}{\sig{}}{\phii{}}{\s{}}}
+\]
+
 \subsection{Environment Modeling}
 
 \[
-\inferrule{\hastyeffphi{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}} \\\\
+\inferrule{\hastyeffphi[\relax{}]{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}} \\\\
   \subtype{\sig{}}{\t{}}}{\rho \models \t{\wpi{x{}}}}
 \qquad\qquad
-\inferrule{\hastyeffphi{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}}
+\inferrule{\hastyeffphi[\relax{}]{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}}
 \\\\  \nooverlap{\sig{}}{\t{}}}{\rho \models \comp{\t{}}_{\wpi{x{}}}}
 \]
 \[
@@ -966,7 +976,7 @@ If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
 \G{}$ and $\evalprime{\e{}}{\vv{}}$ then
 
 \begin{enumerate}
-\item $\rho(\s{}) = \vv{}$.
+\item Either $\s{} = \noeffect$ or $\rho(\s{}) = \vv{}$.
 \item Either $\vv{} \neq \ff$ and $\rho \models
 \op{+}$ or $\vv{} = \ff$ and $\rho \models
 \op{-}$.
@@ -976,17 +986,40 @@ $\subtype{\t{}'}{\t{}}$.
 \end{enumerate}
 \end{lemma}
 
+\noindent
 {\bf Proof:}
 By induction and cases on the derivation of
 $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$.
 
+\noindent
 Cases:
 \begin{enumerate}
 \item {\sc T-Bot}.  By assumption, $\rho \models \G{}$, and therefore
   $\rho \models \bot$ by lemma~\ref{lem:mod-concl}.  But $\rho \not\models
-\bot$.  
-\item {\sc T-Num,
-    T-Const, T-True, T-False}
+\bot$ by inspection of the rules.  
+\item {\sc T-Num}.  First, $\s{} = \noeffect$.  Second, $e = n$ and
+  therefore by {\sc B-Val} (the only rule that applies), $v = n$.
+  Thus, with $\G{} = \G{}'$ and $\rho = \rho'$ and $\t{} = \t{}'$, the
+  third requirement is discharged.  Finally, $\op{+} = \epsilon$ and
+  $\rho \models \epsilon$ for any $\rho$.
+\item {\sc T-Const, T-True, T-False}. Similar to {\sc T-Num}.
+\item {\sc T-Cons}. First, $\s{} = \noeffect$.  Second, $\e{} =
+  \cons{\e1}{\e2}$ and $\t{} = \consty{\t1}{\t2}$.  Third, by {\sc
+    B-Cons}, the only applicable rule, $\evaltwo{\rho}{\e1}{\rho_1}{\vv1}$ and
+  $\evaltwo{\rho_1}{\e2}{\rho'}{\vv2}$.  By the induction hypothesis,
+  we have $\G{}' \supseteq \G1 \supseteq \G{}$ where $\rho' \models
+  \G{}'$ and
+  $\hastyeff[\Gamma']{\vv1}{\t{1}'}{\opp{1+}}{\opp{1-}}{\s{1}'}$  and
+  $\hastyeff[\Gamma']{\vv2}{\t{2}'}{\opp{2+}}{\opp{2-}}{\s{2}'}$ and
+  \subtype{\t1'}{\t1} and \subtype{\t2'}{\t2}.
+  Thus
+  $\hastyeff[\Gamma']{\cons{\vv{1}}{\vv2}}{\consty{\t{1}'}{\t2'}}{\epsilon}{\bot}{\noeffect}$
+  concluding part 3.  For part 2, note that $\cons{\vv{1}}{\vv2} \neq
+  \ff$ and $\rho' \models \epsilon$.
+\item {\sc T-Var}.  The only applicable evaluation rule is {\sc
+    B-Var}.  Therefore, $\vv{} = \rho'(\x{})$, making part 1 trivial,
+  since $\s{} = \x{}$. For part 2, assume $\vv{} \neq \ff$.  Then we
+  must show that $\rho' \models \comp{\fft}$.  
 \end{enumerate}
 \qed 
 

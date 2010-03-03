@@ -89,7 +89,7 @@
 \newcommand\andsym{\ma{\mathit{and}}}
 \newcommand\orsym{\ma{\mathit{or}}}
 \newcommand\plus{\mathbin{+}}
-\newcommand\abs[4][\relax{}]{\ma{\l \movervec[#1]{#2:#3} . #4}}
+\newcommand\abs[4][\relax{}]{\ma{\l \movervec[#1]{{#2}:{#3}}.#4}}
 \newcommand\abssingle[3]{\ma{\l {#1:#2} . #3}}
 \newcommand\absgeneral[2]{\ma{\l {#1} . {#2}}}
 \newcommand\comb[2]{\ma{(#1\ #2)}}
@@ -260,3 +260,5 @@
 
 \def\rp{\rho'}
 \def\rpp{\rho''}
+
+\newcommand{\clos}[2]{[#1,#2]}
