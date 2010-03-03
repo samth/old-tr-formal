@@ -66,12 +66,16 @@
 \[
   \begin{altgrammar}
     \d{}, \e{}, \dots &::=& \x{}  \alt \comb{\e{op}}{\movervec{\e{a}}} 
-    \alt \cond{\e1}{\e2}{\e3} \ponly{\alt \cons{\e{}}{\e{}}} \alt
-    \vv{}  \alt \lett{\x{}}{\e{}}{\e{}} &\mbox{Expressions} \\
-    \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \abs{\x{}}{\t{}}{\e{}} \ponly{\alt \cons{\vv{}}{\vv{}}}  & \mbox{Values} \\
+    \alt \cond{\e1}{\e2}{\e3} \ponly{\alt \cons{\e{}}{\e{}}} 
+    \alt \lett{\x{}}{\e{}}{\e{}} \alt & \mbox{Expressions}\\
+    & & \c{}  \alt \tt \alt \ff \alt
+    \n{} \alt \abs{\x{}}{\t{}}{\e{}}
+    &  \\
+    \vv{} &::=& \c{}  \alt \tt \alt \ff \alt \n{} \alt \clos{\rho}{\abs{\x{}}{\t{}}{\e{}}} \ponly{\alt \cons{\vv{}}{\vv{}}}  & \mbox{Values} \\
 \ifpath
-    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt \procp \alt \notsym  \alt \\
-    &   & \consp \alt \car \alt \cdr  & \mbox{Primitive Operations} 
+    \c{} &::=& \addone \alt \zerop \alt \numberp \alt \boolp \alt
+    \procp \alt \notsym  \alt & \mbox{Primitive Operations} \\
+    &   & \consp \alt \car \alt \cdr  & 
     \vspace{1mm}
     \\
 \else 
@@ -92,22 +96,23 @@
 \hrule
 \[
   \begin{altgrammar}
-    \sig{},\t{} &::= & \top \alt \marg{\proctop \alt}{} \num \alt \ttt \alt \fft 
+    \sig{},\t{} &::= & \topty \alt \marg{\proctop \alt}{} \num \alt \ttt \alt \fft 
     \alt \consty{\t{}}{\t{}} \alt
          {\proctype {\movervec[i]{\t{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}} 
          \alt (\usym\ \overvec{\t{}})     &\mbox{Types} \\
 
+         \nu &::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}} & \mbox{Type Propositions}\\
 
+         \p{} &::=&  \nu_{\x{}}
+         \lonly{\alt \imp{\p{}}{\p{}}} \alt \p{} \vee \p{} \alt \p{}
+         \wedge \p{} \alt
+         \bot \alt \top & \mbox{Filters} \\
 
-         \p{} &::=&  \t{\wpi{\x{}}} \alt \compt{\wpi{\x{}}}
-         \lonly{\alt \imp{\op{}}{\op{}}} \alt \op{} \vee \op{} \alt \bot & \mbox{Filters} \\
+         \ph{} & ::=& \nu \alt \nu_{\x{}}
+         \lonly{\alt \imp{\ph{}}{\ph{}}} \alt \ph{} \vee \ph{} \alt
+         \ph{} \wedge \ph{} 
+         \alt \both \alt \toph & \mbox{Latent Filters} \\
 
-         \ph{} & ::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}}
-         \lonly{\alt \imp{\oph{}}{\oph{}}} \alt \oph{} \vee \oph{} \alt \both & \mbox{Latent Filters} \\
-
-         \phii{} & ::= & \overvec{\p{}}|\overvec{\p{}} & \mbox{Filter Sets} \\
-
-         \phih{} & ::= & \overvec{\ph{}}|\overvec{\ph{}} & \mbox{Latent Filter Sets} \\
 
          \s{} & ::= &   \wpi{\x{}} \alt \noeffect &\mbox{Objects} \\
          
@@ -323,12 +328,8 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\Gamma \vdash \t{\wpi{\x{}}}}
 \qquad \qquad
 \inferrule[L-Update]
-{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \sig{\x{}}}
-{\Gamma \vdash {\update[\t{}]{\pi}{\sig{}}}_{\x{}}}
-\qquad \qquad
-\inferrule[L-UpdateNot]
-{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \comp{\sig{}}_{\x{}}}
-{\Gamma \vdash {\update[\t{}]{\pi}{\comp{\sig{}}}}_{\x{}}}
+{\Gamma \vdash \t{\wpi{\x{}}} \\ \Gamma \vdash \nu_{\x{}}}
+{\Gamma \vdash {\update[\t{}]{\pi}{\nu}}_{\x{}}}
 \]
 \[
 \inferrule[L-ImpE]
@@ -358,7 +359,7 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \else
 \fi
 \qquad\qquad
-\inferrule[S-Top]{ }{\subtype{\t{}}{\top}}
+\inferrule[S-Top]{ }{\subtype{\t{}}{\topty}}
 \]
 
 \[
@@ -378,12 +379,12 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {
   \movervec[i]{\subtype{\sig{a}}{\t{a}}} \\ 
   \subtype{\t{r}}{\sig{r}} \\\\ 
-  \movervec[i]{\phih{}' \subseteq \phih{}} \\ \sh{} = \sh{}' \text{ or } \sh{}' = \noeffect
+  \sh{} = \sh{}' \text{ or } \sh{}' = \noeffect
 }
 {
   \subtype
   {\proctype{\movervec[i]{\t{a}}}{\t{r}}{\movervec[i]{\phih{}}}{\sh{}}}
-  {\proctype{\movervec[i]{\sig{a}}}{\sig{r}}{\movervec[i]{\phih{}'}}{\sh{}'}}
+  {\proctype{\movervec[i]{\sig{a}}}{\sig{r}}{\movervec[i]{\phih{}}}{\sh{}'}}
 }
 \]
 
@@ -433,13 +434,16 @@ This can be fixed with a subtyping algorithm presented in a paper by Voillion.
 
 $$
   \begin{array}{l@{\ =\ }l@{\qquad}l}
-    \af{\x{}}{\op1|\op2}{\overvec{\abstractone{\x{}}{\p1}}|\overvec{\abstractone{\x{}}{\p2}}} &  \vspace{2mm}\\
+    \af{\x{}}{\p{+}|\p{-}}{{\abstractone[\x{}]{\p{+}}}|{\abstractone[\x{}]{\p{-}}}} &  \vspace{2mm}\\
 
-    \abstractone{\x{}}{\bot}& {\both} & \\
-    \abstractone{\x{}}{{\t{}}_{\wpi{\x{}}}}& {{\t{}}_{\pi}} & \\
-    \abstractone{\x{}}{\comp{\t{}}_{\wpi{\x{}}}}& {\comp{\t{}}_{\pi}} & \\
-    \abstractone{\x{}}{{\t{}}_{\wpi{\y{}}}}& {\bullet} &  \text{ where } \x{} \neq \y{} \\
-    \abstractone{\x{}}{\comp{\t{}}_{\wpi{\y{}}}}& {\bullet} & \text{ where } \x{} \neq \y{} \vspace{2mm}\\
+    \abstractone{\nu_{\x{}}}& \nu & \\
+    \abstractone{\nu_{\y{}}}& \nu_{\y{}} &  \text{ where } \x{}
+    \neq \y{} \\
+    \abstractone{\bot}& {\both} & \\
+    \abstractone{\top}& {\toph} & \\
+    \abstractone{\imp{\p1}{\p2}} & \imp{\abstractone{\p1}}{\abstractone{\p2}}& \\
+    \abstractone{{\p1}\vee{\p2}} & {\abstractone{\p1}}\vee{\abstractone{\p2}}& \\
+    \abstractone{{\p1}\wedge{\p2}} & {\abstractone{\p1}}\wedge{\abstractone{\p2}}& \vspace{2mm}\\
 %    \text{ where }
 %    \ph{} = \left\{
 %      \protect{\begin{array}{ll}
@@ -456,7 +460,7 @@ $$
 
 $$
   \begin{array}{l@{\ =\ }l@{\qquad}l}
-    \apf{\oph{+}|\oph{-}}{\t{}}{\s{}}{\overvec{\applyone{\ph+}{\s{}}}|\overvec{\applyone{\ph-}{\s{}}}} &
+    \apf{\ph{+}|\ph{-}}{\t{}}{\s{}}{{\applyone{\ph+}{\s{}}}|{\applyone{\ph-}{\s{}}}} &
 %    {\overvec[i]{\p{+_+}},\overvec[j]{\p{-_-}}|
 %     \overvec[i]{\p{-_+}},\overvec[j]{\p{+_-}}} & 
 %   \text{ where } \overvec[i]{\p{+_+},{\p{+_-}}}  = \overvec[i]{\applyone{\ph+}{\t{}}{\s{}}} \\
@@ -466,10 +470,15 @@ $$
 
 
     \applyone{\both}{\s{}} & \bot & \\
-    \applyone{\ph{}}{\noeffect} & \bullet & \\
-    \applyone{\t{\ponly{\pi'}}} {\wpi{\x{}}} & \t{{\wpip{\wpi{\x{}}}}} & \\
-    \applyone{\comp{\t{}}_{\ponly{\pi'}}} {\wpi{\x{}}} &
-    \comp{\t{}}_{{\wpip{\wpi{\x{}}}}} & \vspace{2mm}\\
+    \applyone{\nu} {\wpi{\x{}}} & \nu_{\wpi{\x{}}} & \\
+    \applyone{\nu_{\x{}}} {\s{}} & \nu_{\x{}} & \\
+    \applyone{\imp{\p1}{\p2}}{\s{}} & \imp{\applyone{\p1}{\s{}}}{\applyone{\p2}{\s{}}}& \\
+    \applyone{{\p1}\vee{\p2}}{\s{}} & {\applyone{\p1}{\s{}}}\vee{\applyone{\p2}{\s{}}}& \\
+    \applyone{{\p1}\wedge{\p2}}{\s{}} &
+    {\applyone{\p1}{\s{}}}\wedge{\applyone{\p2}{\s{}}}&\\
+
+    \applyone{\ph{}}{\s{}} & \top &  \text{ otherwise}\vspace{2mm}\\
+
 
     \applyobject{\movervec[i]{\s{a}}}{\pathmaybe{\pipi}}  &      \wpip{\wpi{x}}
     & \text{ if } {\sai} = \wpi{\x{}} \\
@@ -486,10 +495,10 @@ $$
   \dt{\procp} & {\predty{\bullet}{\proctop}} & \\
   \dt{\boolp} & {\predty{\bullet}{\bool}} & \\
 \ifpath
-  \dt{\consp} & {\predty{\bullet}{\consty{\top}{\top}}} & \\
+  \dt{\consp} & {\predty{\bullet}{\consty{\topty}{\topty}}} & \\
 \fi
   \dt{\addone} & {\simpleproc{\num}{\num}} & \\
-  \dt{\notsym} & {\simpleproc{\top}{\bool}} & \\
+  \dt{\notsym} & {\simpleproc{\topty}{\bool}} & \\
   \dt{\zerop} & {\simpleproc{\num}{\bool}} & \\
 \end{array}
 \]
@@ -718,8 +727,8 @@ $$
 \newcommand{\pecarcarx}{\ma{\pecar(\pecar(\x{}))}}
 
 \newcommand{\xenv}[1]{\x{}:{#1}}
-\newcommand{\xenvtop}{\xenv{\top}}
-\newcommand{\xyenv}{\xenvtop,\y{}:\top}
+\newcommand{\xenvtop}{\xenv{\topty}}
+\newcommand{\xyenv}{\xenvtop,\y{}:\topty}
 
 
 \newcommand{\numpx}{\nump{\x{}}}
@@ -734,11 +743,11 @@ $$
 
 
 \begin{displaymath}
-  \hastyvar[\xenvtop]{\x{}}{\top}{\x{}}
+  \hastyvar[\xenvtop]{\x{}}{\topty}{\x{}}
 \end{displaymath}
 
 \begin{displaymath}
-  \hastyvar[{\xenv{\consty{\top}{\top}}{}}]{\carx{}}{\top}{\pecarx{}}
+  \hastyvar[{\xenv{\consty{\topty}{\topty}}{}}]{\carx{}}{\topty}{\pecarx{}}
 \end{displaymath}
 
 \begin{displaymath}
@@ -746,7 +755,7 @@ $$
 \end{displaymath}
 
 \begin{displaymath}
-  \hastypred [\xenv{\consty{\top}{\top}}] {\nump{\carx}} {\num} {\pecarx}
+  \hastypred [\xenv{\consty{\topty}{\topty}}] {\nump{\carx}} {\num} {\pecarx}
 \end{displaymath}
 
 \begin{displaymath}
@@ -798,7 +807,7 @@ or alternatively, if we had intersection types:
 \end{displaymath}
 
 \begin{displaymath}
-  \hastytrue {\abssingle{\x{}}{\top}{\nump{\x{}}}} {\predty{\bullet}{\num}}
+  \hastytrue {\abssingle{\x{}}{\topty}{\nump{\x{}}}} {\predty{\bullet}{\num}}
 \end{displaymath}
 
 \begin{displaymath}
@@ -818,8 +827,8 @@ or alternatively, if we had intersection types:
 \ifmarg
 \begin{displaymath}
   \hastytrue
-  {\absgeneral {\x{} : \top, \y{} : \top} {\nump{\x{}}}} 
-  {\proctype{\top, \top}{\bool}{{\num}_{\bullet}|{\comp{\num}}_{\bullet},\bullet|\bullet}{\noeffect}}
+  {\absgeneral {\x{} : \topty, \y{} : \topty} {\nump{\x{}}}} 
+  {\proctype{\topty, \topty}{\bool}{{\num}_{\bullet}|{\comp{\num}}_{\bullet},\bullet|\bullet}{\noeffect}}
 \end{displaymath}
 \else
 \fi
@@ -828,8 +837,8 @@ or alternatively, if we had intersection types:
 
 \section{Larger Example}
 
-\def\prty{\consty{\consty{\top}{\top}}{\top}}
-\def\prtyf{\consty{\consty{\fft}{\top}}{\top}}
+\def\prty{\consty{\consty{\topty}{\topty}}{\topty}}
+\def\prtyf{\consty{\consty{\fft}{\topty}}{\topty}}
 \def\env{\x{}:\prty}
 \def\app{\comb{\car}{\carx}}
 \def\concl{\hastyeffphi{\cond{\app}{\tt}{\app}}{\bool}{\bullet|\bullet}{\noeffect}}
@@ -847,8 +856,8 @@ $
 \inferrule*
 {
   \framebox{\(\inferrule*{
-      \inferrule*{\hastyvar{\x{}}{\prty}{\x{}}}{\hastyvar{\carx}{\consty{\top}{\top}}{\pecarx}}}
-    {\hastyvar{\app}{\top}{\pecarcarx}}\)
+      \inferrule*{\hastyvar{\x{}}{\prty}{\x{}}}{\hastyvar{\carx}{\consty{\topty}{\topty}}{\pecarx}}}
+    {\hastyvar{\app}{\topty}{\pecarcarx}}\)
   }
 \and
 \framebox{\(
@@ -856,7 +865,7 @@ $
   {\framebox{\(
       \inferrule*
       {\hastytrue[{\x{}:\prtyf}]{\x{}}{\prtyf}}
-      {\hastytrue[{\x{}:\prtyf}]{\carx}{\consty{\top}{\fft}}} \)}}\\\\
+      {\hastytrue[{\x{}:\prtyf}]{\carx}{\consty{\topty}{\fft}}} \)}}\\\\
   \Gamma + {{\fft}_{\pecarcarx}} = {\x{}:\prtyf} }
  {\hastyfalse[\Gamma + {{\fft}}_{\pecarcarx}]{\app}{\fft}}\)} \\
  \hastytrue[\Gamma + \comp{\fft}_{\pecarcarx}]{\tt}{\ttt} \\
