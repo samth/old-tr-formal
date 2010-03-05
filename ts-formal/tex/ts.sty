@@ -64,9 +64,10 @@
 \newcommand\noeffect{\bf \emptyset}
 %\newbfop\usym{\ma{\bigcup}}
 \newcommand\usym{\ma{\bigcup}}
+\newcommand\usymsmall{\ma{\cup}}
 \newcommand\isym{\ma{\bigcap}}
 \newcommand\proctype[4]{\ma{#1 {\xrightarrow[#4]{#3}} #2}}
-\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctype{\bot}{\topty}{\bullet|\bullet}{\noeffect}}}
+\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctype{\botty}{\topty}{\toph|\toph}{\noeffect}}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -74,6 +75,7 @@
 \newcommand{\uniontwo}[2]{(\usym\ {#1}\ {#2})}
 
 \def\topty{\any}
+\def\botty{(\usymsmall)}
 
 % terms
 \newmeta\x{x}                   % not sure if \x is reserved...
@@ -118,9 +120,9 @@
 \newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
 
 
-\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bullet} {\noeffect}}
-\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bullet} {\bot} {\noeffect}}
-\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\bullet} {\noeffect}}
+\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\top} {\noeffect}}
+\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\bot} {\noeffect}}
+\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\top} {\noeffect}}
 
 \newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
 
@@ -134,7 +136,7 @@
 
 \newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{\path{#3}{}}|{\fft}_{\path{#3}{}}}}{#4}}
 \newcommand{\predty}[3][\topty]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noeffect}}
-\newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\bullet|\bullet}{\noeffect}}
+\newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\toph|\toph}{\noeffect}}
 
 % reductions
 
@@ -228,15 +230,16 @@
 
 \newometa\op{\psi}
 \newometa\opp{\psi'}
+\newmeta\pp{\psi'}
 \newometa\oph{\latentmvar{\psi}}
 
 \newcommand{\abstractfilter}[2]{\ma{\mathrm{abstractfilter}({#1}, {#2})}}
 \newcommand{\abstractobject}[2]{\ma{\mathrm{abstractobject}({#1}, {#2})}}
 \newcommand{\nooverlap}[2]{\ma{\mbox{no-overlap}({#1}, {#2})}}
-\newcommand{\applyfilter}[3]{\ma{\mathrm{applyfilter}({#1},  {#3})}}
-\newcommand{\applyobject}[2]{\ma{\mathrm{applyobject}({#2},  {#1})}}
+\newcommand{\applyfilter}[3]{\ma{\mathrm{applyfilter}({#3},  {#1})}}
+\newcommand{\applyobject}[2]{\ma{\mathrm{applyobject}({#1},  {#2})}}
 \newcommand{\abstractone}[2][\x{}]{\ma{\mathrm{abo}({#1}, {#2})}}
-\newcommand{\applyone}[2]{\ma{\mathrm{apo}({#1}, {#2})}}
+\newcommand{\applyone}[2]{\ma{\mathrm{apo}({#2}, {#1})}}
 
 \newcommand{\pii}{\marg{\pi(\i{})}{\pi}}
 \newcommand{\pipi}{\marg{\pi'(\i{})}{\pi'}}

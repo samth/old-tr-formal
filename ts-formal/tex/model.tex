@@ -128,18 +128,9 @@
   \end{altgrammar}
   \]
 
-\paragraph{Notation}
-We write \bool for $(\usym \ttt\ \fft)$ and $\bot$ for $(\usym)$ in
-type contexts and $\bullet$ for the empty sequence.  We also
-abbreviate $\bullet(\x{})$ as $\x{}$.  Sequences are assumed to be
-automatically flattened, so $\overvec{\t1},\overvec{\t2}$ is a sequence 
-of types with $|\overvec{\t1}| + |\overvec{\t2}|$ elements, not a two
-element sequence of sequences. 
-Since $\bot$  and $\both$  are notation for the universe of formulas, 
-$\op1,\bot,\op2 = \bot$.
- Finally, note that if we have $\op{}|\bot$, $\op{}$
-cannot contain any information we don't already know.  So we will
-assume that $\op{} = \bullet$ (and similarly for $\bot|\op{}$).
+\paragraph{Notation:}
+We write \bool for $(\usym \ttt\ \fft)$.  We also
+abbreviate $\epsilon(\x{})$ as $\x{}$.
 
 \ifmarg
 The type $\proctop$ represents the supertype of all procedures, so
@@ -154,14 +145,14 @@ otherwise representable.
 
 \huge
 \begin{displaymath}
-  \hastyeffphi{\e{}}{\t{}}{\phii{}}{\s{}}
+  \hastyeff{\e{}}{\t{}}{\p+}{\p-}{\s{}}
 \end{displaymath}
 \normalsize
 
 This means that in environment $\Gamma$, \e{} has the type \t{}, that
-evaluating \e{} and gives us information \phii{} based on whether \e{}
-evaluates to \ff or not, and that testing \e{} is the same as testing
-the object \s{}.
+evaluating \e{} and recieving a true value means that \p+ is true,
+that evaluating \e{} and recieving $\ff$ means that \p- is true, and
+that testing \e{} is the same as testing the object \s{}.
 
 %\newpage
 
@@ -227,23 +218,23 @@ the object \s{}.
 \[
 \inferrule[T-If]
 {
-  \hastyeff{\e1}{\t1}{\op{1_+}}{\op{1_-}}{\s1}
+  \hastyeff{\e1}{\t1}{\p{1_+}}{\p{1_-}}{\s1}
   \\\\
-  \hastyeff[\G{} \cup {\op{1_+}}]{\e2}{\t2}{\op{2_+}}{\op{2_-}} {\s2}
+  \hastyeff[\G{}, {\p{1_+}}]{\e2}{\t2}{\p{2_+}}{\p{2_-}} {\s2}
   \\\\
-  \hastyeff[\G{} \cup {\op{1_-}}]{\e3}{\t3}{\op{3_+}}{\op{3_-}} {\s3}
+  \hastyeff[\G{}, {\p{1_-}}]{\e3}{\t3}{\p{3_+}}{\p{3_-}} {\s3}
   \\\\
   \subtype{\t2}{\t{}} \\
   \subtype{\t3}{\t{}} \\\\
-  \Gamma, (\op{1_+}, \op{2_+}) \vee (\op{1_-}, \op{3_+}) \vdash \op{+} \\\\
-  \Gamma, (\op{1_+}, \op{2_-}) \vee (\op{1_-}, \op{3_-}) \vdash \op{-}
-%  \phii{} = \combfilter{\op1|\op2}{\phii2}{\phii3}
+  \p{+} = (\p{1_+} \wedge \p{2_+}) \vee (\p{1_-} \wedge \p{3_+}) \\\\
+  \p{-} = (\p{1_+} \wedge \p{2_-}) \vee (\p{1_-} \wedge \p{3_-}) 
+%  \phii{} = \combfilter{\p1|\p2}{\phii2}{\phii3}
 }
-{\hastyeff {\cond{\e1}{\e2}{\e3}} {\t{}}  {\op{+}} {\op{-}} {\noeffect}}
+{\hastyeff {\cond{\e1}{\e2}{\e3}} {\t{}}  {\p{+}} {\p{-}} {\noeffect}}
 \qquad\qquad
 \inferrule[T-Let]
-{\movervec{\hastyeff{\e0}{\t{}}{\op{0_+}}{\op{0_-}}{\s0}}\\\\
-\hastyeffphi[\G{}, \movervec{\t{\x{}}}, \movervec{\imp{\comp{\fft}_{\x{}}}{\op{0_+}}, \imp{{\fft}_{\x{}}}{\op{0_-}}}]{\e1}{\sig{}}{\phii1}{\s1}}
+{\movervec{\hastyeff{\e0}{\t{}}{\p{0_+}}{\p{0_-}}{\s0}}\\\\
+\hastyeffphi[\G{}, \movervec{\t{\x{}}}, \movervec{\imp{\comp{\fft}_{\x{}}}{\p{0_+}}, \imp{{\fft}_{\x{}}}{\p{0_-}}}]{\e1}{\sig{}}{\phii1}{\s1}}
 {\hastyeffphi{\lett{\x{}}{\e0}{\e1}}{\sig{}}{\phii1}{\s1}}
 \]
 
@@ -292,18 +283,18 @@ the object \s{}.
 \begin{displaymath}
   \inferrule[T-Not]
   {
-    \hastyeff{\e{}}{\t{}}{\op1}{\op2}{\s{}}      
+    \hastyeff{\e{}}{\t{}}{\p1}{\p2}{\s{}}      
   }
   {
-    \hastyeff{\nott{\e{}}}{\bool}{\op2}{\op1}{\noeffect}      
+    \hastyeff{\nott{\e{}}}{\bool}{\p2}{\p1}{\noeffect}      
   }
   \qquad\qquad
   \inferrule[T-Bot]
   {
-    \Gamma \vdash \bot_{\x{}} 
+    \Gamma \vdash (\usymsmall)_{\wpi{\x{}}}
   }
   {
-    \hastyeffphi{\e{}}{\bot}{\bullet|\bullet}{\noeffect}
+    \hastyeffphi{\e{}}{\t{}}{\p1|\p2}{\s{}}
   }
 \end{displaymath}
 
@@ -455,7 +446,7 @@ $$
 %    \text{ where }
 %    \ph{} = \left\{
 %      \protect{\begin{array}{ll}
-%          \both             & \text{if } \bot \in \op{i} \\
+%          \both             & \text{if } \bot \in \p{i} \\
 %          \bullet        & \text{otherwise}
 %        \end{array}} \right.
     \abstractobject{\movervec[i]{\x{}}}{\wpi{\xi}} & \pathmaybe{\pii} &
@@ -480,10 +471,10 @@ $$
     \applyone{\both}{\s{}} & \bot & \\
     \applyone{\nu} {\wpi{\x{}}} & \nu_{\wpi{\x{}}} & \\
     \applyone{\nu_{\x{}}} {\s{}} & \nu_{\x{}} & \\
-    \applyone{\imp{\p1}{\p2}}{\s{}} & \imp{\applyone{\p1}{\s{}}}{\applyone{\p2}{\s{}}}& \\
-    \applyone{{\p1}\vee{\p2}}{\s{}} & {\applyone{\p1}{\s{}}}\vee{\applyone{\p2}{\s{}}}& \\
-    \applyone{{\p1}\wedge{\p2}}{\s{}} &
-    {\applyone{\p1}{\s{}}}\wedge{\applyone{\p2}{\s{}}}&\\
+    \applyone{\imp{\ph1}{\ph2}}{\s{}} & \imp{\applyone{\ph1}{\s{}}}{\applyone{\ph2}{\s{}}}& \\
+    \applyone{{\ph1}\vee{\ph2}}{\s{}} & {\applyone{\ph1}{\s{}}}\vee{\applyone{\ph2}{\s{}}}& \\
+    \applyone{{\ph1}\wedge{\ph2}}{\s{}} &
+    {\applyone{\ph1}{\s{}}}\wedge{\applyone{\ph2}{\s{}}}&\\
 
     \applyone{\ph{}}{\s{}} & \top &  \text{ otherwise}\vspace{2mm}\\
 
@@ -499,11 +490,11 @@ $$
 
 \[
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
-  \dt{\numberp} & {\predty{\bullet}{\num}} & \\
-  \dt{\procp} & {\predty{\bullet}{\proctop}} & \\
-  \dt{\boolp} & {\predty{\bullet}{\bool}} & \\
+  \dt{\numberp} & {\predty{\relax}{\num}} & \\
+  \dt{\procp} & {\predty{\relax}{\proctop}} & \\
+  \dt{\boolp} & {\predty{\relax}{\bool}} & \\
 \ifpath
-  \dt{\consp} & {\predty{\bullet}{\consty{\topty}{\topty}}} & \\
+  \dt{\consp} & {\predty{\relax}{\consty{\topty}{\topty}}} & \\
 \fi
   \dt{\addone} & {\simpleproc{\num}{\num}} & \\
   \dt{\notsym} & {\simpleproc{\topty}{\bool}} & \\
@@ -539,17 +530,17 @@ $$
 % \combfilter{\bot|\bullet}{\phii2}{\phii3} & \phii3 & \vspace{3mm}\\
 
 % \multicolumn{2}{l}{\combfilter 
-% {\t{\wpi{\x{}}}::\op{1_+}|\comp{\t{}}_{\wpi{\x{}}}::\op{1_-}}
+% {\t{\wpi{\x{}}}::\p{1_+}|\comp{\t{}}_{\wpi{\x{}}}::\p{1_-}}
 % {\bullet|\bot}
-% {{\sig{\wpi{\x{}}}::\op{3_+}|\comp{\sig{}}_{\wpi{\x{}}}::\op{3_-}}} 
+% {{\sig{\wpi{\x{}}}::\p{3_+}|\comp{\sig{}}_{\wpi{\x{}}}::\p{3_-}}} 
 % }
 %   & \text{ or with predicates} \\
-% & \ts_{\wpi{\x{}}}::\op+|{\comp{\ts}}_{\wpi{\x{}}}::\op- & \\
-% \multicolumn{3}{c}{\text{where } \op+|\op- = \combfilter{\op1_+|\op1_-}{\bullet|\bot}{\op3_+|\op3_-}} \vspace{3mm}\\
+% & \ts_{\wpi{\x{}}}::\p+|{\comp{\ts}}_{\wpi{\x{}}}::\p- & \\
+% \multicolumn{3}{c}{\text{where } \p+|\p- = \combfilter{\p1_+|\p1_-}{\bullet|\bot}{\p3_+|\p3_-}} \vspace{3mm}\\
 
-% \combfilter{\op{1_+}|\op{1_-}} {\bullet|\bot} {\op{3_+}|\op{3_-}} & {\bullet|\op{1_-},\op{3_-}}& \text{ or} \vspace{3mm}\\
+% \combfilter{\p{1_+}|\p{1_-}} {\bullet|\bot} {\p{3_+}|\p{3_-}} & {\bullet|\p{1_-},\p{3_-}}& \text{ or} \vspace{3mm}\\
 
-% \combfilter{\op{1_+}|\op{1_-}} {\op{2_+}|\op{2_-}} {\bot|\bullet} & \op{1_+},\op{2_+}|\imp{\op{1_+}}{\op{2_-}},\imp{\op{2_+}}{\op{1_-}} & \text{ and} \vspace{3mm}\\
+% \combfilter{\p{1_+}|\p{1_-}} {\p{2_+}|\p{2_-}} {\bot|\bullet} & \p{1_+},\p{2_+}|\imp{\p{1_+}}{\p{2_-}},\imp{\p{2_+}}{\p{1_-}} & \text{ and} \vspace{3mm}\\
 
 % \combfilter{\phii{}}{\phii{}'}{\phii{}'} & \phii{}' & \\
 
@@ -691,14 +682,14 @@ $$
 
   \update[\t{}]{\bullet}{\comp{\ups{}}} & \remove{\t{}}{\ups{}}& \vspace{5mm}\\
 %  \updatesimp{\t{}}{\both} & {\bot} & \\
-  \restrict{\t{}}{\sig{}} & \bot & \text{ if } {\nooverlap{\t{}}{\sig{}}} \\
-  \restrict{(\usym\ \overvec{\t{}})}{\sig{}} & (\usym\ \overvec{\restrict{\t{}}{\sig{}}})& \\
+  \restrict{\t{}}{\sig{}} & \botty & \text{ if } {\nooverlap{\t{}}{\sig{}}} \\
+  \restrict{(\usymsmall\ \overvec{\t{}})}{\sig{}} & (\usymsmall\ \overvec{\restrict{\t{}}{\sig{}}})& \\
   \restrict{\t{}}{\sig{}} & \t{} & \text{ if } {\subtype{\t{}}{\sig{}}} \\
   \restrict{\t{}}{\sig{}} & \sig{} & \text{ otherwise} \vspace{5mm}\\
 
 
-  \remove{\t{}}{\sig{}} & \bot & \text{ if } {\subtype{\t{}}{\sig{}}} \\
-  \remove{(\usym\ \overvec{\t{}})}{\sig{}} & (\usym\ \overvec{\remove{\t{}}{\sig{}}})& \\
+  \remove{\t{}}{\sig{}} & \botty & \text{ if } {\subtype{\t{}}{\sig{}}} \\
+  \remove{(\usymsmall\ \overvec{\t{}})}{\sig{}} & (\usymsmall\ \overvec{\remove{\t{}}{\sig{}}})& \\
   \remove{\t{}}{\sig{}} & \t{} & \text{ otherwise} \vspace{5mm}\\
 
   \nooverlap{\num}{\bool} & \mathrm{true} & \\
@@ -714,7 +705,7 @@ $$
   {\proctype{\movervec[i]{\ups{a}}}{\ups{r}}{\movervec[i]{\phih{}}}{\sh{}}} & 
   \mathrm{true} & \\
 \fi
-  \nooverlap{(\usym\ \overvec{\t{}})}{\sig{}} & \bigwedge
+  \nooverlap{(\usymsmall\ \overvec{\t{}})}{\sig{}} & \bigwedge
   \overvec{\nooverlap{\t{}}{\sig{}}} & \\
   \nooverlap{\t{}}{\sig{}} & \mathrm{true} & \text{ if } \nooverlap{\sig{}}{\t{}}\\
   \nooverlap{\t{}}{\sig{}} & \mathrm{false} & \text{ otherwise}\\
@@ -892,10 +883,10 @@ $
 
 % \[
 % \inferrule{
-% \forall \G{}. \forall \x{} \in \mbox{dom}(\G{}). \subtype{(\G{} + \opp{})(x)}{(\G{} + \op{})(x)}
+% \forall \G{}. \forall \x{} \in \mbox{dom}(\G{}). \subtype{(\G{} + \pp{})(x)}{(\G{} + \p{})(x)}
 % }
 % {
-%   \vdash \op{} < \opp{}
+%   \vdash \p{} < \pp{}
 % }
 % \]
 
@@ -929,7 +920,7 @@ $
 
 % \subsection{Substitution Lemma}
 
-% If \hastyeffphi [\G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\op{+} | \op{-}} {\s{}}
+% If \hastyeffphi [\G{},{\movervec[i]{\hastype{\x{}}{\sig{}}}}] {\e{}} {\t{}} {\p{+} | \p{-}} {\s{}}
 
 % \noindent
 % and \hastyeffphi [] {\vv{}} {\sig{}'} {\phii{0}} {\s{0}}
@@ -938,17 +929,17 @@ $
 % and \subtype{\sig{}'}{\sig{}}
 
 % \noindent
-% Then $\hastyeffphi {\subs{\e{}} {\x{}} {\vv{}}} {\t{}'} {\opp{+} | \opp{-}} {\s{}'}$
+% Then $\hastyeffphi {\subs{\e{}} {\x{}} {\vv{}}} {\t{}'} {\pp{+} | \pp{-}} {\s{}'}$
 
 % \noindent
 % and \subtype{\t{}'}{\t{}}
 
 % \noindent
-% and $\hastype{\x{}}{\sig{}'} \models \op{\pm} \quad \Rightarrow \quad \vdash \opp{\pm} < \op{\pm}$
+% and $\hastype{\x{}}{\sig{}'} \models \p{\pm} \quad \Rightarrow \quad \vdash \pp{\pm} < \p{\pm}$
 
 
 % \noindent
-% and $\hastype{\x{}}{\sig{}'} \not\models \op{\pm} \quad \Rightarrow \quad \opp{\pm} = \bot$
+% and $\hastype{\x{}}{\sig{}'} \not\models \p{\pm} \quad \Rightarrow \quad \pp{\pm} = \bot$
 
 % \noindent
 % and either $\s{} = \wpi{\x{}} \wedge \s{}' = \noeffect$ or $\s{} = \s{}'$
@@ -970,14 +961,17 @@ $
 \qquad\qquad
 \inferrule{\hastyeffphi[\relax{}]{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}}
 \\\\  \nooverlap{\sig{}}{\t{}}}{\rho \models \comp{\t{}}_{\wpi{x{}}}}
+\qquad\qquad
+\inferrule{}{\rho \models \top}
 \]
 \[
-\inferrule{\rho \models \op1}{\rho \models \op1 \vee \op2}
+\inferrule{\rho \models \p1 \text{ or } \rho \models \p2}{\rho \models \p1 \vee \p2}
 \qquad\qquad
-\inferrule{\rho \models \op2}{\rho \models \op1 \vee \op2}
+\inferrule{\rho \models \p{} \Rightarrow \rho \models
+  \p{}'}{\rho \models \imp{\p{}}{\p{}'}}
 \qquad\qquad
-\inferrule{\rho \models \overvec{\p{}} \Rightarrow \rho \models
-  \opp{}}{\rho \models \imp{\op{}}{\opp{}}}
+\inferrule{\rho \models \p{} \\ \rho \models
+  \p{}'}{\rho \models {\p{}} \wedge {\p{}'}}
 \]
 
 
@@ -989,16 +983,15 @@ If $\rho \models \G{}$ and $\G{} \vdash P$ then $\rho \models P$.
 \end{lemma}
 
 \begin{lemma}[Soundness]
-If $\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$ and $\rho \models
+If $\hastyeff{\e{}}{\t{}}{\p{+}}{\p{-}}{\s{}}$ and $\rho \models
 \G{}$ and $\evalprime{\e{}}{\vv{}}$ then
 
 \begin{enumerate}
 \item Either $\s{} = \noeffect$ or $\rho(\s{}) = \vv{}$.
 \item Either $\vv{} \neq \ff$ and $\rho \models
-\op{+}$ or $\vv{} = \ff$ and $\rho \models
-\op{-}$.
-\item $\exists \Gamma' \supseteq \Gamma$  where $\rho' \models \Gamma'$ and
-$\hastyeff[\Gamma']{\vv{}}{\t{}'}{\opp{+}}{\opp{-}}{\s{}'}$ and
+\p{+}$ or $\vv{} = \ff$ and $\rho \models
+\p{-}$.
+\item $\hastyeff[]{\vv{}}{\t{}'}{\p{+}'}{\p{-}'}{\s{}'}$ where
 $\subtype{\t{}'}{\t{}}$. 
 \end{enumerate}
 \end{lemma}
@@ -1006,7 +999,7 @@ $\subtype{\t{}'}{\t{}}$.
 \noindent
 {\bf Proof:}
 By induction and cases on the derivation of
-$\hastyeff{\e{}}{\t{}}{\op{+}}{\op{-}}{\s{}}$.
+$\hastyeff{\e{}}{\t{}}{\p{+}}{\p{-}}{\s{}}$.
 
 \noindent
 Cases:
@@ -1016,27 +1009,49 @@ Cases:
 \bot$ by inspection of the rules.  
 \item {\sc T-Num}.  First, $\s{} = \noeffect$.  Second, $e = n$ and
   therefore by {\sc B-Val} (the only rule that applies), $v = n$.
-  Thus, with $\G{} = \G{}'$ and $\rho = \rho'$ and $\t{} = \t{}'$, the
-  third requirement is discharged.  Finally, $\op{+} = \epsilon$ and
-  $\rho \models \epsilon$ for any $\rho$.
+  Thus, $\t{} = \t{}'$ and the
+  third requirement is discharged.  Finally, $\p{+} = \epsilon$ and
+  $\rho \models \top$ for any $\rho$.
 \item {\sc T-Const, T-True, T-False}. Similar to {\sc T-Num}.
 \item {\sc T-Cons}. First, $\s{} = \noeffect$.  Second, $\e{} =
   \cons{\e1}{\e2}$ and $\t{} = \consty{\t1}{\t2}$.  Third, by {\sc
     B-Cons}, the only applicable rule, $\evaltwo{\rho}{\e1}{\rho_1}{\vv1}$ and
-  $\evaltwo{\rho_1}{\e2}{\rho'}{\vv2}$.  By the induction hypothesis,
-  we have $\G{}' \supseteq \G1 \supseteq \G{}$ where $\rho' \models
-  \G{}'$ and
-  $\hastyeff[\Gamma']{\vv1}{\t{1}'}{\opp{1+}}{\opp{1-}}{\s{1}'}$  and
-  $\hastyeff[\Gamma']{\vv2}{\t{2}'}{\opp{2+}}{\opp{2-}}{\s{2}'}$ and
+  $\evaltwo{\rho}{\e2}{\rho'}{\vv2}$.  By the induction hypothesis,
+  we have 
+  $\hastyeff[\Gamma]{\vv1}{\t{1}'}{\pp{1+}}{\pp{1-}}{\s{1}'}$  and
+  $\hastyeff[\Gamma]{\vv2}{\t{2}'}{\pp{2+}}{\pp{2-}}{\s{2}'}$ and
   \subtype{\t1'}{\t1} and \subtype{\t2'}{\t2}.
   Thus
-  $\hastyeff[\Gamma']{\cons{\vv{1}}{\vv2}}{\consty{\t{1}'}{\t2'}}{\epsilon}{\bot}{\noeffect}$
+  $\hastyeff[\Gamma]{\cons{\vv{1}}{\vv2}}{\consty{\t{1}'}{\t2'}}{\epsilon}{\bot}{\noeffect}$
   concluding part 3.  For part 2, note that $\cons{\vv{1}}{\vv2} \neq
-  \ff$ and $\rho' \models \epsilon$.
+  \ff$ and $\rho \models \epsilon$.
 \item {\sc T-Var}.  The only applicable evaluation rule is {\sc
-    B-Var}.  Therefore, $\vv{} = \rho'(\x{})$, making part 1 trivial,
+    B-Var}.  Therefore, $\vv{} = \rho(\x{})$, making part 1 trivial,
   since $\s{} = \x{}$. For part 2, assume $\vv{} \neq \ff$.  Then we
-  must show that $\rho' \models \comp{\fft}$.  
+  must show that $\rho \models \comp{\fft}_{\x{}}$.  Since $\vv{} \neq
+  \ff$, $\vv{}$ must be some other value, which is either $\tt$, a
+  pair, or a closure.  In each case, we know that $\vv{}$ can be given
+  a type $\sig{}$ such that $\nooverlap{\sig{}}{\fft}$, as desired.
+  If $\vv{} = \ff$, then $\rho(\x{}) = \ff$ and part 2 is trivial.
+  For part 3, we have that $\G{} \vdash \t{\x{}}$, and therefore that
+  $\rho \models \t{\x{}}$.  Thus,
+  $\hastyeffphi[]{\vv{}}{\t{}'}{\phii{}}{\s{}'}$ for some $\t{}'$
+  where $\subtype{\t{}'}{\t{}}$.
+\item {\sc T-Not}. Easy application of the induction hypothesis.
+\item {\sc T-If}. Easy application of the induction hypothesis.
+\item {\sc T-Car}. There are two possible cases.  If the argument has
+  object $\noeffect$, then the resulting filter set is $\top|\top$ and
+  the resulting object is $\noeffect$.  The resulting value must be of
+  the correct type by application of the IH and the fact that the
+  final evaluation rule must be {\sc T-Delta}. 
+
+  If the argument has
+  object $\pi(\x{})$, then the resulting object is $\pecar(\pi(\x{}))$
+  and the resulting filter set is $\fft_{\pecar(\pi(\x{}))}|\comp{\fft}_{\pecar(\pi(\x{}))}$.
+\item {\sc T-Cdr}. Similar to {\sc T-Car}.
+\item {\sc T-Let}. ???
+\item {\sc T-App}. ???
+\item {\sc T-Abs}. Like {\sc T-Num}.  Does this mean I need a stronger IH?
 \end{enumerate}
 \qed 
 
