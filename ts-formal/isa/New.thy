@@ -8,7 +8,6 @@ datatype pe = CarPE | CdrPE
 types 
   name = "string"
   path = "pe list"
-  lobj = "path option"
   obj = "(path * name) option"
 
 datatype ty =
@@ -17,17 +16,13 @@ datatype ty =
   True | False |
   PairTy "ty" "ty" | 
   Union "ty list" |
-  Arr "ty" "ty" "(lprp list * lprp list)" "lobj"
+  Arr name "ty" "ty" "(prp * prp)" "obj"
 
-and tprp = TF "ty" "path" | FF "ty" "path"
+and tprp = TF "ty" | FF "ty" 
 
-and lprp = 
-  LBot | LTop | LFP tprp | FP tprp name | LConj lprp lprp ("_ \<and> _")
-  | LImp lprp lprp ("_ \<supset> _") | LDisj lprp lprp ("_ \<or> _")
-
-datatype prp =
-  Bot | Top | FP tprp name | Conj prp prp ("_ \<and> _")
-  | Imp prp prp ("_ \<supset> _")  | Disj prp prp( "_ \<or> _")
+and prp = 
+  Bot | Top | FP tprp path name | Conj prp prp ("_ \<and> _")
+  | Imp prp prp ("_ \<supset> _") | Disj prp prp ("_ \<or> _")
 
 types env = "prp list"
 
@@ -45,18 +40,15 @@ types valenv = "(name ~=> val)"
 
 consts restrict :: "ty \<Rightarrow> ty \<Rightarrow> ty"
 remove :: "ty \<Rightarrow> ty \<Rightarrow> ty"
+del :: "const \<Rightarrow> val \<Rightarrow> val option"
+delt :: "const \<Rightarrow> ty"
 
-fun update :: "ty \<Rightarrow> tprp \<Rightarrow> ty" where
-  "update (PairTy T S) (TF T' (CarPE#ps)) = PairTy (update T (TF T' ps)) S"
-  |"update (PairTy T S) (FF T' (CarPE#ps)) = PairTy (update T (FF T' ps)) S"
-  |"update (PairTy S T) (TF T' (CdrPE#ps)) = PairTy S (update T (TF T' ps))"
-  |"update (PairTy S T) (FF T' (CdrPE#ps)) = PairTy S (update T (FF T' ps))"
-  | "update T (TF S []) = restrict T S"
-  | "update T (FF S []) = remove T S"
+fun update :: "ty \<Rightarrow> tprp \<Rightarrow> path \<Rightarrow> ty" where
+  "update (PairTy T S) tp (CarPE#ps) = PairTy (update T tp ps) S"
+  | "update (PairTy T S) tp (CdrPE#ps) = PairTy T (update S tp ps)"
+  | "update T (TF S) [] = restrict T S"
+  | "update T (FF S) [] = remove T S"
 
-fun del :: "const \<Rightarrow> val \<Rightarrow> val option"
-  where
-  "del x y = None"
 
 abbreviation
   "vClos" :: "valenv \<Rightarrow> name \<Rightarrow> ty \<Rightarrow> expr \<Rightarrow> val" ("[_, Lam [_:_]._]" [100,100,100,100] 100) where
@@ -75,11 +67,25 @@ inductive eval :: "valenv \<Rightarrow> expr \<Rightarrow> val \<Rightarrow> boo
   | b_if_true[intro]: "\<lbrakk>\<rho>\<turnstile>e1 \<Down> v1 ; v1 \<noteq> vBool false ; \<rho>\<turnstile>e2 \<Down> v\<rbrakk> \<Longrightarrow> \<rho>\<turnstile> (Iff e1 e2 e3)  \<Down> v"
   | b_if_false[intro]: "\<lbrakk>\<rho>\<turnstile>e1 \<Down> (vBool false)  ; \<rho>\<turnstile>e3 \<Down> v\<rbrakk> \<Longrightarrow> \<rho>\<turnstile> (Iff e1 e2 e3)  \<Down> v"
 
+inductive proves :: "env \<Rightarrow> prp \<Rightarrow> bool" ("_ \<turnstile> _" 100) where
+  l_atom[intro]: "p : set G \<Longrightarrow> G \<turnstile> p"
+  | l_top[intro]: "\<Gamma> \<turnstile> Top"
+  | l_bot[intro]: "G \<turnstile> Bot \<Longrightarrow> G \<turnstile> p"
+  | l_imp_i[intro]: "(P#G) \<turnstile> P' \<Longrightarrow> G \<turnstile> Imp P P'"
+  | l_imp_e[intro]: "G \<turnstile> Imp P P' \<Longrightarrow> G \<turnstile> P \<Longrightarrow> G \<turnstile> P'"
+  | l_or_e[intro]: "\<lbrakk>G \<turnstile> P \<and> P'; (P#G) \<turnstile> Q ; (P'#G) \<turnstile> Q\<rbrakk> \<Longrightarrow> G \<turnstile> Q"
+  | l_or_i1[intro]: "(G \<turnstile> P) \<or> (G \<turnstile> P') \<Longrightarrow> G \<turnstile> (P \<or> P')"
+  | l_and_i[intro]: "\<lbrakk>G \<turnstile> P' ; G \<turnstile> P\<rbrakk> \<Longrightarrow> G \<turnstile> P \<and> P'"
+  | l_and_e1[intro]: "G \<turnstile> Conj P P' \<Longrightarrow> G \<turnstile> P"
+  | l_and_e2[intro]: "G \<turnstile> Conj P P' \<Longrightarrow> G \<turnstile> P'"
+  | l_update[intro]: "\<lbrakk>G \<turnstile> FP (TF T) (pi@pi') x; G \<turnstile> FP tp pi' x\<rbrakk> 
+  \<Longrightarrow> G \<turnstile> FP (TF (update T tp pi)) pi' x"
+
 inductive subtype :: "ty \<Rightarrow> ty \<Rightarrow> bool" ("\<turnstile> _ <: _" 100) where
   s_refl[intro]: "\<turnstile> T <: T"
   | s_top[intro]: "\<turnstile> T <: A"
   | s_pair[intro]: "\<lbrakk> \<turnstile> T <: S; \<turnstile> T' <: S'\<rbrakk> \<Longrightarrow> \<turnstile> PairTy T T' <: PairTy S S'" 
-  | s_fun[intro]: "\<lbrakk> \<turnstile> T <: S; \<turnstile> T' <: S'\<rbrakk> \<Longrightarrow> \<turnstile> Arr T S' LFS LO <: Arr S T' LFS LO"
+  | s_fun[intro]: "\<lbrakk> \<turnstile> T <: S; \<turnstile> T' <: S' ; (obj = obj') | (obj' = None) ; [F1] \<turnstile> F1' ; [F2] \<turnstile> F2' \<rbrakk> \<Longrightarrow> \<turnstile> Arr x T S' (F1,F2) obj <: Arr x S T' (F1',F2') obj'"
   | s_union_super[intro]: "\<lbrakk>\<turnstile> T <: S; S : set ts\<rbrakk> \<Longrightarrow> \<turnstile> T <: Union ts"
   | s_union_sub[intro]: "\<lbrakk>S : set ts \<Longrightarrow> \<turnstile> S <: T\<rbrakk> \<Longrightarrow> \<turnstile> Union ts <: T"
 
@@ -87,25 +93,33 @@ lemma s_trans: "\<lbrakk>\<turnstile> S <: T; \<turnstile> T <: U\<rbrakk> \<Lon
 
 lemma empty_is_bot: "\<turnstile> Union [] <: T" by auto
 
-inductive proves :: "env \<Rightarrow> prp \<Rightarrow> bool" ("_ \<turnstile> _" 100) where
-  e_atom[intro]: "p : set G \<Longrightarrow> G \<turnstile> p"
-  | e_bot[intro]: "G \<turnstile> Bot \<Longrightarrow> G \<turnstile> p"
-  | e_imp_i[intro]: "(P#G) \<turnstile> P' \<Longrightarrow> G \<turnstile> Imp P P'"
-  | e_imp_e[intro]: "G \<turnstile> Imp P P' \<Longrightarrow> G \<turnstile> P \<Longrightarrow> G \<turnstile> P'"
-  | e_or_e[intro]: "\<lbrakk>G \<turnstile> Disj P P'; (P#G) \<turnstile> Q ; (P'#G) \<turnstile> Q\<rbrakk> \<Longrightarrow> G \<turnstile> Q"
-  | e_or_i1[intro]: "G \<turnstile> P \<Longrightarrow> G \<turnstile> Disj P P'"
-  | e_or_i2[intro]: "G \<turnstile> P' \<Longrightarrow> G \<turnstile> Disj P P'"
-  | e_and_i[intro]: "G \<turnstile> P' \<Longrightarrow> G \<turnstile> P \<Longrightarrow> G \<turnstile> Conj P P'"
-  | e_and_e1[intro]: "G \<turnstile> Conj P P' \<Longrightarrow> G \<turnstile> P"
-  | e_and_e2[intro]: "G \<turnstile> Conj P P' \<Longrightarrow> G \<turnstile> P'"
-  | e_update[intro]: "\<lbrakk>G \<turnstile> FP (TF T pi') x; G \<turnstile> FP (TF T' (pi@pi')) x\<rbrakk> 
-  \<Longrightarrow> G \<turnstile> FP (TF (update T (TF T' pi)) pi') x"
-  | e_updatenot[intro]: "\<lbrakk>G \<turnstile> FP (TF T pi) x; G \<turnstile> FP (FF T' (pi@pi')) x\<rbrakk> 
-  \<Longrightarrow> G \<turnstile> FP (TF (update T (FF T' pi)) pi') x"
+function subs_obj :: "obj \<Rightarrow> obj \<Rightarrow> name \<Rightarrow> obj" ("_[_/_]" 100) where
+  "subs_obj None ob n = None"
+  |"x \<noteq> z \<Longrightarrow> subs_obj (Some (pi,x)) ob z = Some (pi, x)"
+  |"x = z \<Longrightarrow> subs_obj (Some (pi,x)) None z = None"
+  |"x = z \<Longrightarrow> subs_obj (Some (pi,x)) (Some (pi',y)) z = Some ((pi@pi'),y)"
+by (auto, atomize_elim, auto)
 
-fun apo :: "name \<Rightarrow> prp \<Rightarrow> lprp option" where
-"apo x Bot = Some LBot"
-| "apo x (FP F pi x') = (if (x = x') then (Some (LFP F pi)) else None)"
+function subs_prop :: "prp \<Rightarrow> obj \<Rightarrow> name \<Rightarrow> prp" ("_[_/_]" 100) and
+  (*subs_prop_set :: "prp * prp \<Rightarrow> obj \<Rightarrow> name \<Rightarrow> prp * prp" ("_[_/_]" 100) and *)
+  subs_tprop :: "tprp \<Rightarrow> obj \<Rightarrow> name \<Rightarrow> tprp" and
+  subs_ty :: "ty \<Rightarrow> obj \<Rightarrow> name \<Rightarrow> ty" ("_[_/_]" 100) where
+"subs_prop Top ob n = Top"
+  | "subs_prop Bot ob n = Bot"
+  | "subs_prop (Imp p1 p2) ob n = Imp (subs_prop p1 ob n) (subs_prop p2 ob n)"
+  | "subs_prop (Conj p1 p2) ob n = Conj (subs_prop p1 ob n) (subs_prop p2 ob n)"
+  | "subs_prop (Disj p1 p2) ob n = Disj (subs_prop p1 ob n) (subs_prop p2 ob n)"
+  | "subs_prop (FP f pi x) None z = (if x = z then Top else FP (subs_tprop f None z) pi x)"
+  | "subs_prop (FP f pi x) (Some (pi',y)) z = (if x = z then FP (subs_tprop f (Some (pi',y)) z) (pi@pi') y else FP (subs_tprop f (Some (pi',y)) z) pi x)"
 
+  | "subs_tprop (TF t) ob n = TF (subs_ty t ob n)"
+  | "subs_tprop (FF t) ob n = FF (subs_ty t ob n)"
 
-
+  |"subs_ty (Union ts) ob n = Union (map (\<lambda> t. subs_ty t ob n) ts)"
+  | "subs_ty (PairTy t1 t2) ob n = (PairTy (subs_ty t1 ob n) (subs_ty t2 ob n))"
+  | "subs_ty (Arr m t1 t2 (f1,f2) ob') ob n = 
+  (if (m = n) then (Arr m t1 t2 (f1,f2) ob') else
+  (Arr m (subs_ty t1 ob n) (subs_ty t2 ob n) (subs_prop f1 ob n,subs_prop f2 ob n) (subs_obj ob' ob n)))"
+  | "subs_ty t ob n = t"
+  sorry
+termination sorry
