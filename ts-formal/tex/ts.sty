@@ -61,13 +61,13 @@
 \newbfop\letsym{let}
 \newcommand\pecar{{\bf car}}
 \newcommand\pecdr{{\bf cdr}}
-\newcommand\noeffect{\bf \emptyset}
+\newcommand\noeffect{{\bf \emptyset}}
 %\newbfop\usym{\ma{\bigcup}}
 \newcommand\usym{\ma{\bigcup}}
 \newcommand\usymsmall{\ma{\cup}}
 \newcommand\isym{\ma{\bigcap}}
-\newcommand\proctype[4]{\ma{#1 {\xrightarrow[#4]{#3}} #2}}
-\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctype{\botty}{\topty}{\toph|\toph}{\noeffect}}}
+\newcommand\proctype[5][\x{}]{\ma{{#1\kern-0.8mm :\kern-0.8mm #2} {\xrightarrow[#5]{#4}} #3}}
+\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctype{\botty}{\topty}{\top|\top}{\noeffect}}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -80,6 +80,7 @@
 % terms
 \newmeta\x{x}                   % not sure if \x is reserved...
 \newmeta\c{c}
+\newmeta\z{z}
 \newcommand\numberp{\ma{\mathit{number?}}}
 \newcommand\procp{\ma{\mathit{procedure?}}}
 \newcommand\addone{\ma{\mathit{add1}}}
@@ -116,6 +117,7 @@
 \newcommand\hastyeff[6][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4|#5\ ;\ #6}}}
 
 \newcommand\hastyeffphi[5][\Gamma]{\ma{\hastype{#1 \vdash #2}{#3\ ;\ #4\ ;\ #5}}}
+\newcommand\hastyeffphisubs[7][\Gamma]{\ma{\hastype{#1 \vdash #2}{\subs{#3}{#6}{#7}\ ;\ \subs{#4}{#6}{#7}\ ;\ \subs{#5}{#6}{#7}}}}
 
 \newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
 
@@ -136,7 +138,7 @@
 
 \newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{\path{#3}{}}|{\fft}_{\path{#3}{}}}}{#4}}
 \newcommand{\predty}[3][\topty]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noeffect}}
-\newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\toph|\toph}{\noeffect}}
+\newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\top|\top}{\noeffect}}
 
 % reductions
 

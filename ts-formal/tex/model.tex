@@ -83,14 +83,6 @@
     \vspace{1mm}
     \\
 \fi
-    \E{} &::=& [] \alt 
-    \marg
-        {\comb{\overvec{\vv{}}}{\E{}\ {\overvec{\e{}}}}} % general multi-arg contexts
-        {\comb{\E{}}{\e{}} \alt \comb{\vv{}}{\E{}}} % one-arg contexts
-        \ponly{\alt \cons{\E{}}{\e{}} \alt \cons{\vv{}}{\E{}}} \alt
-        \cond{\E{}}{\e{}}{\e{}} 
-        \alt \marg{(\letsym\ (\movervec{[\x{}\ \vv{}]}\ [{\x{}}\ {\E{}}]\ \movervec{[\x{}\ \e{}]})\ {\e{}})}{\lett{\x{}}{\E{}}{\e{}}}
-        & \mbox{Evaluation Contexts} \vspace{1mm} \\
   \end{altgrammar}
   \]
 \hrule
@@ -98,25 +90,19 @@
   \begin{altgrammar}
     \sig{},\t{} &::= & \topty \alt \marg{\proctop \alt}{} \num \alt \ttt \alt \fft 
     \alt \consty{\t{}}{\t{}} \alt
-         {\proctype {\movervec[i]{\t{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}} 
+         {\proctype {\movervec[i]{\t{}}} {\t{}} {\movervec[i]{\p{}|\p{}}} {\s{}}} 
          \alt (\usym\ \overvec{\t{}})     &\mbox{Types} \\
 
-         \nu &::=& \t{\ponly{\pi}} \alt \compt{\ponly{\pi}} & \mbox{Type Propositions}\\
+         \nu &::=& \t{} \alt \compt{} & \mbox{Type Propositions}\\
 
-         \p{} &::=&  \nu_{\x{}}
+         \p{} &::=&  \nu_{\wpi{\x{}}}
          \lonly{\alt \imp{\p{}}{\p{}}} \alt \p{} \vee \p{} \alt \p{}
          \wedge \p{} \alt
          \bot \alt \top & \mbox{Filters} \\
 
-         \ph{} & ::=& \nu \alt \nu_{\x{}}
-         \lonly{\alt \imp{\ph{}}{\ph{}}} \alt \ph{} \vee \ph{} \alt
-         \ph{} \wedge \ph{} 
-         \alt \both \alt \toph & \mbox{Latent Filters} \\
-
 
          \s{} & ::= &   \wpi{\x{}} \alt \noeffect &\mbox{Objects} \\
          
-         \sh{} & ::= & \pathmaybe{\pii} \alt \noeffect  & \mbox{Projections (Latent Objects)} \\
          \ifpath
          \pi & ::= & \overvec{\pe{}} & \mbox{Paths}\\
          
@@ -154,7 +140,7 @@ evaluating \e{} and recieving a true value means that \p+ is true,
 that evaluating \e{} and recieving $\ff$ means that \p- is true, and
 that testing \e{} is the same as testing the object \s{}.
 
-%\newpage
+\newpage
 
 \section{Type Rules}
 
@@ -182,12 +168,11 @@ that testing \e{} is the same as testing the object \s{}.
 \renewcommand{\xi}{\msubi{\x{}}}
 \newcommand{\sai}{\msubi{\s{a}}}
 
+\newcommand{\suboa}[1]{\subs{#1}{\s{a}}{\x{}}}
 
 \[
 \inferrule[T-Abs]
-{\hastyeffphi [\G{},{\movervec[i]{\sig{\x{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}} \\\\
-\movervec[i]{\phih{} = \abstractfilter {\xi} {\phii{}}} \\\\
-\sh{} = \abstractobject{\movervec[i]{\x{}}}{\s{}}
+{\hastyeffphi [\G{},{\movervec[i]{\sig{\x{}}}}] {\e{}} {\t{}} {\phii{}} {\s{}}
 % \left\{
 %  \protect{\begin{array}{ll}
 %   \pathmaybe{\pii}     & \text{if } \s{} = \wpi{\xi} \\
@@ -196,23 +181,17 @@ that testing \e{} is the same as testing the object \s{}.
 }
 {\hastytrue
   {\abs[i]{\x{}}{\sig{}}{\e{}}} 
-  {\proctype {\movervec[i]{\sig{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}}
+  {\proctype {\movervec[i]{\sig{}}} {\t{}} {\movervec[i]{\phii{}}} {\s{}}}
 }
 \qquad\qquad
 \inferrule[T-App]
 { \hastyeffphi {\e{op}} {\t{op}}   {\phii{op}} {\s{op}}\\  
   \movervec[i]{\hastyeffphi {\e{a}} {\t{a}}  {\phii{a}} {\s{a}}}\\\\ 
   \movervec[i]{\subtype {\t{a}}{\t{f}}} \\
-  {\subtype {\t{op}} {\proctype{\movervec[i]{\t{f}}}{\t{r}}{\movervec[i]{\phih{f}}}{\sh{f}}}} \\\\
-\phii{r} = \movervec[i]{\applyfilter{\phih{f}}{\t{a}}{\s{a}}} \\\\
-\s{r} = \applyobject{\movervec[i]{\s{a}}}{\sh{f}}
- % \left\{
- %  \protect{\begin{array}{ll}
- %      \wpip{\wpi{x}}     & \text{if } \sh{} = \pathmaybe{\pipi} \text{ and } {\sai} = \wpi{\x{}} \\
- %      \noeffect  & \text{otherwise}
- %    \end{array}} \right.
+  {\subtype {\t{op}} {\proctype{\movervec[i]{\t{f}}}{\t{r}}{\movervec[i]{\phii{f}}}{\s{f}}}}
 }
-{\hastyeffphi {\comb{\e{op}}{\movervec[i]{\e{a}}}} {\t{r}} {\phii{r}} {\s{r}}}
+{\hastyeffphisubs {\comb{\e{op}}{\movervec[i]{\e{a}}}} {{\t{r}}}
+  {{\phii{f}}} {{\s{f}}} {\s{a}} {x}}
 \]
 
 \[
@@ -235,7 +214,8 @@ that testing \e{} is the same as testing the object \s{}.
 \inferrule[T-Let]
 {\movervec{\hastyeff{\e0}{\t{}}{\p{0_+}}{\p{0_-}}{\s0}}\\\\
 \hastyeffphi[\G{}, \movervec{\t{\x{}}}, \movervec{\imp{\comp{\fft}_{\x{}}}{\p{0_+}}, \imp{{\fft}_{\x{}}}{\p{0_-}}}]{\e1}{\sig{}}{\phii1}{\s1}}
-{\hastyeffphi{\lett{\x{}}{\e0}{\e1}}{\sig{}}{\phii1}{\s1}}
+{\hastyeffphisubs{\lett{\x{}}{\e0}{\e1}} {\sig{}} {\phii{1}} {\s{1}}
+  {\noeffect} {\x{}}}
 \]
 
 \ifpath
@@ -256,8 +236,8 @@ that testing \e{} is the same as testing the object \s{}.
 \inferrule[T-Car]
   {
     \hastyeffphi{\e{}} {\consty{\t1}{\t2}} {\phii{}} {\s{}} \\\\
-    \phii{r} = \applyfilter{\comp{\fft}_{\pecar}|{\fft}_{\pecar}}{\consty{\t1}{\t2}} {\s{}} \\\\
-    \s{r} = \applyobject{\pecar}{\s{}}
+    \phii{r} = \subs{\comp{\fft}_{\pecar(\x{})}|{\fft}_{\pecar(\x{})}}{\s{}}{\x{}} \\\\
+    \s{r} = \subs{\pecar_{\x{}}}{\s{}}{\x{}}
   }
   {
     \hastyeffphi{\comb{\car}{\e{}}}{\t1}{\phii{r}}{\s{r}}
@@ -266,8 +246,8 @@ that testing \e{} is the same as testing the object \s{}.
   \inferrule[T-Cdr]
   {
     \hastyeffphi{\e{}} {\consty{\t1}{\t2}} {\phii{}} {\s{}} \\\\
-    \phii{r} = \applyfilter{\comp{\fft}_{\pecdr}|{\fft}_{\pecdr}}{\consty{\t1}{\t2}} {\s{}} \\\\
-    \s{r} = \applyobject{\pecdr}{\s{}}
+    \phii{r} = \subs{\comp{\fft}_{\pecdr(\x{})}|{\fft}_{\pecdr(\x{})}}{\s{}}{\x{}} \\\\
+    \s{r} = \subs{\pecdr_{\x{}}}{\s{}}{\x{}}
   }
   {
     \hastyeffphi{\comb{\cdr}{\e{}}}{\t2}{\phii{r}}{\s{r}} 
@@ -302,7 +282,7 @@ that testing \e{} is the same as testing the object \s{}.
 code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\sc T-IfFalse}.
 
-
+\newpage
 \section{Environment Rules}
 
 \newcommand{\update}[3][\Gamma(\x{})]{\mathrm{update}({#1},{#3}{\ponly{,#2}})}
@@ -325,11 +305,11 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
   , \p1 \wedge \p2 \vdash \p{}}
 \]
 \[
-\inferrule[L-ImpI]{\Gamma,\p{} \vdash \p{}'}{\Gamma \vdash \imp{\p{}}{\p{}'}}
+\inferrule[L-ImpI]{\Gamma,\p1 \vdash \p2}{\Gamma \vdash \imp{\p1}{\p2}}
 \qquad\qquad
 \inferrule[L-ImpE]
-{{\Gamma \vdash \p{}} \\\\ \Gamma \vdash \imp{\p{}}{\p{}'}}
-{{\Gamma \vdash \p{}'}}
+{{\Gamma \vdash \p1} \\\\ \Gamma \vdash \imp{\p1}{\p2}}
+{{\Gamma \vdash \p2}}
 \qquad\qquad
 \inferrule[L-OrI]{\Gamma \vdash \p1 \text{ or }\Gamma \vdash \p2}{\Gamma \vdash \p1 \vee \p2}
 \qquad\qquad
@@ -354,7 +334,7 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \ifmarg
 \qquad\qquad
 \inferrule[S-ProcTop]
-{ }{\subtype {\proctype {\movervec[i]{\sig{}}} {\t{}} {\movervec[i]{\phih{}}} {\sh{}}} {\proctop}}
+{ }{\subtype {\proctype {\movervec[i]{\sig{}}} {\t{}} {\movervec[i]{\phii{}}} {\s{}}} {\proctop}}
 \else
 \fi
 \qquad\qquad
@@ -378,12 +358,13 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {
   \movervec[i]{\subtype{\sig{a}}{\t{a}}} \\ 
   \subtype{\t{r}}{\sig{r}} \\\\ 
-  \sh{} = \sh{}' \text{ or } \sh{}' = \noeffect
+  \p+ \vdash \p+' \\ \p- \vdash \p-' \\\\
+  \s{} = \s{}' \text{ or } \s{}' = \noeffect 
 }
 {
   \subtype
-  {\proctype{\movervec[i]{\t{a}}}{\t{r}}{\movervec[i]{\phih{}}}{\sh{}}}
-  {\proctype{\movervec[i]{\sig{a}}}{\sig{r}}{\movervec[i]{\phih{}}}{\sh{}'}}
+  {\proctype{\movervec[i]{\t{a}}}{\t{r}}{\movervec[i]{\p+|\p-}}{\s{}}}
+  {\proctype{\movervec[i]{\sig{a}}}{\sig{r}}{\movervec[i]{\p+'|\p-'}}{\s{}'}}
 }
 \]
 
@@ -426,65 +407,32 @@ This can be fixed with a subtyping algorithm presented in a paper by Voillion.
 
 \section{Metafunctions}
 
-\newcommand{\af}[3]{\abstractfilter{#1}{#2} & {#3}}
-\newcommand{\apf}[4]{\applyfilter{#1}{#2}{#3} & {#4}}
+\subsection{Substitution}
 
-\subsection{Abstract}
-
-$$
-  \begin{array}{l@{\ =\ }l@{\qquad}l}
-    \af{\x{}}{\p{+}|\p{-}}{{\abstractone[\x{}]{\p{+}}}|{\abstractone[\x{}]{\p{-}}}} &  \vspace{2mm}\\
-
-    \abstractone{\nu_{\x{}}}& \nu & \\
-    \abstractone{\nu_{\y{}}}& \nu_{\y{}} &  \text{ where } \x{}
-    \neq \y{} \\
-    \abstractone{\bot}& {\both} & \\
-    \abstractone{\top}& {\toph} & \\
-    \abstractone{\imp{\p1}{\p2}} & \imp{\abstractone{\p1}}{\abstractone{\p2}}& \\
-    \abstractone{{\p1}\vee{\p2}} & {\abstractone{\p1}}\vee{\abstractone{\p2}}& \\
-    \abstractone{{\p1}\wedge{\p2}} & {\abstractone{\p1}}\wedge{\abstractone{\p2}}& \vspace{2mm}\\
-%    \text{ where }
-%    \ph{} = \left\{
-%      \protect{\begin{array}{ll}
-%          \both             & \text{if } \bot \in \p{i} \\
-%          \bullet        & \text{otherwise}
-%        \end{array}} \right.
-    \abstractobject{\movervec[i]{\x{}}}{\wpi{\xi}} & \pathmaybe{\pii} &
-    \\
-    \abstractobject{\movervec[i]{\x{}}}{\s{}} & \noeffect & \text{ otherwise}\\
-   \end{array}
-$$
-%
-\subsection{Apply}
+\newcommand{\sxo}[1]{\subs{#1}{\s{}}{\x{}}}
 
 $$
   \begin{array}{l@{\ =\ }l@{\qquad}l}
-    \apf{\ph{+}|\ph{-}}{\t{}}{\s{}}{{\applyone{\ph+}{\s{}}}|{\applyone{\ph-}{\s{}}}} &
-%    {\overvec[i]{\p{+_+}},\overvec[j]{\p{-_-}}|
-%     \overvec[i]{\p{-_+}},\overvec[j]{\p{+_-}}} & 
-%   \text{ where } \overvec[i]{\p{+_+},{\p{+_-}}}  = \overvec[i]{\applyone{\ph+}{\t{}}{\s{}}} \\
-%   & & & \text{ and } \overvec[j]{\p{-_+},{\p{-_-}}}  = \overvec[j]{\applyone{\ph-}{\t{}}{\s{}}} \\
-\vspace{2mm}\\
+  \sxo{\p+|\p-} & \sxo{\p+}|\sxo{\p-} & \vspace{2mm}\\
 
 
+  \subs{\nu_{\wpi{\x{}}}}{\wpip{\y{}}}{\x{}} & \nu_{\wpi{\wpip{\y{}}}} & \\
+  \subs{\nu_{\wpi{\x{}}}}{\noeffect}{\x{}} & \top & \\
+  \subs{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & {\nu_{\wpi{\x{}}}} & \x{} \neq \z{}\\
+  \sxo{\top} & \top & \\
+  \sxo{\bot} & \bot & \\
+  \sxo{(\imp{\p1}{\p2})} & \imp{\sxo{\p1}}{\sxo{\p2}}& \\
+  \sxo{({\p1}\vee{\p2})} & {\sxo{\p1}}\vee{\sxo{\p2}}& \\
+  \sxo{({\p1}\wedge{\p2})} & {\sxo{\p1}}\wedge{\sxo{\p2}}&
+  \vspace{2mm}\\
 
-    \applyone{\both}{\s{}} & \bot & \\
-    \applyone{\nu} {\wpi{\x{}}} & \nu_{\wpi{\x{}}} & \\
-    \applyone{\nu_{\x{}}} {\s{}} & \nu_{\x{}} & \\
-    \applyone{\imp{\ph1}{\ph2}}{\s{}} & \imp{\applyone{\ph1}{\s{}}}{\applyone{\ph2}{\s{}}}& \\
-    \applyone{{\ph1}\vee{\ph2}}{\s{}} & {\applyone{\ph1}{\s{}}}\vee{\applyone{\ph2}{\s{}}}& \\
-    \applyone{{\ph1}\wedge{\ph2}}{\s{}} &
-    {\applyone{\ph1}{\s{}}}\wedge{\applyone{\ph2}{\s{}}}&\\
-
-    \applyone{\ph{}}{\s{}} & \top &  \text{ otherwise}\vspace{2mm}\\
-
-
-    \applyobject{\movervec[i]{\s{a}}}{\pathmaybe{\pipi}}  &      \wpip{\wpi{x}}
-    & \text{ if } {\sai} = \wpi{\x{}} \\
-    \applyobject{\movervec[i]{\s{a}}}{\sh{}}  &  \noeffect  & \text{ otherwise} \\
-
-   \end{array}
+  \subs{\wpi{\x{}}}{\wpip{\y{}}}{\x{}} & \wpi{\wpip{\y{}}}& \\
+  \subs{\wpi{\x{}}}{\noeffect}{\x{}} & \noeffect & \\
+  \subs{\wpi{\x{}}}{\s{}}{\z{}} & \wpi{{\x{}}}& \x{} \neq \z{}\\
+  \sxo{\noeffect} & \noeffect \\
+  \end{array}
 $$
+
 
 \subsection{Constant Typing}
 
@@ -503,59 +451,24 @@ $$
 \]
 
 
-% \subsection{Combine}
-
-% There are many possibilities for $\combfilter{-}{-}{-}$.  One is the
-% very conservative
-
-% $$%
-% \begin{array}{l@{\ =\ }l@{\qquad}l}
-% \combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & 
-% \end{array}
-% $$
-
-% \noindent
-% A more sophisticated version is:
-
-
-% \newcommand{\ts}{\uniontwo{\t{}}{\s{}}}
-
-% $$
-% \begin{array}{l@{\ =\ }l@{\qquad}l}
-% \combfilter{\phii{}}{\bullet|\bot}{\bot|\bullet} & \phii{}
-% & \text{  the student expansion}\\
-
-% \combfilter{\bullet|\bot}{\phii2}{\phii3} & \phii2 & \\
-
-% \combfilter{\bot|\bullet}{\phii2}{\phii3} & \phii3 & \vspace{3mm}\\
-
-% \multicolumn{2}{l}{\combfilter 
-% {\t{\wpi{\x{}}}::\p{1_+}|\comp{\t{}}_{\wpi{\x{}}}::\p{1_-}}
-% {\bullet|\bot}
-% {{\sig{\wpi{\x{}}}::\p{3_+}|\comp{\sig{}}_{\wpi{\x{}}}::\p{3_-}}} 
-% }
-%   & \text{ or with predicates} \\
-% & \ts_{\wpi{\x{}}}::\p+|{\comp{\ts}}_{\wpi{\x{}}}::\p- & \\
-% \multicolumn{3}{c}{\text{where } \p+|\p- = \combfilter{\p1_+|\p1_-}{\bullet|\bot}{\p3_+|\p3_-}} \vspace{3mm}\\
-
-% \combfilter{\p{1_+}|\p{1_-}} {\bullet|\bot} {\p{3_+}|\p{3_-}} & {\bullet|\p{1_-},\p{3_-}}& \text{ or} \vspace{3mm}\\
-
-% \combfilter{\p{1_+}|\p{1_-}} {\p{2_+}|\p{2_-}} {\bot|\bullet} & \p{1_+},\p{2_+}|\imp{\p{1_+}}{\p{2_-}},\imp{\p{2_+}}{\p{1_-}} & \text{ and} \vspace{3mm}\\
-
-% \combfilter{\phii{}}{\phii{}'}{\phii{}'} & \phii{}' & \\
-
-% \combfilter{\phii1}{\phii2}{\phii3} & \bullet|\bullet & \text{ otherwise}
-% \end{array}
-% $$
-
-% Rules 2 and 3 might only be needed in the proof.
-
-
 \newpage
 
 \section{Operational Semantics}
 
 \subsection{Small Step Semantics}
+
+\[
+\begin{altgrammar}
+    \E{} &::=& [] \alt 
+    \marg
+        {\comb{\overvec{\vv{}}}{\E{}\ {\overvec{\e{}}}}} % general multi-arg contexts
+        {\comb{\E{}}{\e{}} \alt \comb{\vv{}}{\E{}}} % one-arg contexts
+        \ponly{\alt \cons{\E{}}{\e{}} \alt \cons{\vv{}}{\E{}}} \alt
+        \cond{\E{}}{\e{}}{\e{}} 
+        \alt \marg{(\letsym\ (\movervec{[\x{}\ \vv{}]}\ [{\x{}}\ {\E{}}]\ \movervec{[\x{}\ \e{}]})\ {\e{}})}{\lett{\x{}}{\E{}}{\e{}}}
+        &  \vspace{1mm} \\
+\end{altgrammar}
+\]
 
 \[
 \inferrule*[lab={E-Delta}]
@@ -602,7 +515,8 @@ $$
   {\e{b}}{\rho''}{\vv{}}
 }
 {\evaltwo{{\rho}}{{\lett{\x{}}{\e{a}}{\e{b}}}}{\rpp}{\vv{}}}
-\qquad\qquad
+\]
+\[
 \inferrule[B-Beta]
 {
   \evalprime{\e{f}}{\clos{\rho_c}{\abs[i]{\x{}}{\t{}}{\e{b}}}}
@@ -612,21 +526,21 @@ $$
   \evaltwo {\rho_c[\movervec{\x{} \mapsto \vv{a}}]} {\e{b}} {\rho'''} {\vv{}}
 }
 {\evaltwo{\rho}{\comb{\e{f}}{\movervec[i]{\e{a}}}}{\rho'''}{\vv{}}}
-\]
-\[
+\qquad\qquad
 \inferrule[B-Val]{}{\eval{\vv{}}{\vv{}}}
-\qquad
+\qquad\qquad
 \inferrule[B-Abs]{}{\eval{\abs{\x{}}{\t{}}{\e{}}}{\clos{\rho}{\abs{\x{}}{\t{}}{\e{}}}}}
 \ifpath
-\qquad
+\qquad\qquad
 \inferrule[B-Cons]{\evalprime{\e1}{\vv1} \\\\ \evalprime{\e2}{\vv2}}
 {\evalpp{\cons{\e1}{\e2}}{\cons{\vv1}{\vv2}}}
 \fi
-\qquad
+\]
+\[
 \inferrule[B-IfTrue]{\evalprime{\e1}{\vv1} \\\\ \vv1 \neq \ff\\\\
   \evalprime{\e2}{\vv{}}}
 {\evalpp{\cond{\e1}{\e2}{\e3}}{\vv{}}}
-\qquad
+\qquad\qquad
 \inferrule[B-IfFalse]{\evalprime{\e1}{\ff} \\\\
   \evalprime{\e3}{\vv{}}}
 {\evalpp{\cond{\e1}{\e2}{\e3}}{\vv{}}}
@@ -673,15 +587,11 @@ $$
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
 \ifpath
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\nu} & \consty{\update[\t{}]{\pi}{\nu}}{\sig{}}  & \\
-%  \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\comp{\ups{}}} & \consty{\update[\t{}]{\pi}{\comp{\ups{}}}}{\sig{}}  & \\
-
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\nu} & \consty{\t{}}{\update[\sig{}]{\pi}{\nu}}  & \\
-%  \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\comp{\ups{}}} & \consty{\t{}}{\update[\sig{}]{\pi}{\comp{\ups{}}}}  & \\
 \fi
-  \update[\t{}]{\bullet}{\ups{}} & \restrict{\t{}}{\ups{}}& \\
+  \update[\t{}]{\bullet}{\sig{}} & \restrict{\t{}}{\sig{}}& \\
 
-  \update[\t{}]{\bullet}{\comp{\ups{}}} & \remove{\t{}}{\ups{}}& \vspace{5mm}\\
-%  \updatesimp{\t{}}{\both} & {\bot} & \\
+  \update[\t{}]{\bullet}{\comp{\sig{}}} & \remove{\t{}}{\sig{}}& \vspace{5mm}\\
   \restrict{\t{}}{\sig{}} & \botty & \text{ if } {\nooverlap{\t{}}{\sig{}}} \\
   \restrict{(\usymsmall\ \overvec{\t{}})}{\sig{}} & (\usymsmall\ \overvec{\restrict{\t{}}{\sig{}}})& \\
   \restrict{\t{}}{\sig{}} & \t{} & \text{ if } {\subtype{\t{}}{\sig{}}} \\
@@ -697,12 +607,12 @@ $$
   \nooverlap{\num}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
   \nooverlap{\bool}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
 \fi
-  \nooverlap{\num}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phih{}}}{\sh{}}} & \mathrm{true} & \\
-  \nooverlap{\bool}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phih{}}}{\sh{}}} & \mathrm{true} & \\
+  \nooverlap{\num}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phii{}}}{\s{}}} & \mathrm{true} & \\
+  \nooverlap{\bool}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phii{}}}{\s{}}} & \mathrm{true} & \\
 \ifpath
   \nooverlap
   {\consty{\t{}}{\sig{}}}
-  {\proctype{\movervec[i]{\ups{a}}}{\ups{r}}{\movervec[i]{\phih{}}}{\sh{}}} & 
+  {\proctype{\movervec[i]{\ups{a}}}{\ups{r}}{\movervec[i]{\phii{}}}{\s{}}} & 
   \mathrm{true} & \\
 \fi
   \nooverlap{(\usymsmall\ \overvec{\t{}})}{\sig{}} & \bigwedge
