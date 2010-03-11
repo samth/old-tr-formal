@@ -876,9 +876,31 @@ $
 \subsection{Lemmas}
 
 \begin{lemma}[Soundness of Derivations]
-If $\rho \models \G{}$ and $\G{} \vdash P$ then $\rho \models P$.
+If $\rho \models \G{}$ and $\G{} \vdash \p{}$ then $\rho \models \p{}$.
 \label{lem:mod-concl}
 \end{lemma}
+
+\noindent
+{\bf Proof Sketch:}  By induction on $\G{} \vdash \p{}$.
+
+\begin{lemma}[Removing variables maintains provability]
+If $\rho[\x{}\mapsto\vv{}] \models \p{}$ then $\rho \models
+\subs{\p{}}{\noeffect}{\x{}}$.
+\label{lem:env-remove-prove}
+\end{lemma}
+
+\noindent
+{\bf Proof Sketch:}  By induction on $\rho[\x{}\mapsto\vv{}] \models \p{}$ .
+
+
+\begin{lemma}[Removing variables produces subtype]
+$\subtype{\t{}}{\subs{\t{}}{\noeffect}{\x{}}}$.
+\label{lem:remove-subtype}
+\end{lemma}
+
+\noindent
+{\bf Proof Sketch:}  By induction on $\t{}$ .
+
 
 \begin{lemma}[Soundness]
 If $\hastyeff{\e{}}{\t{}}{\p{+}}{\p{-}}{\s{}}$ and $\rho \models
@@ -945,11 +967,31 @@ Cases:
 
   If the argument has
   object $\pi(\x{})$, then the resulting object is $\pecar(\pi(\x{}))$
-  and the resulting filter set is $\fft_{\pecar(\pi(\x{}))}|\comp{\fft}_{\pecar(\pi(\x{}))}$.
+  and the resulting filter set is
+  $\fft_{\pecar(\pi(\x{}))}|\comp{\fft}_{\pecar(\pi(\x{}))}$.  All
+  three parts are trivial from the induction hypothesis and the
+  premises of {\sc B-Delta} and {\sc T-Car}.
 \item {\sc T-Cdr}. Similar to {\sc T-Car}.
-\item {\sc T-Let}. ???
-\item {\sc T-App}. ???
-\item {\sc T-Abs}. Like {\sc T-Num}.  Does this mean I need a stronger IH?
+\item {\sc T-Let}. 
+  \begin{enumerate}
+  \item Part 1. There are two cases.  If $\s1 = \wpi{\x{}}$, then
+    $\s{} = \noeffect$, concluding this part.  Otherwise, let $\rho'$
+    be the extended environment.  Then we have $\rho'(\s{}) = \vv{}$.
+    But $\rho$ and $\rho'$ agree on $\s{}$, since $\rho' =
+    \rho[\x{}\mapsto\vv{}']$ for some $\vv{}'$ and $\s1 \neq
+    \wpi{\x{}}$.  
+    This concludes the
+    case.  
+    \item Part 2. By application of lemma~\ref{lem:env-remove-prove}
+      and cases on \vv{}.
+    \item Part 3.  Trivial from the premises and the fact that the
+      type of \vv{} cannot mention \x{}, so $\t{}'$.
+  \end{enumerate}
+\item {\sc T-App}. There are two cases, since the only values of
+  function type are closures and constants.  If the operand is a
+  constant, then we proceed by cases on the constant.  If the operand
+  is a closure, then ???
+\item {\sc T-Abs}. Like {\sc T-Num}. % Does this mean I need a stronger IH?
 \end{enumerate}
 \qed 
 
