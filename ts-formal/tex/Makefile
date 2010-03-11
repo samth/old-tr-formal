@@ -1,4 +1,4 @@
-all: model.pdf model-multi.pdf model-simple.pdf
+all: model.pdf  #model-multi.pdf
 
 MF=\def\multiargs{false}
 MT=\def\multiargs{true}

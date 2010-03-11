@@ -120,8 +120,7 @@ abbreviate $\epsilon(\x{})$ as $\x{}$.
 
 \ifmarg
 The type $\proctop$ represents the supertype of all procedures, so
-$\subtype{\proctype {\movervec[i]{\t{}}}{\sig}{\movervec[i]{\phih{}}}
-  {\sh{}}}{\proctop}$ for any $\movervec[i]{\t{}}$, \sig{},
+$\subtype{\proctype{\movervec[i]{\t{}}}{\sig}{\movervec[i]{\phih{}}}{\sh{}}}{\proctop}$ for any $\movervec[i]{\t{}}$, \sig{},
 ${\movervec[i]{\phih{}}}$  and $\sh{}$.  Note that this type is not
 otherwise representable.
 \else
@@ -138,7 +137,9 @@ otherwise representable.
 This means that in environment $\Gamma$, \e{} has the type \t{}, that
 evaluating \e{} and recieving a true value means that \p+ is true,
 that evaluating \e{} and recieving $\ff$ means that \p- is true, and
-that testing \e{} is the same as testing the object \s{}.
+that testing \e{} is the same as testing the object \s{}.  In function
+types, we omit the variable when it is unreferenced, the object when
+it is $\noeffect$, and the filter set when it is $\top|\top$.
 
 \newpage
 
@@ -294,9 +295,12 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\p{} \in \Gamma}
 {\Gamma \vdash \p{}}
 \qquad \qquad
+\inferrule[L-Top]{}
+{\Gamma \vdash \top}
+\qquad \qquad
 \inferrule[L-Bot]
 {\Gamma \vdash \bot}
-{\Gamma \vdash \t{\wpi{\x{}}}}
+{\Gamma \vdash \p{}}
 \qquad\qquad
 \inferrule[L-AndI]{\Gamma \vdash \p1\\\\\Gamma \vdash \p2}{\Gamma
   \vdash \p1 \wedge \p2}
@@ -416,9 +420,9 @@ $$
   \sxo{\p+|\p-} & \sxo{\p+}|\sxo{\p-} & \vspace{2mm}\\
 
 
-  \subs{\nu_{\wpi{\x{}}}}{\wpip{\y{}}}{\x{}} & \nu_{\wpi{\wpip{\y{}}}} & \\
+  \subs{\nu_{\wpi{\x{}}}}{\wpip{\y{}}}{\x{}} & {\subs{\nu}{\wpip{\y{}}}{\x{}}}_{\wpi{\wpip{\y{}}}} & \\
   \subs{\nu_{\wpi{\x{}}}}{\noeffect}{\x{}} & \top & \\
-  \subs{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & {\nu_{\wpi{\x{}}}} & \x{} \neq \z{}\\
+  \subs{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & {{\subs{\nu}{\s{}}{\z{}}}_{\wpi{\x{}}}} & \x{} \neq \z{}\\
   \sxo{\top} & \top & \\
   \sxo{\bot} & \bot & \\
   \sxo{(\imp{\p1}{\p2})} & \imp{\sxo{\p1}}{\sxo{\p2}}& \\
@@ -438,11 +442,11 @@ $$
 
 \[
 \begin{array}{@{}l@{\ =\ }l@{\qquad}l}
-  \dt{\numberp} & {\predty{\relax}{\num}} & \\
-  \dt{\procp} & {\predty{\relax}{\proctop}} & \\
-  \dt{\boolp} & {\predty{\relax}{\bool}} & \\
+  \dt{\numberp} & {\predty{\x{}}{\num}} & \\
+  \dt{\procp} & {\predty{\x{}}{\proctop}} & \\
+  \dt{\boolp} & {\predty{\x{}}{\bool}} & \\
 \ifpath
-  \dt{\consp} & {\predty{\relax}{\consty{\topty}{\topty}}} & \\
+  \dt{\consp} & {\predty{\x{}}{\consty{\topty}{\topty}}} & \\
 \fi
   \dt{\addone} & {\simpleproc{\num}{\num}} & \\
   \dt{\notsym} & {\simpleproc{\topty}{\bool}} & \\
@@ -592,7 +596,8 @@ $$
   \update[\t{}]{\bullet}{\sig{}} & \restrict{\t{}}{\sig{}}& \\
 
   \update[\t{}]{\bullet}{\comp{\sig{}}} & \remove{\t{}}{\sig{}}& \vspace{5mm}\\
-  \restrict{\t{}}{\sig{}} & \botty & \text{ if } {\nooverlap{\t{}}{\sig{}}} \\
+  \restrict{\t{}}{\sig{}} & \botty & \text{ if } {\not\exists
+  \vv{}. \hastyeffphi[]{\vv{}}{\t{}}{\p1}{\s1}\text{ and }\hastyeffphi[]{\vv{}}{\sig{}}{\p2}{\s2}} \\
   \restrict{(\usymsmall\ \overvec{\t{}})}{\sig{}} & (\usymsmall\ \overvec{\restrict{\t{}}{\sig{}}})& \\
   \restrict{\t{}}{\sig{}} & \t{} & \text{ if } {\subtype{\t{}}{\sig{}}} \\
   \restrict{\t{}}{\sig{}} & \sig{} & \text{ otherwise} \vspace{5mm}\\
@@ -602,23 +607,6 @@ $$
   \remove{(\usymsmall\ \overvec{\t{}})}{\sig{}} & (\usymsmall\ \overvec{\remove{\t{}}{\sig{}}})& \\
   \remove{\t{}}{\sig{}} & \t{} & \text{ otherwise} \vspace{5mm}\\
 
-  \nooverlap{\num}{\bool} & \mathrm{true} & \\
-\ifpath
-  \nooverlap{\num}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
-  \nooverlap{\bool}{\consty{\t{}}{\sig{}}} & \mathrm{true} & \\
-\fi
-  \nooverlap{\num}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phii{}}}{\s{}}} & \mathrm{true} & \\
-  \nooverlap{\bool}{\proctype{\movervec[i]{\t{}}}{\sig{}}{\movervec[i]{\phii{}}}{\s{}}} & \mathrm{true} & \\
-\ifpath
-  \nooverlap
-  {\consty{\t{}}{\sig{}}}
-  {\proctype{\movervec[i]{\ups{a}}}{\ups{r}}{\movervec[i]{\phii{}}}{\s{}}} & 
-  \mathrm{true} & \\
-\fi
-  \nooverlap{(\usymsmall\ \overvec{\t{}})}{\sig{}} & \bigwedge
-  \overvec{\nooverlap{\t{}}{\sig{}}} & \\
-  \nooverlap{\t{}}{\sig{}} & \mathrm{true} & \text{ if } \nooverlap{\sig{}}{\t{}}\\
-  \nooverlap{\t{}}{\sig{}} & \mathrm{false} & \text{ otherwise}\\
 \end{array}
 $$
 

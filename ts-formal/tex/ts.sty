@@ -66,8 +66,13 @@
 \newcommand\usym{\ma{\bigcup}}
 \newcommand\usymsmall{\ma{\cup}}
 \newcommand\isym{\ma{\bigcap}}
-\newcommand\proctype[5][\x{}]{\ma{{#1\kern-0.8mm :\kern-0.8mm #2} {\xrightarrow[#5]{#4}} #3}}
-\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctype{\botty}{\topty}{\top|\top}{\noeffect}}}
+\newcommand\proctype[5][\x{}]{
+  \ma{{#1\kern-0.8mm :\kern-0.8mm #2} 
+    {\xrightarrow[{\ifthenelse{\equal{#5}{\noeffect}}{\relax}{{#5}}}]
+      {#4}}
+    #3}}
+\newcommand\proctypesimple[4]{\ma{{#1 \xrightarrow[{\ifthenelse{\equal{#4}{\noeffect}}{\relax}{{#4}}}]{#3}} #2}}
+\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctypesimple{\botty}{\topty}{\relax}{\noeffect}}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -138,7 +143,7 @@
 
 \newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{\path{#3}{}}|{\fft}_{\path{#3}{}}}}{#4}}
 \newcommand{\predty}[3][\topty]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noeffect}}
-\newcommand{\simpleproc}[2]{\proctype{#1}{#2}{\top|\top}{\noeffect}}
+\newcommand{\simpleproc}[2]{\proctypesimple{#1}{#2}{\relax}{\noeffect}}
 
 % reductions
 
