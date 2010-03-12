@@ -61,18 +61,18 @@
 \newbfop\letsym{let}
 \newcommand\pecar{{\bf car}}
 \newcommand\pecdr{{\bf cdr}}
-\newcommand\noeffect{{\bf \emptyset}}
+\newcommand\noobj{{\bf \emptyset}}
 %\newbfop\usym{\ma{\bigcup}}
 \newcommand\usym{\ma{\bigcup}}
 \newcommand\usymsmall{\ma{\cup}}
 \newcommand\isym{\ma{\bigcap}}
 \newcommand\proctype[5][\x{}]{
   \ma{{#1\kern-0.8mm :\kern-0.8mm #2} 
-    {\xrightarrow[{\ifthenelse{\equal{#5}{\noeffect}}{\relax}{{#5}}}]
+    {\xrightarrow[{\ifthenelse{\equal{#5}{\noobj}}{\relax}{{#5}}}]
       {#4}}
     #3}}
-\newcommand\proctypesimple[4]{\ma{{#1 \xrightarrow[{\ifthenelse{\equal{#4}{\noeffect}}{\relax}{{#4}}}]{#3}} #2}}
-\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctypesimple{\botty}{\topty}{\relax}{\noeffect}}}
+\newcommand\proctypesimple[4]{\ma{{#1 \xrightarrow[{\ifthenelse{\equal{#4}{\noobj}}{\relax}{{#4}}}]{#3}} #2}}
+\newcommand\proctop{\marg{\stackrel{\topty}{\rightarrow}}{\proctypesimple{\botty}{\topty}{\relax}{\noobj}}}
 %\newcommand\uty
 % \proctype is a little overkill.
 %% Reynolds' package can also abstract things like (\s1 \to \s2 \to \s3).
@@ -127,14 +127,14 @@
 \newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
 
 
-\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\top} {\noeffect}}
-\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\bot} {\noeffect}}
-\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\top} {\noeffect}}
+\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\top} {\noobj}}
+\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\bot} {\noobj}}
+\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\top} {\noobj}}
 
-\newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noeffect}}
+\newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noobj}}
 
 \newcommand\ghastyeff[3]{\ma{\hastyeff{\Gamma}{#1}{#2}{#3}}}
-\newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noeffect}}}
+\newcommand\ghasty[2]{\ma{\ghastyeff{#1}{#2}{\noobj}}}
 
 
 \newcommand\subtype[2]{\ma{\vdash #1 \subtypesym #2}}
@@ -142,8 +142,8 @@
 \newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{?} #2}}
 
 \newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{\path{#3}{}}|{\fft}_{\path{#3}{}}}}{#4}}
-\newcommand{\predty}[3][\topty]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noeffect}}
-\newcommand{\simpleproc}[2]{\proctypesimple{#1}{#2}{\relax}{\noeffect}}
+\newcommand{\predty}[3][\topty]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noobj}}
+\newcommand{\simpleproc}[2]{\proctypesimple{#1}{#2}{\relax}{\noobj}}
 
 % reductions
 
@@ -240,6 +240,7 @@
 \newmeta\pp{\psi'}
 \newometa\oph{\latentmvar{\psi}}
 
+\newcommand{\fv}[1]{\ma{\mathrm{fv}(#1)}}
 \newcommand{\abstractfilter}[2]{\ma{\mathrm{abstractfilter}({#1}, {#2})}}
 \newcommand{\abstractobject}[2]{\ma{\mathrm{abstractobject}({#1}, {#2})}}
 \newcommand{\nooverlap}[2]{\ma{\mbox{no-overlap}({#1}, {#2})}}
