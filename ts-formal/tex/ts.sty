@@ -140,6 +140,7 @@
 \newcommand\subtype[2]{\ma{\vdash #1 \subtypesym #2}}
 \newcommand\notsubtype[2]{\ma{\vdash #1 \not\subtypesym #2}}
 \newcommand\subeff[2]{\ma{\vdash #1 \subtypesym_{?} #2}}
+\newcommand\subobj[2]{\ma{\vdash #1 \subtypesym #2}}
 
 \newcommand{\latentvarty}[4]{\proctype{#1}{#2}{{\comp{\fft}_{\path{#3}{}}|{\fft}_{\path{#3}{}}}}{#4}}
 \newcommand{\predty}[3][\topty]{\proctype{#1}{\bool}{{#3}_{\path{#2}{}}|{\comp{#3}}_{\path{#2}{}}}{\noobj}}
@@ -148,6 +149,8 @@
 % reductions
 
 \newcommand\subs[3]{\ma{#1[#2/#3}]}
+\newcommand\subsplus[3]{\ma{#1[#2/#3}]_{+}}
+\newcommand\subsminus[3]{\ma{#1[#2/#3}]_{-}}
 \newcommand\subsmulti[4]{\ma{#1[\movervec[{#4}]{#2/#3}]}}
 \newcommand\step[2]{\ma{#1 \hookrightarrow #2}}
 \newcommand\reduce[2]{\ma{#1 \rightarrow #2}}
