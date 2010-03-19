@@ -206,8 +206,8 @@ it is $\noobj$, and the filter set when it is $\top|\top$.
   \\\\
   \subtype{\t2}{\t{}} \\
   \subtype{\t3}{\t{}} \\\\
-  \p{+} = (\p{1_+} \wedge \p{2_+}) \vee (\p{1_-} \wedge \p{3_+}) \\\\
-  \p{-} = (\p{1_+} \wedge \p{2_-}) \vee (\p{1_-} \wedge \p{3_-}) 
+  \G{}, (\p{1_+} \wedge \p{2_+}) \vee (\p{1_-} \wedge \p{3_+}) \vdash \p{+}\\\\
+  \G{}, (\p{1_+} \wedge \p{2_-}) \vee (\p{1_-} \wedge \p{3_-}) \vdash \p{-}
 %  \phii{} = \combfilter{\p1|\p2}{\phii2}{\phii3}
 }
 {\hastyeff {\cond{\e1}{\e2}{\e3}} {\t{}}  {\p{+}} {\p{-}} {\noobj}}
@@ -325,7 +325,7 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 \inferrule[L-SubNot]{\Gamma \vdash \comp{\sig{}}_{\wpi{\x{}}} \\ \subtype{\t{}}{\sig{}}}{\Gamma \vdash \comp{\t{}}_{\wpi{\x{}}}}
 \qquad \qquad
 \inferrule[L-Update]
-{\Gamma \vdash \t{\wpi{\wpip{\x{}}}} \\ \Gamma \vdash \nu_{\wpip{\x{}}}}
+{\Gamma \vdash \t{{\wpip{\x{}}}} \\ \Gamma \vdash \nu_{\wpi{\wpip{\x{}}}}}
 {\Gamma \vdash {\update[\t{}]{\pi}{\nu}}_{\wpip{\x{}}}}
 \]
 
@@ -626,9 +626,9 @@ $$
 \newcommand{\pecarx}{\ma{\pecar(\x{})}}
 \newcommand{\pecarcarx}{\ma{\pecar(\pecar(\x{}))}}
 
-\newcommand{\xenv}[1]{\x{}:{#1}}
+\newcommand{\xenv}[1]{{#1}_{\x{}}}
 \newcommand{\xenvtop}{\xenv{\topty}}
-\newcommand{\xyenv}{\xenvtop,\y{}:\topty}
+\newcommand{\xyenv}{\xenvtop,\topty_{\y{}}}
 
 
 \newcommand{\numpx}{\nump{\x{}}}
@@ -667,15 +667,17 @@ $$
 \end{displaymath}
 
 \begin{displaymath}
-  \hastyeff[\xyenv] {\cand{\numpx}{\boolpy}} {\bool} {\num_{x{}},\bool_{\y{}}}  {\bullet} {\noobj}
+  \hastyeff[\xyenv] {\cand{\numpx}{\boolpy}} {\bool} {\num_{x{}}
+    \wedge \bool_{\y{}}}  {\top} {\noobj}
 \end{displaymath}
 
 \begin{displaymath}
-  \hastyeff[\xyenv] {\cor{\numpx}{\boolpy}} {\bool} {\bullet} {\comp{\num}_{x{}},\comp{\bool}_{\y{}}}  {\noobj}
+  \hastyeff[\xyenv] {\cor{\numpx}{\boolpy}} {\bool} {\top}
+  {\comp{\num}_{x{}} \wedge \comp{\bool}_{\y{}}}  {\noobj}
 \end{displaymath}
 
 \begin{displaymath}
-  \hastyeff[\xenvtop] {\cand{\numpx}{\boolpx}} {\bool} {\num_{x{}},\bool_{\x{}}}  {\bullet} {\noobj}
+  \hastyeff[\xenvtop] {\cand{\numpx}{\boolpx}} {\bool} {\num_{x{}} \wedge\bool_{\x{}}}  {\top} {\noobj}
 \end{displaymath}
 
 \begin{displaymath}
