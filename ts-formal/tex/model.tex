@@ -98,7 +98,7 @@
          \p{} &::=&  \nu_{\wpi{\x{}}}
          \lonly{\alt \imp{\p{}}{\p{}}} \alt \p{} \vee \p{} \alt \p{}
          \wedge \p{} \alt
-         \bot \alt \top & \mbox{Filters} \\
+         \botprop \alt \topprop & \mbox{Filters} \\
 
 
          \s{} & ::= &   \wpi{\x{}} \alt \noobj &\mbox{Objects} \\
@@ -139,7 +139,7 @@ evaluating \e{} and recieving a true value means that \p+ is true,
 that evaluating \e{} and recieving $\ff$ means that \p- is true, and
 that testing \e{} is the same as testing the object \s{}.  In function
 types, we omit the variable when it is unreferenced, the object when
-it is $\noobj$, and the filter set when it is $\top|\top$.
+it is $\noobj$, and the filter set when it is $\topprop|\topprop$.
 
 \newpage
 
@@ -276,7 +276,7 @@ it is $\noobj$, and the filter set when it is $\top|\top$.
   \qquad\qquad
   \inferrule[T-Bot]
   {
-    \Gamma \vdash (\usymsmall)_{\wpi{\x{}}}
+    \Gamma \vdash {\botty}_{\wpi{\x{}}}
   }
   {
     \hastyeffphi{\e{}}{\t{}}{\p1|\p2}{\s{}}
@@ -299,11 +299,11 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\p{} \in \Gamma}
 {\Gamma \vdash \p{}}
 \qquad \qquad
-\inferrule[L-Top]{}
-{\Gamma \vdash \top}
+\inferrule[L-True]{}
+{\Gamma \vdash \topprop}
 \qquad \qquad
-\inferrule[L-Bot]
-{\Gamma \vdash \bot}
+\inferrule[L-False]
+{\Gamma \vdash \botprop}
 {\Gamma \vdash \p{}}
 \qquad\qquad
 \inferrule[L-AndI]{\Gamma \vdash \p1\\\\\Gamma \vdash \p2}{\Gamma
@@ -435,16 +435,16 @@ $$
 
 
   \subs{\nu_{\wpi{\x{}}}}{\wpip{\y{}}}{\x{}} & {(\subs{\nu}{\wpip{\y{}}}{\x{}})}_{\wpi{\wpip{\y{}}}} & \\
-  \subsplus{\nu_{\wpi{\x{}}}}{\noobj}{\x{}} & \top & \\
-  \subsminus{\nu_{\wpi{\x{}}}}{\noobj}{\x{}} & \bot & \\
+  \subsplus{\nu_{\wpi{\x{}}}}{\noobj}{\x{}} & \topprop & \\
+  \subsminus{\nu_{\wpi{\x{}}}}{\noobj}{\x{}} & \botprop & \\
   \subs{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & {{\nu}_{\wpi{\x{}}}} & \x{}
   \neq \z{} \text { and } \z{} \not\in \fv{\nu}\\
-  \subsplus{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & \top & \x{}
+  \subsplus{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & \topprop & \x{}
   \neq \z{} \text { and } \z{} \in \fv{\nu}\\
-  \subsminus{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & \bot & \x{}
+  \subsminus{\nu_{\wpi{\x{}}}}{\s{}}{\z{}} & \botprop & \x{}
   \neq \z{} \text { and } \z{} \in \fv{\nu}\\
-  \sxo{\top} & \top & \\
-  \sxo{\bot} & \bot & \\
+  \sxo{\topprop} & \topprop & \\
+  \sxo{\botprop} & \botprop & \\
   \sxop{(\imp{\p1}{\p2})} & \imp{\sxom{\p1}}{\sxop{\p2}}& \\
   \sxom{(\imp{\p1}{\p2})} & \imp{\sxop{\p1}}{\sxom{\p2}}& \\
   \sxo{({\p1}\vee{\p2})} & {\sxo{\p1}}\vee{\sxo{\p2}}& \\
@@ -686,16 +686,16 @@ $$
 
 \begin{displaymath}
   \hastyeff[\xyenv] {\cand{\numpx}{\boolpy}} {\bool} {\num_{x{}}
-    \wedge \bool_{\y{}}}  {\top} {\noobj}
+    \wedge \bool_{\y{}}}  {\topprop} {\noobj}
 \end{displaymath}
 
 \begin{displaymath}
-  \hastyeff[\xyenv] {\cor{\numpx}{\boolpy}} {\bool} {\top}
+  \hastyeff[\xyenv] {\cor{\numpx}{\boolpy}} {\bool} {\topprop}
   {\comp{\num}_{x{}} \wedge \comp{\bool}_{\y{}}}  {\noobj}
 \end{displaymath}
 
 \begin{displaymath}
-  \hastyeff[\xenvtop] {\cand{\numpx}{\boolpx}} {\bool} {\num_{x{}} \wedge\bool_{\x{}}}  {\top} {\noobj}
+  \hastyeff[\xenvtop] {\cand{\numpx}{\boolpx}} {\bool} {\num_{x{}} \wedge\bool_{\x{}}}  {\topprop} {\noobj}
 \end{displaymath}
 
 \begin{displaymath}
@@ -740,7 +740,7 @@ or alternatively, if we had intersection types:
 \end{displaymath}
 
 \begin{displaymath}
-  \hastytrue {\abssingle{\x{}}{\a{}}{\ff}} {\proctype{\a{}}{\bool}{\both|\bullet}{\noobj}}
+  \hastytrue {\abssingle{\x{}}{\a{}}{\ff}} {\proctype{\a{}}{\bool}{\botproph|\bullet}{\noobj}}
 \end{displaymath}
 
 
@@ -789,7 +789,7 @@ $
   \Gamma + {{\fft}_{\pecarcarx}} = {\x{}:\prtyf} }
  {\hastyfalse[\Gamma + {{\fft}}_{\pecarcarx}]{\app}{\fft}}\)} \\
  \hastytrue[\Gamma + \comp{\fft}_{\pecarcarx}]{\tt}{\ttt} \\
- {\bullet|\bullet} = \combfilter{\fft_{\pecarcarx}|{\comp{\fft}}_{\pecarcarx}}{\bullet|\bot}{\bot|\bullet}}
+ {\bullet|\bullet} = \combfilter{\fft_{\pecarcarx}|{\comp{\fft}}_{\pecarcarx}}{\bullet|\botprop}{\botprop|\bullet}}
 {\concl}
 $
 %end{turn}
@@ -820,7 +820,7 @@ $
 % \]
 
 % \[
-% \hastype{\x{}}{\t{}} \models \bot
+% \hastype{\x{}}{\t{}} \models \botprop
 % \qquad
 % \inferrule{\subtype{\t{}' @ \pi}{\t{}}}
 % {\hastype{\x{}}{\t{}'} \models \t{\wpi{\x{}}}}
@@ -860,7 +860,7 @@ $
 
 
 % \noindent
-% and $\hastype{\x{}}{\sig{}'} \not\models \p{\pm} \quad \Rightarrow \quad \pp{\pm} = \bot$
+% and $\hastype{\x{}}{\sig{}'} \not\models \p{\pm} \quad \Rightarrow \quad \pp{\pm} = \botprop$
 
 % \noindent
 % and either $\s{} = \wpi{\x{}} \wedge \s{}' = \noobj$ or $\s{} = \s{}'$
@@ -886,7 +886,7 @@ $
   }\hastyeffphi[]{\vv{}}{\sig{}}{\p2}{\s2}}}
 {\rho \models \comp{\t{}}_{\wpi{x{}}}}
 \qquad\qquad
-\inferrule{}{\rho \models \top}
+\inferrule{}{\rho \models \topprop}
 \]
 \[
 \inferrule{\rho \models \p1 \text{ or } \rho \models \p2}{\rho \models \p1 \vee \p2}
@@ -951,13 +951,13 @@ $\hastyeff{\e{}}{\t{}}{\p{+}}{\p{-}}{\s{}}$.
 Cases:
 \begin{enumerate}
 \item {\sc T-Bot}.  By assumption, $\rho \models \G{}$, and therefore
-  $\rho \models \bot$ by lemma~\ref{lem:mod-concl}.  But $\rho \not\models
-\bot$ by inspection of the rules.  
+  $\rho \models \botprop$ by lemma~\ref{lem:mod-concl}.  But $\rho \not\models
+\botprop$ by inspection of the rules.  
 \item {\sc T-Num}.  First, $\s{} = \noobj$.  Second, $e = n$ and
   therefore by {\sc B-Val} (the only rule that applies), $v = n$.
   Thus, $\t{} = \t{}'$ and the
   third requirement is discharged.  Finally, $\p{+} = \epsilon$ and
-  $\rho \models \top$ for any $\rho$.
+  $\rho \models \topprop$ for any $\rho$.
 \item {\sc T-Const, T-True, T-False}. Similar to {\sc T-Num}.
 \item {\sc T-Cons}. First, $\s{} = \noobj$.  Second, $\e{} =
   \cons{\e1}{\e2}$ and $\t{} = \consty{\t1}{\t2}$.  Third, by {\sc
@@ -968,7 +968,7 @@ Cases:
   $\hastyeff[\Gamma]{\vv2}{\t{2}'}{\pp{2+}}{\pp{2-}}{\s{2}'}$ and
   \subtype{\t1'}{\t1} and \subtype{\t2'}{\t2}.
   Thus
-  $\hastyeff[\Gamma]{\cons{\vv{1}}{\vv2}}{\consty{\t{1}'}{\t2'}}{\epsilon}{\bot}{\noobj}$
+  $\hastyeff[\Gamma]{\cons{\vv{1}}{\vv2}}{\consty{\t{1}'}{\t2'}}{\epsilon}{\botprop}{\noobj}$
   concluding part 3.  For part 2, note that $\cons{\vv{1}}{\vv2} \neq
   \ff$ and $\rho \models \epsilon$.
 \item {\sc T-Var}.  The only applicable evaluation rule is {\sc
@@ -986,7 +986,7 @@ Cases:
 \item {\sc T-Not}. Easy application of the induction hypothesis.
 \item {\sc T-If}. Easy application of the induction hypothesis.
 \item {\sc T-Car}. There are two possible cases.  If the argument has
-  object $\noobj$, then the resulting filter set is $\top|\top$ and
+  object $\noobj$, then the resulting filter set is $\topprop|\topprop$ and
   the resulting object is $\noobj$.  The resulting value must be of
   the correct type by application of the IH and the fact that the
   final evaluation rule must be {\sc T-Delta}. 

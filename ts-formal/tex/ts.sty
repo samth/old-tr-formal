@@ -48,6 +48,12 @@
 
 \renewcommand\bullet{\ma{\epsilon}}
 
+\newbfop\ttprop{tt}
+\newbfop\ffprop{ff}
+
+\def\botprop{\ffprop}
+\def\topprop{\ttprop}
+
 % types
 \newbfop\num{N}
 \newbfop\bool{B}
@@ -79,8 +85,8 @@
 
 \newcommand{\uniontwo}[2]{(\usym\ {#1}\ {#2})}
 
-\def\topty{\any}
-\def\botty{(\usymsmall)}
+\def\topty{\top}
+\def\botty{\bot}
 
 % terms
 \newmeta\x{x}                   % not sure if \x is reserved...
@@ -127,9 +133,9 @@
 \newcommand\hastyvar[4][\Gamma]{\hastyeff [#1] {#2} {#3} {\comp{\fft}_{#4}} {{\fft}_{#4}} {#4}}
 
 
-\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\top} {\noobj}}
-\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\top} {\bot} {\noobj}}
-\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\bot} {\top} {\noobj}}
+\newcommand\hastyno[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\topprop} {\topprop} {\noobj}}
+\newcommand\hastytrue[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\topprop} {\botprop} {\noobj}}
+\newcommand\hastyfalse[3][\Gamma]{\hastyeff [#1] {#2} {#3} {\botprop} {\topprop} {\noobj}}
 
 \newcommand\hastypred[4][\Gamma]{\hastyeff [#1] {#2} {\bool} {{#3}_{#4}} {{\comp{#3}}_{#4}} {\noobj}}
 
@@ -196,12 +202,12 @@
       {\uppsi}
       {\ifthenelse{\equal{#1}{s}}
         {S}
-        {\ifthenelse{\equal{#1}{\bot}}
-          {\mbox{\boldmath$\bot\!\!\!\!\bot$}}
+        {\ifthenelse{\equal{#1}{\botprop}}
+          {\mbox{\boldmath$\botprop\!\!\!\!\botprop$}}
           {\ifthenelse{\equal{#1}{o}}
             {O}
-            {\ifthenelse{\equal{#1}{\top}}
-                {\mbox{\boldmath$\top\!\!\!\!\top$}}
+            {\ifthenelse{\equal{#1}{\topprop}}
+                {\mbox{\boldmath$\topprop\!\!\!\!\topprop$}}
                 {\doesnotexist{#1}}}}}}}}}
 
 \newmeta\e{e}
@@ -230,8 +236,8 @@
 \newmeta\compt{\comp{\tau}}
 \newmeta\ups{\upsilon}
 
-\newcommand{\both}{\latentmvar{\bot}}
-\newcommand{\toph}{\latentmvar{\top}}
+\newcommand{\botproph}{\latentmvar{\botprop}}
+\newcommand{\topproph}{\latentmvar{\topprop}}
 
 %\newcommand\v{\vv{}}
 
