@@ -1,6 +1,6 @@
 %\usepackage{newif}
 
-\usepackage{upgreek}
+\usepackage{upgreek,mathbbol}
 
 \newif\ifmarg
 \margtrue
@@ -48,16 +48,18 @@
 
 \renewcommand\bullet{\ma{\epsilon}}
 
-\newbfop\ttprop{tt}
-\newbfop\ffprop{ff}
+%\newbfop\ttprop{tt}
+%\newbfop\ffprop{ff}
+\def\ttprop{\mathbb{tt}}
+\def\ffprop{\mathbb{ff}}
 
 \def\botprop{\ffprop}
 \def\topprop{\ttprop}
 
 % types
-\newbfop\num{N}
-\newbfop\bool{B}
-\newbfop\any{A}
+\newbfop\num{{{ N}}}
+\newbfop\bool{{ B}}
+\newbfop\any{{ A}}
 \newbfop\tt{\ma{\#t}}
 \newbfop\ff{\ma{\#f}}
 \newbfop\ttt{\#t}

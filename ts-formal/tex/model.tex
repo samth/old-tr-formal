@@ -614,9 +614,13 @@ $$
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecar}{\nu} & \consty{\update[\t{}]{\pi}{\nu}}{\sig{}}  & \\
   \update[\consty{\t{}}{\sig{}}]{\pi::\pecdr}{\nu} & \consty{\t{}}{\update[\sig{}]{\pi}{\nu}}  & \\
 \fi
-  \update[\t{}]{\bullet}{\sig{}} & \restrict{\t{}}{\sig{}}& \\
+  \update[\t{}]{\bullet}{\sig{}} & \restrict{\t{}}{\sig{}}&  \t{} \cap
+  \sig{} \\
+  \update[\t{}]{\bullet}{\comp{\sig{}}} & \remove{\t{}}{\sig{}}& \t{}
+  - \sig{}
+  \vspace{5mm}\\
 
-  \update[\t{}]{\bullet}{\comp{\sig{}}} & \remove{\t{}}{\sig{}}& \vspace{5mm}\\
+
   \restrict{\t{}}{\sig{}} & \botty & \text{ if } {\not\exists
   \vv{}. \hastyeffphi[]{\vv{}}{\t{}}{\p1}{\s1}\text{ and }\hastyeffphi[]{\vv{}}{\sig{}}{\p2}{\s2}} \\
   \restrict{(\usymsmall\ \overvec{\t{}})}{\sig{}} & (\usymsmall\ \overvec{\restrict{\t{}}{\sig{}}})& \\
@@ -877,8 +881,7 @@ $
 \subsection{Environment Modeling}
 
 \[
-\inferrule{\hastyeffphi[\relax{}]{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}} \\\\
-  \subtype{\sig{}}{\t{}}}{\rho \models \t{\wpi{x{}}}}
+\inferrule{\hastyeffphi[\relax{}]{\rho(\wpi{\x{}})}{\t{}}{\phii}{\s{}} }{\rho \models \t{\wpi{x{}}}}
 \qquad\qquad
 \inferrule{\hastyeffphi[\relax{}]{\rho(\wpi{\x{}})}{\sig{}}{\phii}{\s{}}
 \\\\  {\not\exists
