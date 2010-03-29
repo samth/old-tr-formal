@@ -306,6 +306,10 @@ code, and it takes the place of the earlier rules {\sc T-IfTrue} and
 {\Gamma \vdash \botprop}
 {\Gamma \vdash \p{}}
 \qquad\qquad
+\inferrule[L-Bot]
+{\Gamma \vdash \botty_{\x{}}}
+{\Gamma \vdash \p{}}
+\qquad\qquad
 \inferrule[L-AndI]{\Gamma \vdash \p1\\\\\Gamma \vdash \p2}{\Gamma
   \vdash \p1 \wedge \p2}
 \qquad\qquad
